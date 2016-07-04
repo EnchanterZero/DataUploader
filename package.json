@@ -1,0 +1,27 @@
+{
+  "name": "DcmSynchronizer",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/www"
+  },
+  "dependencies": {
+    "body-parser": "~1.15.1",
+    "bootstrap": "*",
+    "co": "*",
+    "cookie-parser": "~1.4.3",
+    "debug": "~2.2.0",
+    "ejs": "~2.4.1",
+    "express": "~4.13.4",
+    "jquery": "*",
+    "lodash": "^4.13.1",
+    "log4js": "^0.6.37",
+    "metismenu": "^2.5.2",
+    "mongodb": "^2.1.18",
+    "mongoose": "^4.5.1",
+    "morgan": "~1.7.0",
+    "q": "^1.4.1",
+    "serve-favicon": "~2.3.0",
+    "winston": "^2.2.0"
+  }
+}

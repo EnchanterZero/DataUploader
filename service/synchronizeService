@@ -1,0 +1,145 @@
+var q = require('q');
+var co = require('co');
+var config = require('../config');
+var dcmService = require('./dcmService');
+var mongoDBService = require('./mongoDBService');
+var _ = require('lodash');
+
+var logger = config.logger;
+var filepath = config.dcmTempDir;
+
+var startSynchronize = function*() {
+
+
+    var flag = true;
+    while(flag) {
+        var count = 0;
+        logger.info('\n\n[step ' + (count) + '] preparing for a new round of dcm synchronization......');
+        //对于没有传输完成的dcms,先传输,保证dcmTempDir达到清空状态
+        logger.info('\n\n[step ' + (count) + '] checking unfinished synchronization......');
+        var len = yield dcmService.listTempDcms();
+        while( len.length > 0){
+            //
+            //对本地的文件(未同步),进行上传,并更新DB中的记录(isSynchronized字段),
+            logger.info('\n[step ' + (count) + '] pushing fcms......');
+            var pushedDcmUIDs = yield dcmService.pushDcms(filepath);
+            yield mongoDBService.setDcmsSynchronized(pushedDcmUIDs);
+            logger.info('\n[step ' + (count) + '] succeed: ['+pushedDcmUIDs.length+']');
+
+            //
+            //查找DB中记录,找出本地的已经同步了的dcm files,将这些dcm files 删除,并将相应数据记录的dcmPath置为空串
+            logger.info('\n[step ' + (count) + '] cleaning pushed local fcms......');
+            var synchronizedLocalDcms = yield mongoDBService.findSynchronizedLocalDcms();
+            var dcmPaths = [];
+            for (var n in synchronizedLocalDcms) {
+                dcmPaths.push(synchronizedLocalDcms[n].dcmPath);
+            }
+            yield dcmService.rmLocalSynchronizedDcms(dcmPaths);
+            yield mongoDBService.setSynchronizedDcmsDeleted();
+            logger.info('\n[step ' + (count) + '] finished');
+
+            len = yield dcmService.listTempDcms();
+        }
+
+        count++;
+        //---1
+        //读取A端所有dcm的UID信息
+        logger.info('\n[step ' + (count++) + '] finding all dcm......');
+
+        console.time('test find all dcms');
+        var allDcms = yield dcmService.findAllDcms();
+        var allDcmsMetas = dcmService.formatDcmForDB(allDcms);
+        console.timeEnd('test find all dcms');
+        logger.info('\n[step ' + (count) + '] found all ['+allDcmsMetas.length+'] dcms' );
+
+        //---2
+        //将DB记录的dcm与A端的比较,挑出A端的新纪录,并下载
+        logger.info('\n[step ' + (count++) + '] comparing diff and getting new files......');
+
+        //先在studies一级比较,将新的studies对应的dcm的meta
+        var newStudiesDocs = [];
+        var studiesIds = yield mongoDBService.findAllStudiesId();
+        var allStudiesIds=[];
+        for(var i in allDcmsMetas){
+            allStudiesIds.push(allDcmsMetas[i].StudyInstanceUID);
+        }
+        allStudiesIds = _.uniq(allStudiesIds);
+        var newStudiesIds = _.difference(allStudiesIds,studiesIds);
+        logger.info('\n[step ' + (count) + '] found ['+newStudiesIds.length+'] new studies. ' );
+        if(newStudiesIds.length != 0){
+            for(var i in allDcmsMetas){
+                if(_.indexOf(newStudiesIds,allDcmsMetas[i].StudyInstanceUID)!=-1){
+                    newStudiesDocs.push(allDcmsMetas[i]);
+                }
+            }
+            //pull新的studies
+            logger.info('\n[step ' + (count) + '] getting new studies ......');
+            for (var m in newStudiesIds) {
+                //retrieveLevel,StudyInstanceUID,SeriesInstanceUID,SOPInstanceUID
+                yield dcmService.pullDcms('STUDY', newStudiesIds[m]);
+            }
+            yield mongoDBService.insert(newStudiesDocs);
+        }
+        //在dcm一级比较,将新的dcm的meta信息
+        var ids = yield mongoDBService.findAllId();
+        var newDcmDocs = [];
+        for (var i in allDcmsMetas) {
+            var j;
+            for (j = 0; j < ids.length; j++) {
+                if (allDcmsMetas[i]._id == ids[j]) break;
+            }
+            if (j == ids.length) newDcmDocs.push(allDcmsMetas[i]);
+        }
+        logger.info('\n[step ' + (count) + '] found ['+newDcmDocs.length+'] new dcms' );
+        if (newDcmDocs.length != 0){
+
+            logger.info('\n[step ' + (count) + '] getting new dcms ......');
+            for (var m in newDcmDocs) {
+                //retrieveLevel,StudyInstanceUID,SeriesInstanceUID,SOPInstanceUID
+                yield dcmService.pullDcms('IMAGE', newDcmDocs[m].StudyInstanceUID, newDcmDocs[m].SeriesInstanceUID, newDcmDocs[m].SOPInstanceUID);
+            }
+            yield mongoDBService.insert(newDcmDocs);
+        }
+
+        logger.info('\n[step ' + (count) + '] finished');
+        if(newStudiesDocs.length ==0 && newDcmDocs.length==0){
+            logger.info('\n[step ' + (count) + '] found no new studies and dcms,this round is finished.' );
+        }else{
+
+            /*
+            //---4
+            //对于本地的文件(未同步),进行读取信息,并更新DB(dcmPath字段)
+            logger.info('\n[step ' + (count++) + '] reading new dcms......');
+            var dcmMetas = yield dcmService.readDcm(filepath);
+            console.log(dcmMetas);
+            yield mongoDBService.setDcmsPath(dcmMetas);
+            logger.info('\n[step ' + (count) + '] finished');
+
+
+            //---5
+            //对本地的文件(未同步),进行上传,并更新DB中的记录(isSynchronized字段),
+            logger.info('\n[step ' + (count++) + '] pushing fcms......');
+            var pushedDcmUIDs = yield dcmService.pushDcms(filepath);
+            yield mongoDBService.setDcmsSynchronized(pushedDcmUIDs);
+            logger.info('\n[step ' + (count) + '] succeed: [' + pushedDcmUIDs.length + ']');
+
+            //---6
+            //查找DB中记录,找出本地的已经同步了的dcm files,将这些dcm files 删除,并将相应数据记录的dcmPath置为空串
+            logger.info('\n[step ' + (count++) + '] cleaning pushed local fcms......');
+            var synchronizedLocalDcms = yield mongoDBService.findSynchronizedLocalDcms();
+            var dcmPaths = [];
+            for (var n in synchronizedLocalDcms) {
+                dcmPaths.push(synchronizedLocalDcms[n].dcmPath);
+            }
+            yield dcmService.rmLocalSynchronizedDcms(dcmPaths);
+            yield mongoDBService.setSynchronizedDcmsDeleted();
+            logger.info('\n[step ' + (count) + '] finished');*/
+        }
+        
+
+        
+        flag = false;
+
+    };
+}
+exports.startSynchronize = startSynchronize;

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title><%= title %></title>
+  <link rel="stylesheet" href='/bootstrap/css/bootstrap.css'/>
+  <link rel="stylesheet" href='/metismenu/metisMenu.css'/>
+  <link rel='stylesheet' href='/stylesheets/style.css'/>
+</head>
+<body>
+<h1 id="title"><%= title %></h1>
+
+<button type="button" class="btn btn-primary" onclick="start()">Start</button>
+<button type="button" class="btn btn-primary" onclick="readDcms()">readDcms</button>
+<button type="button" class="btn btn-primary" onclick="uploadDcms()">uploadDcms</button>
+<br/>
+<!--<table id="objectstable" class="table table-bordered" data-region="<%= 4 %>" data-bucketname="<%= 5 %>">
+  <thead>
+  <tr>
+    <th><a>all check</a></th>
+    <th>name</th>
+    <th>lastModified</th>
+    <th>type</th>
+    <th>size</th>
+  </tr>
+  </thead>
+  <tbody>
+  <% for(var key in { }){
+  %>
+  <tr>
+    <td><input class="checkbox objectscheck" type="checkbox"></td>
+    <td><label data-name="<%= 1 %>"><%= 1 %></label></td>
+    <td><%= 1 %></td>
+    <td><%= 2 %></td>
+    <td><%= 3 %></td>
+  </tr>
+  <%
+  } %>
+  </tbody>
+</table>-->
+<!--<a id="pre_page" onclick="prePage()">Pre Page</a> -&#45;&#45; <a id="next_page" onclick="nextPage()">Next Page</a>-->
+<br/>
+<br/>
+<div id="output" class="col-lg-10"></div>
+<script type='text/javascript' src='/jquery/jquery.min.js'></script>
+<link rel="stylesheet" href='/bootstrap/js/bootstrap.min.js'/>
+<link rel="stylesheet" href='/metismenu/metisMenu.min.js'/>
+<link rel="stylesheet" href='/javascripts/sb-admin-2.js'/>
+<script type='text/javascript'>
+  function start(){
+    $.post('/start',{},function (data) {
+      console.log(data);
+      $('#title').html(data.title);
+      var output='';
+      for(var i in data.files){
+        output += '<p>'+data.files[i] + '</p><br/>';
+      }
+      $('#output').html(output)
+    });
+  }
+  function readDcms(){
+    $.post('/readdcms',{},function (data) {
+      console.log(data);
+      $('#title').html(data.title);
+
+    });
+  }
+  function uploadDcms(){
+    $.post('/uploaddcms',{},function (data) {
+      console.log(data);
+      $('#title').html(data.title);
+
+    });
+
+  }
+
+</script>
+</body>
+</html>
