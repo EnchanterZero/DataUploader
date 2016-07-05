@@ -50,7 +50,7 @@ var findAllUID = function* (stepCount) {
  * 
  * @param stepCount
  * @param allDcmsMetas
- * @returns {{newStudiesIds, newDcmDocs: Array}}
+ * @returns {{newStudiesIds: Array, newDcmDocs: Array}}
  */
 var getDefference = function* (stepCount,allDcmsMetas) {
 
@@ -94,6 +94,102 @@ var getDefference = function* (stepCount,allDcmsMetas) {
         totalNewDcmNum += newDcmDocs.length;
     }
 
+    logger.info('[step ' + (stepCount) + '] found [' + newStudiesIds.length + '] new studies; [' + newDcmDocs.length + '] new dcms; total [' + totalNewDcmNum + '] new dcms');
+
+    return {
+        newStudiesIds:newStudiesIds,
+        newDcmDocs:newDcmDocs,
+        totalNewDcmNum:totalNewDcmNum
+    }
+}
+var getDefferenceMaxStudies = function* (stepCount,allDcmsMetas) {
+
+    //先在studies一级比较,得出新的studies,并将对应的dcm的meta存入DB
+    var totalNewDcmNum = 0;
+
+    var newStudiesDocs = [];
+    var studiesIds = yield mongoDBService.findAllStudiesId();
+    var allStudiesIds = [];
+    for (var i in allDcmsMetas) {
+        allStudiesIds.push(allDcmsMetas[i].StudyInstanceUID);
+    }
+    allStudiesIds = _.uniq(allStudiesIds);
+    var newStudiesIds = _.difference(allStudiesIds, studiesIds);
+    //logger.info('\n[step ' + (stepCount) + '] found [' + newStudiesIds.length + '] new studies. ');
+    //新studies对应的的meta存入DB
+    if (newStudiesIds.length != 0) {
+        for (var i in allDcmsMetas) {
+            if (_.indexOf(newStudiesIds, allDcmsMetas[i].StudyInstanceUID) != -1) {
+                newStudiesDocs.push(allDcmsMetas[i]);
+            }
+        }
+        yield mongoDBService.insert(newStudiesDocs);
+        totalNewDcmNum += newStudiesDocs.length;
+    }
+
+    //在dcm一级比较,得出新的dcm,并将它们的meta信息存入DB
+    var ids = yield mongoDBService.findAllId();
+    var newDcmDocs = [];
+    for (var i in allDcmsMetas) {
+        var j;
+        for (j = 0; j < ids.length; j++) {
+            if (allDcmsMetas[i]._id == ids[j]) break;
+        }
+        if (j == ids.length) newDcmDocs.push(allDcmsMetas[i]);
+    }
+    
+
+    //logger.info('\n[step ' + (stepCount) + '] found [' + newDcmDocs.length + '] new dcms');
+    //新dcm的meta存入DB
+    if (newDcmDocs.length != 0) {
+        yield mongoDBService.insert(newDcmDocs);
+        totalNewDcmNum += newDcmDocs.length;
+    }
+    logger.info('[step ' + (stepCount) + '] found [' + newStudiesIds.length + '] new studies; [' + newDcmDocs.length + '] new dcms; total [' + totalNewDcmNum + '] new dcms');
+    
+    //从现在的newDcmDocs中要下载的数目多的study,把它的study算在newStudiesIds里,再把它原本要下载的dcm从newDcmDocs中去掉
+    function serachStudyInstanceUID(newDcmCount,a) {
+        for(var i=0;i<newDcmCount.length;i++){
+            if(newDcmCount[i].StudyInstanceUID == a){
+                return i;
+            }
+        }
+        return -1;
+    }
+    var MAXCOUNT = 50;
+    var newDcmCount =[];
+    var addedStudies = [];
+    for(var i in newDcmDocs){
+        var index = serachStudyInstanceUID(newDcmCount,newDcmDocs[i].StudyInstanceUID)
+        if(index == -1){
+            newDcmCount.push({
+                StudyInstanceUID:newDcmDocs[i].StudyInstanceUID,
+                count:1
+            });
+        }else{
+            newDcmCount[index].count+=1;
+            if(newDcmCount[index].count > MAXCOUNT){
+                addedStudies.push(newDcmCount[index].StudyInstanceUID);
+            }
+        }
+    }
+    addedStudies = _.uniq(addedStudies);
+    //console.log(newDcmCount);
+    //console.log(addedStudies);
+    //console.log(newDcmDocs);
+
+    //修改返回的newStudiesIds和newDcmDocs
+    newStudiesIds = newStudiesIds.concat(addedStudies);
+    for(var i in addedStudies){
+        
+        for(var j=0;j<newDcmDocs.length;j++ ){
+            if(addedStudies[i] == newDcmDocs[j].StudyInstanceUID){
+                newDcmDocs.splice(j,1);
+                j--;
+            }
+        }
+    }
+    //console.log(newDcmDocs);
     return {
         newStudiesIds:newStudiesIds,
         newDcmDocs:newDcmDocs,
@@ -169,32 +265,33 @@ exports.startSynchronize = function*() {
         //将DB记录的dcm与A端的比较,挑出A端的新dcm
         logger.info('\n[step ' + (count) + '] comparing diff and finding new files......');
         var diffStart = new Date().getTime();
-        var result = yield getDefference(count,allDcmsMetas);
+        var result = yield getDefferenceMaxStudies(count,allDcmsMetas);
         var newStudiesIds = result.newStudiesIds;
         var newDcmDocs = result.newDcmDocs;
         var totalNewDcmNum = result.totalNewDcmNum;
-        logger.info('[step ' + (count) + '] found [' + newStudiesIds.length + '] new studies; [' + newDcmDocs.length + '] new dcms; total [' + totalNewDcmNum + '] new dcms');
+        logger.info('[step ' + (count) + '] ready to get [' + newStudiesIds.length + '] studies; [' + newDcmDocs.length + '] dcms;');
         logger.info('[step ' + (count) + '] finished. use time:['+(new Date().getTime()-diffStart)+'ms]');
 
         count++;
+        
         //---3
         //pull新dcm
         logger.info('\n[step ' + (count) + '] pulling all new files......');
         var pullDcmsStart = new Date().getTime();
         yield getNewStudiesAndDcms(count,newStudiesIds,newDcmDocs);
         var pulledDcmFiles = yield dcmService.listTempDcms();
-        while(pulledDcmFiles.length != totalNewDcmNum){
+        while(pulledDcmFiles.length < totalNewDcmNum){
             logger.info('[step ' + (count) + '] pulled Dcm files number:['+ pulledDcmFiles.length +'];total new Dcm files number:['+ totalNewDcmNum +'],not match');
             yield getNewStudiesAndDcms(count,newStudiesIds,newDcmDocs);
             pulledDcmFiles = yield dcmService.listTempDcms();
         }
-
+        
         logger.info('[step ' + (count) + '] finished. pulled: ['+pulledDcmFiles.length+'],total:['+totalNewDcmNum+'],use time:['+(new Date().getTime()-pullDcmsStart)+'ms]');
         if (newStudiesIds.length == 0 && newDcmDocs.length == 0) {
             logger.info('\n[step ' + (count) + '] found no any new files,this round is finished.');
             continue;
         }
-
+        
         count++;
         //---4
         //对于本地的文件(未同步),进行读取信息,并更新DB(dcmPath字段)
@@ -204,8 +301,8 @@ exports.startSynchronize = function*() {
         logger.info('[step ' + (count) + '] read:['+dcmMetas.length+'],use time:['+(new Date().getTime()-readDcmsStart)+'ms]');
         yield mongoDBService.setDcmsPath(dcmMetas);
         logger.info('[step ' + (count) + '] finished.');
-
-
+        
+        
         count++;
         //---5
         //对本地的文件,进行上传操作,并更新DB中的记录(isSynchronized字段),
