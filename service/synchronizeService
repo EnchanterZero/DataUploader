@@ -109,9 +109,9 @@ var getNewStudiesAndDcms = function* (stepCount,newStudiesIds,newDcmDocs) {
     //pull新的studies
     if (newStudiesIds.length != 0) {
         logger.info('\n[step ' + (stepCount) + '] getting new studies ......');
-        for (var m in newStudiesIds) {
+        for (var m = 0;m < newStudiesIds.length;m++) {
             //retrieveLevel,StudyInstanceUID,SeriesInstanceUID,SOPInstanceUID
-            yield dcmService.pullDcms('STUDY', newStudiesIds[m]);
+            yield dcmService.pullDcms(m+1,'STUDY', newStudiesIds[m],null,null);
         }
     }
 
@@ -119,9 +119,9 @@ var getNewStudiesAndDcms = function* (stepCount,newStudiesIds,newDcmDocs) {
     if (newDcmDocs.length != 0) {
 
         logger.info('\n[step ' + (stepCount) + '] getting new dcms ......');
-        for (var m in newDcmDocs) {
+        for (var m = 0;m < newDcmDocs.length;m++) {
             //retrieveLevel,StudyInstanceUID,SeriesInstanceUID,SOPInstanceUID
-            yield dcmService.pullDcms('IMAGE', newDcmDocs[m].StudyInstanceUID, newDcmDocs[m].SeriesInstanceUID, newDcmDocs[m].SOPInstanceUID);
+            yield dcmService.pullDcms(m+1,'IMAGE', newDcmDocs[m].StudyInstanceUID, newDcmDocs[m].SeriesInstanceUID, newDcmDocs[m].SOPInstanceUID);
         }
     }
 }
@@ -166,7 +166,7 @@ exports.startSynchronize = function*() {
 
         count++;
         //---2
-        //将DB记录的dcm与A端的比较,挑出A端的新纪录
+        //将DB记录的dcm与A端的比较,挑出A端的新dcm
         logger.info('\n[step ' + (count) + '] comparing diff and finding new files......');
         var diffStart = new Date().getTime();
         var result = yield getDefference(count,allDcmsMetas);
@@ -178,7 +178,7 @@ exports.startSynchronize = function*() {
 
         count++;
         //---3
-        //pull新纪录
+        //pull新dcm
         logger.info('\n[step ' + (count) + '] pulling all new files......');
         var pullDcmsStart = new Date().getTime();
         yield getNewStudiesAndDcms(count,newStudiesIds,newDcmDocs);

@@ -174,6 +174,10 @@ var ls = function*(dcmPath) {
     }
     return files;
 }
+/**
+ * 
+ * @returns tempFilesList{Array}
+ */
 exports.listTempDcms = function* () {
      return yield ls(dcmTempDir);
 }
@@ -195,12 +199,12 @@ exports.readDcm = function*(dcmPath) {
     } else {
         var files = yield ls(dcmPath);
         console.time('many files read');
-        for (var i in files) {
+        for (var i=0; i<files.length;i++) {
             /*if(path.extname(dcmPath)!='.dcm'){
              continue;
              }*/
 
-            logger.info('---reading : '+files[i]);
+            logger.info('---reading ['+(i+1)+']: '+files[i]);
             var dcmMeta = yield readOneDcm(path.join(dcmPath, files[i]));
             dcmMetas.push(dcmMeta);
             //if (i >= 9) break;
@@ -279,6 +283,12 @@ var findDcms = function*(StudyInstanceUID, SeriesInstanceUID) {
     return dcms;
 }
 exports.findDcms = findDcms;
+
+
+/**
+ * 
+ * @returns allDcms {Array}
+ */
 exports.findAllDcms = function*() {
     var allDcms = [];
     var studies = yield findStudies();
@@ -291,21 +301,36 @@ exports.findAllDcms = function*() {
     }
     return allDcms;
 }
+
+/**
+ *
+ * @returns tempFilesList{Array}
+ */
 exports.pullAllDcms = function*() {
 
     logger.info('pulling all dcms:');
     var studies = yield findStudies();
     for (var i in studies) {
-        yield pullDcms('STUDY', studies[i].StudyInstanceUID);
+        yield pullDcms(i+1,'STUDY', studies[i].StudyInstanceUID);
     }
     var files = yield ls(dcmTempDir);
     return files;
 }
-var pullDcms = function*(retrieveLevel, StudyInstanceUID, SeriesInstanceUID, SOPInstanceUID) {
+
+
+/**
+ * 
+ * @param count  {Number}
+ * @param retrieveLevel
+ * @param StudyInstanceUID
+ * @param SeriesInstanceUID
+ * @param SOPInstanceUID
+ */
+var pullDcms = function*(count,retrieveLevel, StudyInstanceUID, SeriesInstanceUID, SOPInstanceUID) {
     var l = retrieveLevel.toUpperCase();
     var c;
     if (l == 'STUDY') {
-        logger.info('pulling dcm: ' + l +' [StudyInstanceUID]'+StudyInstanceUID );
+        logger.info('pulling dcm:['+count+'] ' + l +' [StudyInstanceUID]'+StudyInstanceUID );
         c = dcm4cheBinPath + '/getscu'
             + ' -c ' + pullingSCP_AET + '@' + pullingEnd
             + ' -L ' + l
@@ -313,7 +338,7 @@ var pullDcms = function*(retrieveLevel, StudyInstanceUID, SeriesInstanceUID, SOP
             + ' --directory ' + dcmTempDir;
     }
     if (l == 'SERIES') {
-        logger.info('pulling dcm: ' + l
+        logger.info('pulling dcm:['+count+'] ' + l
             +' [StudyInstanceUID]'+StudyInstanceUID
             +' [SeriesInstanceUID]'+SeriesInstanceUID);
         c = dcm4cheBinPath + '/getscu '
@@ -324,7 +349,7 @@ var pullDcms = function*(retrieveLevel, StudyInstanceUID, SeriesInstanceUID, SOP
             + ' --directory ' + dcmTempDir;
     }
     if (l == 'IMAGE') {
-        logger.info('pulling dcm: ' + l
+        logger.info('pulling dcm:['+count+'] ' + l
             +' [StudyInstanceUID]'+StudyInstanceUID
             +' [SeriesInstanceUID]'+SeriesInstanceUID
             +' [SOPInstanceUID]'+SOPInstanceUID);
@@ -342,6 +367,7 @@ var pullDcms = function*(retrieveLevel, StudyInstanceUID, SeriesInstanceUID, SOP
     console.log(result.stderr);
 }
 exports.pullDcms = pullDcms;
+
 
 /**
  *
@@ -365,6 +391,12 @@ exports.pushDcms = function*(path) {
 
 
 }
+
+
+/**
+ * 
+ * @param dcmPaths
+ */
 exports.rmLocalSynchronizedDcms = function* (dcmPaths) {
     logger.info('removing Local Synchronized Dcms:');
 
