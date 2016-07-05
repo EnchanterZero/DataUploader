@@ -15,7 +15,6 @@ var pushingSCP_AET = config.pushingSCP_AET;
 var dcmAttrCode = config.dcmAttrCode;
 //console.log(path.resolve(dcm4cheBinPath));
 var execCmd = function (cmd) {
-
     //logger.info('** run command: **\n'+cmd);
     var defer = q.defer();
     exec(cmd, {
@@ -61,9 +60,9 @@ var parseDcmdumpStdout = function (stdout) {
     var SeriesInstanceUID = getUID(stdout, dcmAttrCode.SeriesInstanceUID);
     var SOPInstanceUID = getUID(stdout, dcmAttrCode.SOPInstanceUID);
 
-    logger.info('\ngot StudyInstanceUID:  ' + StudyInstanceUID
+    /*logger.info('\ngot StudyInstanceUID:  ' + StudyInstanceUID
         + '\ngot SeriesInstanceUID:   ' + SeriesInstanceUID
-        + '\ngot SOPInstanceUID   '+ SOPInstanceUID);
+        + '\ngot SOPInstanceUID   '+ SOPInstanceUID);*/
 
     return {
         StudyInstanceUID: StudyInstanceUID,
@@ -123,7 +122,7 @@ var parseStoreSCUStdout = function (stdout) {
 
     logger.info('parsing StoreSCU Stdout:');
     
-    fs.writeFileSync(config.projectRoot+'/StoreSCUStdout.log', stdout,{flag:'a'});
+    //fs.writeFileSync(config.projectRoot+'/StoreSCUStdout.log', stdout,{flag:'a'});
     var getUID = function (stdout, CODE) {
         var UIDs = [];
         var s = eval('/STORESCU->' + pushingSCP_AET + '\\(\\d\\) >> \\d*:C-STORE-RSP/');
@@ -137,7 +136,7 @@ var parseStoreSCUStdout = function (stdout) {
                 var matchedlines = blocks[i].match(/iuid=.*-/);
                 //console.log(matchedlines[0]);
                 if(matchedlines){
-                    logger.info('-----matched '+(++count)+':  \n'+blocks[i]);
+                    //logger.info('-----matched '+(++count)+':  \n'+blocks[i]);
                     var UID = matchedlines[0].replace('iuid=','').replace(' -','');
                     UIDs.push(UID);
                 }
@@ -148,7 +147,7 @@ var parseStoreSCUStdout = function (stdout) {
     }
     var AffectedSOPInstanceUIDs = getUID(stdout, dcmAttrCode.AffectedSOPInstanceUID);
 
-    logger.info('got StudyInstanceUID:  ' + AffectedSOPInstanceUIDs);
+    logger.info('got AffectedSOPInstanceUIDs:  ' + AffectedSOPInstanceUIDs);
     return AffectedSOPInstanceUIDs;
 
     
