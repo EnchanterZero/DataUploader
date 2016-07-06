@@ -397,7 +397,7 @@ exports.pushDcms = function*(path) {
  * 
  * @param dcmPaths
  */
-exports.rmLocalSynchronizedDcms = function* (dcmPaths) {
+var rmLocalSynchronizedDcms = function* (dcmPaths) {
     logger.info('removing Local Synchronized Dcms:');
 
     for(var i in dcmPaths){
@@ -405,6 +405,7 @@ exports.rmLocalSynchronizedDcms = function* (dcmPaths) {
         var result = yield execCmd(c);
     }
 }
+exports.rmLocalSynchronizedDcms = rmLocalSynchronizedDcms;
 
 var formatDcmForDB = function (dcms) {
     //console.log('Array.isArray(dcms) : ' + Array.isArray(dcms));

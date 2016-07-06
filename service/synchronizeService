@@ -36,7 +36,24 @@ var pushAndClean = function* (stepCount) {
     yield dcmService.rmLocalSynchronizedDcms(dcmPaths);
     yield mongoDBService.setSynchronizedDcmsDeleted();
 }
-
+var pushToClear = function* (stepCount) {
+    var ls = yield dcmService.listTempDcms();
+    var rePushTroubleCount=0;
+    while (ls.length > 0) {
+        if(rePushTroubleCount == rePushTroubleCountThreshold){
+            logger.info('[step ' + (stepCount) + '] too much[javax.ejb.EJBTransactionRolledbackException]...each turn of pushing will wait for '+rePushTroubleWait+' milliseconds');
+        }
+        if(rePushTroubleCount >= 5){
+            yield wait(rePushTroubleWait);
+        }
+        yield pushAndClean(stepCount);
+        var lastLs = ls;
+        ls = yield dcmService.listTempDcms();
+        if(lastLs.length - ls.length < 3 && ls.length != 0){
+            rePushTroubleCount++;
+        }
+    }
+}
 /**
  * 
  * @param stepCount
@@ -81,7 +98,7 @@ var getDefference = function* (stepCount,allDcmsMetas) {
     }
 
     //在dcm一级比较,得出新的dcm,并将它们的meta信息存入DB
-    var ids = yield mongoDBService.findAllId();
+    var ids = yield mongoDBService.findAllDcmId();
     var newDcmDocs = [];
     for (var i in allDcmsMetas) {
         var j;
@@ -107,7 +124,7 @@ var getDefference = function* (stepCount,allDcmsMetas) {
 }
 var getDefferenceMaxStudies = function* (stepCount,allDcmsMetas) {
 
-    //先在studies一级比较,得出新的studies,并将对应的dcm的meta存入DB
+    //先在studies一级比较,得出未同步的studies,并将对应的dcm的meta存入DB
     var totalNewDcmNum = 0;
 
     var newStudiesDocs = [];
@@ -130,8 +147,8 @@ var getDefferenceMaxStudies = function* (stepCount,allDcmsMetas) {
         totalNewDcmNum += newStudiesDocs.length;
     }
 
-    //在dcm一级比较,得出新的dcm,并将它们的meta信息存入DB
-    var ids = yield mongoDBService.findAllId();
+    //在dcm一级比较,得出未同步的的dcm,并将它们的meta信息存入DB
+    var ids = yield mongoDBService.findAllDcmId();
     var newDcmDocs = [];
     for (var i in allDcmsMetas) {
         var j;
@@ -227,45 +244,29 @@ var getNewStudiesAndDcms = function* (stepCount,newStudiesIds,newDcmDocs) {
 
 var readAll = function*(stepCount,filePath){
     var dcmMetas = yield dcmService.readDcm(filePath);
-    yield mongoDBService.setDcmsPath(dcmMetas);
+    var duplicatedDcmPaths = yield mongoDBService.setDcmsPath(dcmMetas);
+    yield dcmService.rmLocalSynchronizedDcms(duplicatedDcmPaths);
+    logger.info('[step ' + (stepCount) + '] removed local duplicated dcms : [' + duplicatedDcmPaths.length + ']');
     return dcmMetas;
 }
-
-
-
 
 exports.startSynchronize = function*() {
 
     var flag = true;
     while (flag) {
         var count = 0;
-        logger.info('[step ' + (count) + '] preparing for a new round of dcm synchronization......');
+        logger.info('[step ' + (count) + '] ***** preparing for a new round of dcm synchronization...... *****');
 
         //---0
         //对于没有传输完成的dcms,先传输,保证dcmTempDir达到清空状态
         logger.info('[step ' + (count) + '] checking unfinished synchronization......');
-        var ls = yield dcmService.listTempDcms();
-        var rePushTroubleCount=0;
-        while (ls.length > 0) {
-            if(rePushTroubleCount == rePushTroubleCountThreshold){
-                logger.info('[step ' + (count) + '] too much[javax.ejb.EJBTransactionRolledbackException]...each turn of pushing will wait for '+rePushTroubleWait+' milliseconds');
-            }
-            if(rePushTroubleCount >= 5){
-                yield wait(rePushTroubleWait);
-            }
-            yield pushAndClean(count);
-            var lastLs = ls;
-            ls = yield dcmService.listTempDcms();
-            if(lastLs.length - ls.length < 3 && ls.length != 0){
-                rePushTroubleCount++;
-            }
-        }
+        yield pushToClear(count);
         logger.info('[step ' + (count) + '] finished. checking over\n');
         count++;
 
         //---1
         //读取A端所有dcm的UID信息
-        logger.info('[step ' + (count) + '] finding all new files......');
+        logger.info('[step ' + (count) + '] ***** finding all new files...... *****');
         var findStart = new Date().getTime();
         var allDcmsMetas = yield findAllUID(count);
         logger.info('[step ' + (count) + '] finished. found all dcms number: [' + allDcmsMetas.length + '],use time:['+(new Date().getTime()-findStart)+'ms]\n');
@@ -273,7 +274,7 @@ exports.startSynchronize = function*() {
         count++;
         //---2
         //将DB记录的dcm与A端的比较,挑出A端的新dcm
-        logger.info('[step ' + (count) + '] comparing diff and finding new files......');
+        logger.info('[step ' + (count) + '] ***** comparing diff and finding new files...... *****');
         var diffStart = new Date().getTime();
         var result = yield getDefferenceMaxStudies(count,allDcmsMetas);
         var newStudiesIds = result.newStudiesIds;
@@ -286,7 +287,7 @@ exports.startSynchronize = function*() {
         
         //---3
         //pull新dcm
-        logger.info('[step ' + (count) + '] pulling all new files......');
+        logger.info('[step ' + (count) + '] ***** pulling all new files...... *****');
         var pullDcmsStart = new Date().getTime();
         yield getNewStudiesAndDcms(count,newStudiesIds,newDcmDocs);
         var pulledDcmFiles = yield dcmService.listTempDcms();
@@ -304,8 +305,8 @@ exports.startSynchronize = function*() {
         
         count++;
         //---4
-        //对于本地的文件(未同步),进行读取信息,并更新DB(dcmPath字段)
-        logger.info('[step ' + (count) + '] reading new dcms......');
+        //对于本地的文件(未同步),进行读取信息,并更新DB(dcmPath字段),剔除已重复下载的dcms
+        logger.info('[step ' + (count) + '] ***** reading new dcms...... *****');
         var readDcmsStart = new Date().getTime();
         var dcmMetas = yield readAll(count, filePath);
         logger.info('[step ' + (count) + '] finished.read:['+dcmMetas.length+'],use time:['+(new Date().getTime()-readDcmsStart)+'ms]\n');
@@ -314,8 +315,8 @@ exports.startSynchronize = function*() {
         count++;
         //---5
         //对本地的文件,进行上传操作,并更新DB中的记录(isSynchronized字段),
-        logger.info('[step ' + (count) + '] pushing and cleaning local fcms......');
-        yield pushAndClean(count);
+        logger.info('[step ' + (count) + '] ***** pushing and cleaning local fcms...... *****');
+        yield pushToClear(count);
         logger.info('[step ' + (count) + '] finished.\n');
 
         //flag = false;
