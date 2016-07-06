@@ -9,6 +9,10 @@ var winston = require('winston');
 exports.projectRoot = __dirname;
 //the directory of the logHomePath must exists
 var logHomePath = __dirname + '/' + 'logs/';
+
+exports.pullDcmsTopullStudyThreshold = 20;
+exports.rePushTroubleCountThreshold = 5;
+exports.rePushTroubleWait = 5000;
 console.log(__dirname);
 console.log(logHomePath);
 
@@ -60,6 +64,7 @@ var logger = new (winston.Logger)({
         })
     ],
     exceptionHandlers: [
+        new (winston.transports.Console)(),
         new winston.transports.File({ filename: logHomePath + 'exceptions.log' })
     ]
 });
