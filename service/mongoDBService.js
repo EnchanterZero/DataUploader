@@ -12,6 +12,7 @@ var logger = config.logger;
 var MongoClient = mongodb.MongoClient;
 var connUrl = 'mongodb://' + config.mongodbHost + ':' + config.mongodbPort + '/' + config.mongodbBaseName;
 var collDcmMeta = 'dcm_meta';
+//var collSynchronizingStudy = 'synchronizing_study';
 logger.info('Mongo url at '+ connUrl);
 
 /**
@@ -20,6 +21,7 @@ logger.info('Mongo url at '+ connUrl);
 co(function* () {
     var db = yield MongoClient.connect(connUrl);
     yield db.createCollection(collDcmMeta);
+    //yield db.createCollection(collSynchronizingStudy);
 
 }).catch(function (err) {
     logger.error(err);
@@ -43,6 +45,18 @@ exports.test = function () {
         db.close();
     });
 }
+exports.removeAllDcmRecords = function () {
+    co(function*() {
+        var db = yield MongoClient.connect(connUrl);
+        var collection = db.collection(collDcmMeta);
+        yield collection.deleteMany({});
+        db.close();
+    });
+}
+/**
+ * 
+ * @param docArr {Array}
+ */
 exports.insert = function*(docArr) {
     var db = yield MongoClient.connect(connUrl);
     // Fetch a collection to insert document into
@@ -123,7 +137,7 @@ exports.findAllSeriesId = function*() {
     db.close();
     return seriesId;
 }
-exports.find = function*(doclist) {
+exports.find = function*() {
     var db = yield MongoClient.connect(connUrl);
     // Fetch a collection to insert document into
     var collection = db.collection(collDcmMeta);
@@ -173,16 +187,23 @@ exports.setDcmsPath = function*(dcms) {
     return duplicatedDcmPaths;
 }
 exports.setDcmsSynchronized = function*(dcmUIDs) {
-    //console.log('\n\n-------setDcmsSynchronized');
-    //console.log(dcmUIDs);
     var db = yield MongoClient.connect(connUrl);
-    // Fetch a collection to insert document into
     var collection = db.collection(collDcmMeta);
     for(var i in dcmUIDs){
         var r = yield collection.updateOne({_id: dcmUIDs[i]},{$set:{isSynchronized:true}});
-        //console.log(i + " r.matchedCount  :  " + r.matchedCount);
     }
-    //console.log('!!!!!!!!!!');
+    db.close();
+}
+exports.setSynchronizedDcmsDeleted = function*(dcmUIDs) {
+    var db = yield MongoClient.connect(connUrl);
+    var collection = db.collection(collDcmMeta);
+    for(var i in dcmUIDs){
+        var r = yield collection.updateOne({_id: dcmUIDs[i]},{$set:{dcmPath:''}});
+        var foundDcm = yield collection.find({_id:dcmUIDs[i],isSynchronized:true,dcmPath:''}).toArray();
+        if(foundDcm.length == 1){
+            throw 'UnsynchronizedDcmSetDeletedError: '+dcmUIDs[i];
+        }
+    }
     db.close();
 }
 exports.findSynchronizedLocalDcms = function*() {
@@ -196,14 +217,21 @@ exports.findSynchronizedLocalDcms = function*() {
     db.close();
     return r;
 }
-exports.setSynchronizedDcmsDeleted = function*() {
+exports.findAllSynchronizedDcms = function*() {
     //console.log('\n\n-------findSynchronizedLocalDcms');
     var db = yield MongoClient.connect(connUrl);
     // Fetch a collection to insert document into
     var collection = db.collection(collDcmMeta);
-    var r = yield collection.updateMany({isSynchronized:true},{$set:{dcmPath:''}});
+    var r = yield collection.find({isSynchronized:true}).toArray();
     //console.log(i + " r.matchedCount  :  " + r.matchedCount);
     //console.log(r);
+    db.close();
+    return r;
+}
+exports.setSynchronizedDcmsDeleted = function*() {
+    var db = yield MongoClient.connect(connUrl);
+    var collection = db.collection(collDcmMeta);
+    var r = yield collection.updateMany({isSynchronized:true},{$set:{dcmPath:''}});
     db.close();
     return r;
 }

@@ -22,8 +22,6 @@ var execCmd = function (cmd) {
         },
         function (err, stdout, stderr) {
             // if(err) {
-            //     console.log('err : ');
-            //     console.log(err);
             //     defer.reject(err);
             // }
             // else defer.resolve({
@@ -32,10 +30,10 @@ var execCmd = function (cmd) {
             //     err:err
             // });
             if (err) {
-                logger.error('** exec err: **\n'+ cmd +'\n'+err);
+                logger.error('** exec err: **\n' + cmd + '\n' + err);
             }
-            if (stderr){
-                logger.error('** exec stderr: **\n'+ cmd +'\n'+stderr);
+            if (stderr) {
+                logger.error('** exec stderr: **\n' + cmd + '\n' + stderr);
             }
             defer.resolve({
                 stdout: stdout,
@@ -47,7 +45,7 @@ var execCmd = function (cmd) {
 }
 //var
 var parseDcmdumpStdout = function (stdout) {
-    logger.info('parsing Dcmdump Stdout...');
+    //logger.info('parsing Dcmdump Stdout...');
 
     var getUID = function (stdout, CODE) {
         var UID;
@@ -61,8 +59,8 @@ var parseDcmdumpStdout = function (stdout) {
     var SOPInstanceUID = getUID(stdout, dcmAttrCode.SOPInstanceUID);
 
     /*logger.info('\ngot StudyInstanceUID:  ' + StudyInstanceUID
-        + '\ngot SeriesInstanceUID:   ' + SeriesInstanceUID
-        + '\ngot SOPInstanceUID   '+ SOPInstanceUID);*/
+     + '\ngot SeriesInstanceUID:   ' + SeriesInstanceUID
+     + '\ngot SOPInstanceUID   '+ SOPInstanceUID);*/
 
     return {
         StudyInstanceUID: StudyInstanceUID,
@@ -72,7 +70,7 @@ var parseDcmdumpStdout = function (stdout) {
 }
 var parseFindSCUStdout = function (stdout) {
 
-    logger.info('parsing FindSCU Stdout...');
+    //logger.info('parsing FindSCU Stdout...');
     var getUID = function (stdout, CODE) {
         var UID = [];
         var regExp = eval("/" + CODE + ".*\\]/g");
@@ -97,8 +95,8 @@ var parseFindSCUStdout = function (stdout) {
     var SOPInstanceUID = getUID(stdout, dcmAttrCode.SOPInstanceUID);
 
     /*logger.info('\ngot StudyInstanceUID:  ' + StudyInstanceUID
-        + '\ngot SeriesInstanceUID:   ' + SeriesInstanceUID
-        + '\ngot SOPInstanceUID   '+ SOPInstanceUID);*/
+     + '\ngot SeriesInstanceUID:   ' + SeriesInstanceUID
+     + '\ngot SOPInstanceUID   '+ SOPInstanceUID);*/
 
     var results = [];
     for (var i in StudyInstanceUID) {
@@ -115,42 +113,41 @@ var parseFindSCUStdout = function (stdout) {
     return results;
 }
 var parseGetSCUStdout = function (stdout) {
-    
+
 }
 
 var parseStoreSCUStdout = function (stdout) {
 
-    logger.info('parsing StoreSCU Stdout:');
-    
+    //logger.info('parsing StoreSCU Stdout:');
+
     //fs.writeFileSync(config.projectRoot+'/StoreSCUStdout.log', stdout,{flag:'a'});
     var getUID = function (stdout, CODE) {
         var UIDs = [];
         var s = eval('/STORESCU->' + pushingSCP_AET + '\\(\\d\\) >> \\d*:C-STORE-RSP/');
         var blocks = stdout.split(s);
-        var count=0;
-        for(var i=1;i < blocks.length;i++){
-            
+        var count = 0;
+        for (var i = 1; i < blocks.length; i++) {
+
             var regExp = eval("/" + CODE + ".*\\]/");
-            if(blocks[i].search(regExp) > -1 && blocks[i].search(/status=0H/) > -1){
+            if (blocks[i].search(regExp) > -1 && blocks[i].search(/status=0H/) > -1) {
 
                 var matchedlines = blocks[i].match(/iuid=.*-/);
-                //console.log(matchedlines[0]);
-                if(matchedlines){
+                if (matchedlines) {
                     //logger.info('-----matched '+(++count)+':  \n'+blocks[i]);
-                    var UID = matchedlines[0].replace('iuid=','').replace(' -','');
+                    var UID = matchedlines[0].replace('iuid=', '').replace(' -', '');
                     UIDs.push(UID);
                 }
             }
-            
+
         }
         return UIDs;
     }
     var AffectedSOPInstanceUIDs = getUID(stdout, dcmAttrCode.AffectedSOPInstanceUID);
 
-    logger.info('got AffectedSOPInstanceUIDs:  ' + AffectedSOPInstanceUIDs);
+    //logger.info('got AffectedSOPInstanceUIDs:  ' + AffectedSOPInstanceUIDs);
     return AffectedSOPInstanceUIDs;
 
-    
+
 }
 var readOneDcm = function*(dcmPath) {
     var c = dcm4cheBinPath + '/dcmdump -w 150 ' + '"' + dcmPath + '"';
@@ -175,11 +172,18 @@ var ls = function*(dcmPath) {
     return files;
 }
 /**
- * 
+ *
  * @returns tempFilesList{Array}
  */
-exports.listTempDcms = function* () {
-     return yield ls(dcmTempDir);
+exports.listTempDcms = function*(path) {
+    if (path) {
+        //console.log('path: '+path);
+        return yield ls(dcmTempDir + '/' + path);
+    } else {
+        //console.log('no path: ');
+        return yield ls(dcmTempDir);
+    }
+
 }
 /**
  *
@@ -187,7 +191,7 @@ exports.listTempDcms = function* () {
  * @returns dcmMetas {Array}
  */
 exports.readDcm = function*(dcmPath) {
-    logger.info('reading local dcms:');
+    //logger.info('reading local dcms:');
 
     var dcmMetas = [];
     var stat = fs.lstatSync(dcmPath);
@@ -198,18 +202,18 @@ exports.readDcm = function*(dcmPath) {
         /*}*/
     } else {
         var files = yield ls(dcmPath);
-        console.time('many files read');
-        for (var i=0; i<files.length;i++) {
+        console.time('many files read--'+dcmPath);
+        for (var i = 0; i < files.length; i++) {
             /*if(path.extname(dcmPath)!='.dcm'){
              continue;
              }*/
 
-            logger.info('---reading ['+(i+1)+']: '+files[i]);
+            //logger.info('---reading [' + (i + 1) + ']: ' + files[i]);
             var dcmMeta = yield readOneDcm(path.join(dcmPath, files[i]));
             dcmMetas.push(dcmMeta);
             //if (i >= 9) break;
         }
-        console.timeEnd('many files read');
+        console.timeEnd('many files read--'+dcmPath);
     }
     return dcmMetas;
 }
@@ -217,20 +221,24 @@ exports.readDcm = function*(dcmPath) {
 /**
  * @returns studies {Array}
  */
-var findStudies = function*() {
+var findStudies = function*(sourceORdest) {
     /*  findscu -c DCM4CHEE@10.255.177.255:11112 -r StudyInstanceUID  */
-    var c = dcm4cheBinPath + '/findscu'
-        + ' -c ' + pullingSCP_AET + '@' + pullingEnd
-        + ' -r StudyInstanceUID';
+    sourceORdest = sourceORdest.toLowerCase();
+    var c;
+    if (sourceORdest == 'source') {
+        c = dcm4cheBinPath + '/findscu'
+            + ' -c ' + pullingSCP_AET + '@' + pullingEnd
+            + ' -r StudyInstanceUID';
+    } else {
+        c = dcm4cheBinPath + '/findscu'
+            + ' -c ' + pushingSCP_AET + '@' + pushingEnd
+            + ' -r StudyInstanceUID';
+    }
     var result = yield execCmd(c);
-    //console.log(result.stdout);
-    console.log(result.stderr);
     var studies = parseFindSCUStdout(result.stdout);
     //console.log('!!! found studies: ');
     //console.log(studies);
     return studies;
-
-
 }
 exports.findStudies = findStudies;
 /**
@@ -239,17 +247,27 @@ exports.findStudies = findStudies;
  *
  * @returns series {Array}
  */
-var findSeries = function*(StudyInstanceUID) {
+var findSeries = function*(sourceORdest, StudyInstanceUID) {
+    sourceORdest = sourceORdest.toLowerCase();
     /*  findscu -c DCM4CHEE@10.255.177.255:11112 -L SERIES -m StudyInstanceUID=1.2.840.88888888.3.20150912121121.7436369 -r StudyInstanceUID -r SeriesInstanceUID  */
-    var c = dcm4cheBinPath + '/findscu'
-        + ' -c ' + pullingSCP_AET + '@' + pullingEnd
-        + ' -L SERIES'
-        + ' -m StudyInstanceUID=' + StudyInstanceUID
-        + ' -r StudyInstanceUID'
-        + ' -r SeriesInstanceUID'
+    var c;
+    if (sourceORdest == 'source') {
+        c = dcm4cheBinPath + '/findscu'
+            + ' -c ' + pullingSCP_AET + '@' + pullingEnd
+            + ' -L SERIES'
+            + ' -m StudyInstanceUID=' + StudyInstanceUID
+            + ' -r StudyInstanceUID'
+            + ' -r SeriesInstanceUID';
+    } else {
+        c = dcm4cheBinPath + '/findscu'
+            + ' -c ' + pushingSCP_AET + '@' + pushingEnd
+            + ' -L SERIES'
+            + ' -m StudyInstanceUID=' + StudyInstanceUID
+            + ' -r StudyInstanceUID'
+            + ' -r SeriesInstanceUID';
+    }
     var result = yield execCmd(c);
     //console.log(result.stdout);
-    console.log(result.stderr);
     var series = parseFindSCUStdout(result.stdout);
     //console.log('!!! found series: ');
     //console.log(series);
@@ -264,19 +282,32 @@ exports.findSeries = findSeries;
  *
  * @returns dcms {Array}
  */
-var findDcms = function*(StudyInstanceUID, SeriesInstanceUID) {
+var findDcms = function*(sourceORdest, StudyInstanceUID, SeriesInstanceUID) {
     /*findscu -c DCM4CHEE@10.255.177.255:11112 -L IMAGE -m StudyInstanceUID=1.2.410.200010.86.101.5201511200293 -m SeriesInstanceUID=1.3.12.2.1107.5.1.4.65381.30000015112208533703900112915 -r StudyInstanceUID -r SeriesInstanceUID -r SOPInstanceUID*/
-    var c = dcm4cheBinPath + '/findscu'
-        + ' -c ' + pullingSCP_AET + '@' + pullingEnd
-        + ' -L IMAGE'
-        + ' -m StudyInstanceUID=' + StudyInstanceUID
-        + ' -m SeriesInstanceUID=' + SeriesInstanceUID
-        + ' -r StudyInstanceUID'
-        + ' -r SeriesInstanceUID'
-        + ' -r SOPInstanceUID';
+    sourceORdest = sourceORdest.toLowerCase();
+    var c;
+    if (sourceORdest == 'source') {
+        c = dcm4cheBinPath + '/findscu'
+            + ' -c ' + pullingSCP_AET + '@' + pullingEnd
+            + ' -L IMAGE'
+            + ' -m StudyInstanceUID=' + StudyInstanceUID
+            + ' -m SeriesInstanceUID=' + SeriesInstanceUID
+            + ' -r StudyInstanceUID'
+            + ' -r SeriesInstanceUID'
+            + ' -r SOPInstanceUID';
+    } else {
+        c = dcm4cheBinPath + '/findscu'
+            + ' -c ' + pushingSCP_AET + '@' + pushingEnd
+            + ' -L IMAGE'
+            + ' -m StudyInstanceUID=' + StudyInstanceUID
+            + ' -m SeriesInstanceUID=' + SeriesInstanceUID
+            + ' -r StudyInstanceUID'
+            + ' -r SeriesInstanceUID'
+            + ' -r SOPInstanceUID';
+    }
+
     var result = yield execCmd(c);
     //console.log(result.stdout);
-    console.log(result.stderr);
     var dcms = parseFindSCUStdout(result.stdout);
     //console.log('!!! found dcms: ');
     //console.log(dcms);
@@ -286,16 +317,28 @@ exports.findDcms = findDcms;
 
 
 /**
- * 
+ *
  * @returns allDcms {Array}
  */
-exports.findAllDcms = function*() {
+exports.findAllSourceDcms = function*() {
     var allDcms = [];
-    var studies = yield findStudies();
+    var studies = yield findStudies('source');
     for (var i in studies) {
-        var series = yield findSeries(studies[i].StudyInstanceUID);
+        var series = yield findSeries('source', studies[i].StudyInstanceUID);
         for (var j in series) {
-            var dcms = yield findDcms(series[j].StudyInstanceUID, series[j].SeriesInstanceUID);
+            var dcms = yield findDcms('source', series[j].StudyInstanceUID, series[j].SeriesInstanceUID);
+            allDcms = allDcms.concat(dcms);
+        }
+    }
+    return allDcms;
+}
+exports.findAllDestDcms = function*() {
+    var allDcms = [];
+    var studies = yield findStudies('dest');
+    for (var i in studies) {
+        var series = yield findSeries('dest', studies[i].StudyInstanceUID);
+        for (var j in series) {
+            var dcms = yield findDcms('dest', series[j].StudyInstanceUID, series[j].SeriesInstanceUID);
             allDcms = allDcms.concat(dcms);
         }
     }
@@ -308,10 +351,10 @@ exports.findAllDcms = function*() {
  */
 exports.pullAllDcms = function*() {
 
-    logger.info('pulling all dcms:');
+    //logger.info('pulling all dcms:');
     var studies = yield findStudies();
     for (var i in studies) {
-        yield pullDcms(i+1,'STUDY', studies[i].StudyInstanceUID);
+        yield pullDcms(i + 1, 'STUDY', studies[i].StudyInstanceUID,null,null);
     }
     var files = yield ls(dcmTempDir);
     return files;
@@ -319,18 +362,18 @@ exports.pullAllDcms = function*() {
 
 
 /**
- * 
+ *
  * @param count  {Number}
  * @param retrieveLevel
  * @param StudyInstanceUID
  * @param SeriesInstanceUID
  * @param SOPInstanceUID
  */
-var pullDcms = function*(count,retrieveLevel, StudyInstanceUID, SeriesInstanceUID, SOPInstanceUID) {
+var pullDcms = function*(count, retrieveLevel, StudyInstanceUID, SeriesInstanceUID, SOPInstanceUID) {
     var l = retrieveLevel.toUpperCase();
     var c;
     if (l == 'STUDY') {
-        logger.info('pulling dcm:['+count+'] ' + l +' [StudyInstanceUID]'+StudyInstanceUID );
+        logger.info('pulling dcm:[' + count + '] ' + l + ' [StudyInstanceUID]' + StudyInstanceUID);
         c = dcm4cheBinPath + '/getscu'
             + ' -c ' + pullingSCP_AET + '@' + pullingEnd
             + ' -L ' + l
@@ -338,9 +381,9 @@ var pullDcms = function*(count,retrieveLevel, StudyInstanceUID, SeriesInstanceUI
             + ' --directory ' + dcmTempDir;
     }
     if (l == 'SERIES') {
-        logger.info('pulling dcm:['+count+'] ' + l
-            +' [StudyInstanceUID]'+StudyInstanceUID
-            +' [SeriesInstanceUID]'+SeriesInstanceUID);
+        logger.info('pulling dcm:[' + count + '] ' + l
+            + ' [StudyInstanceUID]' + StudyInstanceUID
+            + ' [SeriesInstanceUID]' + SeriesInstanceUID);
         c = dcm4cheBinPath + '/getscu '
             + ' -c ' + pullingSCP_AET + '@' + pullingEnd
             + ' -L ' + l
@@ -349,10 +392,10 @@ var pullDcms = function*(count,retrieveLevel, StudyInstanceUID, SeriesInstanceUI
             + ' --directory ' + dcmTempDir;
     }
     if (l == 'IMAGE') {
-        logger.info('pulling dcm:['+count+'] ' + l
-            +' [StudyInstanceUID]'+StudyInstanceUID
-            +' [SeriesInstanceUID]'+SeriesInstanceUID
-            +' [SOPInstanceUID]'+SOPInstanceUID);
+        logger.info('pulling dcm:[' + count + '] ' + l
+            + ' [StudyInstanceUID]' + StudyInstanceUID
+            + ' [SeriesInstanceUID]' + SeriesInstanceUID
+            + ' [SOPInstanceUID]' + SOPInstanceUID);
 
         c = dcm4cheBinPath + '/getscu '
             + ' -c ' + pullingSCP_AET + '@' + pullingEnd
@@ -364,9 +407,48 @@ var pullDcms = function*(count,retrieveLevel, StudyInstanceUID, SeriesInstanceUI
     }
     var result = yield execCmd(c);
     //console.log(result.stdout);
-    console.log(result.stderr);
 }
 exports.pullDcms = pullDcms;
+
+var pullDcmsToDir = function*(count, retrieveLevel, StudyInstanceUID, SeriesInstanceUID, SOPInstanceUID, dir) {
+    var l = retrieveLevel.toUpperCase();
+    var c;
+    if (l == 'STUDY') {
+        logger.info('pulling dcm:[' + count + '] ' + l + ' [StudyInstanceUID]' + StudyInstanceUID);
+        c = dcm4cheBinPath + '/getscu'
+            + ' -c ' + pullingSCP_AET + '@' + pullingEnd
+            + ' -L ' + l
+            + ' -m StudyInstanceUID=' + StudyInstanceUID
+            + ' --directory ' + dcmTempDir + '/' + dir;
+    }
+    if (l == 'SERIES') {
+        logger.info('pulling dcm:[' + count + '] ' + l
+            + ' [StudyInstanceUID]' + StudyInstanceUID
+            + ' [SeriesInstanceUID]' + SeriesInstanceUID);
+        c = dcm4cheBinPath + '/getscu '
+            + ' -c ' + pullingSCP_AET + '@' + pullingEnd
+            + ' -L ' + l
+            + ' -m StudyInstanceUID=' + StudyInstanceUID
+            + ' -m SeriesInstanceUID=' + SeriesInstanceUID
+            + ' --directory ' + dcmTempDir + '/' + dir;
+    }
+    if (l == 'IMAGE') {
+        logger.info('pulling dcm:[' + count + '] ' + l
+            + ' [StudyInstanceUID]' + StudyInstanceUID
+            + ' [SeriesInstanceUID]' + SeriesInstanceUID
+            + ' [SOPInstanceUID]' + SOPInstanceUID);
+
+        c = dcm4cheBinPath + '/getscu '
+            + ' -c ' + pullingSCP_AET + '@' + pullingEnd
+            + ' -L ' + l
+            + ' -m StudyInstanceUID=' + StudyInstanceUID
+            + ' -m SeriesInstanceUID=' + SeriesInstanceUID
+            + ' -m SOPInstanceUID=' + SOPInstanceUID
+            + ' --directory ' + dcmTempDir + '/' + dir;
+    }
+    var result = yield execCmd(c);
+}
+exports.pullDcmsToDir = pullDcmsToDir;
 
 
 /**
@@ -376,7 +458,7 @@ exports.pullDcms = pullDcms;
  * @return AffectedSOPClassUIDs {Array}
  */
 exports.pushDcms = function*(path) {
-    logger.info('pushing all dcms:');
+    //logger.info('pushing all dcms:');
     /*storescu -c DCM4CHEE@10.255.177.255:11112 ~intern07/Desktop/dicdom/000005.dcm*/
     var c = dcm4cheBinPath + '/storescu'
         + ' -c ' + pushingSCP_AET + '@' + pushingEnd
@@ -384,8 +466,6 @@ exports.pushDcms = function*(path) {
     var result = yield execCmd(c);
     //console.log(result.stdout);
     var AffectedSOPClassUIDs = parseStoreSCUStdout(result.stdout);
-    //var testStdout = fs.readFileSync('/Users/intern07/Desktop/dcm4che-3.3.7/bin/log_storescu','utf-8');
-    //console.log(testStdout);
     //var AffectedSOPClassUIDs = parseStoreSCUStdout(testStdout);
     return AffectedSOPClassUIDs;
 
@@ -394,18 +474,34 @@ exports.pushDcms = function*(path) {
 
 
 /**
- * 
+ *
  * @param dcmPaths
  */
-var rmLocalSynchronizedDcms = function* (dcmPaths) {
-    logger.info('removing Local Synchronized Dcms:');
+var rmLocalSynchronizedDcms = function*(dcmPaths) {
+    //logger.info('removing Local Synchronized Dcms:');
 
-    for(var i in dcmPaths){
+    for (var i in dcmPaths) {
         var c = 'rm ' + '"' + dcmPaths[i] + '"';
         var result = yield execCmd(c);
     }
 }
 exports.rmLocalSynchronizedDcms = rmLocalSynchronizedDcms;
+
+var rmAllLocalDcms = function*(dcmDirPath) {
+
+    var c = 'rm -rf ' + '"' + dcmDirPath + '/"*';
+    var result = yield execCmd(c);
+    //console.log(result);
+}
+exports.rmAllLocalDcms = rmAllLocalDcms;
+
+var rmStudyDir = function*(DirPath) {
+
+    var c = 'rm -rf ' + '"' + DirPath + '"';
+    var result = yield execCmd(c);
+    //console.log(result);
+}
+exports.rmStudyDir = rmStudyDir;
 
 var formatDcmForDB = function (dcms) {
     //console.log('Array.isArray(dcms) : ' + Array.isArray(dcms));
@@ -425,3 +521,22 @@ var formatDcmForDB = function (dcms) {
     return dcms;
 }
 exports.formatDcmForDB = formatDcmForDB;
+
+var formatInitDcmForDB = function (dcms) {
+    //console.log('Array.isArray(dcms) : ' + Array.isArray(dcms));
+    if (Array.isArray(dcms)) {
+        for (var i in dcms) {
+            var dcm = dcms[i];
+            dcm._id = dcms[i].SOPInstanceUID;
+            dcm.dcmPath = '';
+            dcm.isSynchronized = true;
+        }
+    } else {
+        dcms._id = dcms.SOPInstanceUID;
+        dcms.dcmPath = '';
+        dcms.isSynchronized = true;
+    }
+
+    return dcms;
+}
+exports.formatInitDcmForDB = formatInitDcmForDB;
