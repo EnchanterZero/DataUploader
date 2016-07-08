@@ -12,7 +12,7 @@ var logger = config.logger;
 var MongoClient = mongodb.MongoClient;
 var connUrl = 'mongodb://' + config.mongodbHost + ':' + config.mongodbPort + '/' + config.mongodbBaseName;
 var collDcmMeta = 'dcm_meta';
-//var collSynchronizingStudy = 'synchronizing_study';
+var collSynchronizingStudy = 'synchronizing_study';
 logger.info('Mongo url at '+ connUrl);
 
 /**
@@ -21,11 +21,30 @@ logger.info('Mongo url at '+ connUrl);
 co(function* () {
     var db = yield MongoClient.connect(connUrl);
     yield db.createCollection(collDcmMeta);
-    //yield db.createCollection(collSynchronizingStudy);
+    yield db.createCollection(collSynchronizingStudy);
 
 }).catch(function (err) {
     logger.error(err);
 });
+/**
+ * collDcmMeta :
+ * {
+    "_id" : "1.3.12.2.1107.5.1.4.74080.30000015082400402627500032022",
+    "StudyInstanceUID" : "1.2.840.88888888.3.20150825145012.7421970",
+    "SeriesInstanceUID" : "1.3.12.2.1107.5.1.4.74080.30000015082400402627500031888",
+    "SOPInstanceUID" : "1.3.12.2.1107.5.1.4.74080.30000015082400402627500032022",
+    "dcmPath" : "",
+    "isSynchronized" : true
+}
+ * collSynchronizingStudy :
+ * {
+    "_id" : "1.2.840.88888888.3.20150825145012.7421970",
+    "StudyInstanceUID" : "1.2.840.88888888.3.20150825145012.7421970"
+}
+ *
+ *
+ *
+ */
 
 /**
  * operations
@@ -45,10 +64,61 @@ exports.test = function () {
         db.close();
     });
 }
+
+
+/**
+ * operations of synchronizing study
+ *
+ */
+exports.addSynchronizingStudy = function*(doc) {
+    var db = yield MongoClient.connect(connUrl);
+    // Fetch a collection to insert document into
+    var collection = db.collection(collSynchronizingStudy);
+        var foundDcm = yield collection.find({_id:doc._id}).toArray();
+        if(foundDcm.length == 1){
+            db.close();
+            return false;
+        }
+        else{
+            yield collection.insertOne(doc);
+            db.close();
+            return true;
+        }
+}
+exports.removeSynchronizingStudy = function*(rmStudyID) {
+    var db = yield MongoClient.connect(connUrl);
+    // Fetch a collection to insert document into
+    var collection = db.collection(collSynchronizingStudy);
+    var result = yield collection.removeOne({_id:rmStudyID});
+    db.close();
+    if(result.deletedCount == 0){
+        return false;
+    }
+    return true;
+
+}
+exports.findSynchronizingStudy = function*() {
+    var db = yield MongoClient.connect(connUrl);
+    // Fetch a collection to insert document into
+    var collection = db.collection(collSynchronizingStudy);
+    var result = yield collection.find({}).toArray();
+    db.close();
+    return result;
+}
+
+
 exports.removeAllDcmRecords = function () {
     co(function*() {
         var db = yield MongoClient.connect(connUrl);
         var collection = db.collection(collDcmMeta);
+        yield collection.deleteMany({});
+        db.close();
+    });
+}
+exports.removeAllSynchronizingStudyRecords = function () {
+    co(function*() {
+        var db = yield MongoClient.connect(connUrl);
+        var collection = db.collection(collSynchronizingStudy);
         yield collection.deleteMany({});
         db.close();
     });
@@ -71,6 +141,7 @@ exports.insert = function*(docArr) {
 
     db.close();
 }
+
 exports.findAllSynchronizedDcmId = function*() {
     var db = yield MongoClient.connect(connUrl);
     // Fetch a collection to insert document into

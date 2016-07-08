@@ -40,6 +40,7 @@ co(function* () {
             var ID = synchronizeID++;
             //将该studyID添加入正在同步的study记录
             synchronizingStudies.push(newDcmsStudiesIds[i]);
+            yield mongoDBService.addSynchronizingStudy({'_id':newDcmsStudiesIds[i],'StudyInstanceUID':newDcmsStudiesIds[i]});
             logger.info('########## record added ['+(ID)+']');
             logger.info('---------- synchronizing Studies ['+synchronizingStudies.length+']: '+ synchronizingStudies);
             logger.info('########## new DcmsStudiesIds ['+newDcmsStudiesIds.length+']: '+ newDcmsStudiesIds);
@@ -49,6 +50,7 @@ co(function* () {
             //console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   i:' + i);
             var index = synchronizingStudies.indexOf(SunchronizedStudyID);
             if(index > -1){
+              yield mongoDBService.removeSynchronizingStudy(SunchronizedStudyID);
               synchronizingStudies.splice(index,1);
               logger.info('########## record removed ('+index+') ['+(ID)+']');
               logger.info('---------- synchronizing Studies ['+synchronizingStudies.length+']: '+ synchronizingStudies);

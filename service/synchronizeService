@@ -335,6 +335,7 @@ exports.init = function* () {
     logger.info('[init step ' + '] ***** initialing Synchronizer...... *****');
     logger.info('[init step ' + '] clearing DB records...... ');
     mongoDBService.removeAllDcmRecords();
+    mongoDBService.removeAllSynchronizingStudyRecords();
     logger.info('[init step ' + '] clearing local temp dir...... ');
     dcmService.rmAllLocalDcms(localTempfilePath);
     logger.info('[init step ' + '] finished ');
