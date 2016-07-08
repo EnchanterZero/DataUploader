@@ -107,7 +107,7 @@ exports.findSynchronizingStudy = function*() {
 }
 
 
-exports.removeAllDcmRecords = function () {
+exports.removeAllDcmRecords = function* () {
     co(function*() {
         var db = yield MongoClient.connect(connUrl);
         var collection = db.collection(collDcmMeta);
@@ -115,7 +115,7 @@ exports.removeAllDcmRecords = function () {
         db.close();
     });
 }
-exports.removeAllSynchronizingStudyRecords = function () {
+exports.removeAllSynchronizingStudyRecords = function* () {
     co(function*() {
         var db = yield MongoClient.connect(connUrl);
         var collection = db.collection(collSynchronizingStudy);

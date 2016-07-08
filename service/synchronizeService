@@ -334,10 +334,10 @@ var readAll = function*(stepCount,localTempfilePath){
 exports.init = function* () {
     logger.info('[init step ' + '] ***** initialing Synchronizer...... *****');
     logger.info('[init step ' + '] clearing DB records...... ');
-    mongoDBService.removeAllDcmRecords();
-    mongoDBService.removeAllSynchronizingStudyRecords();
+    yield mongoDBService.removeAllDcmRecords();
+    yield mongoDBService.removeAllSynchronizingStudyRecords();
     logger.info('[init step ' + '] clearing local temp dir...... ');
-    dcmService.rmAllLocalDcms(localTempfilePath);
+    yield dcmService.rmAllLocalDcms(localTempfilePath);
     logger.info('[init step ' + '] finished ');
 }
 
@@ -419,6 +419,7 @@ exports.synchronizeOnce = function*(synchronizeID,studyID) {
     logger.info('[synchronize '+synchronizeID+'][step ' + (count) + ' push] pushing study :['+ studyID +']......');
     var ls =yield dcmService.listTempDcms(studyID);
     var pushStart = new Date().getTime();
+    //如果拿回来的pushedDcmUIDs少于实际传输的dcmID,下面的dcmpath值置空操作会有误
     var pushedDcmUIDs = yield dcmService.pushDcmsAndRecordOneByOne(synchronizeID,count,studyPath);
     logger.info('[synchronize '+synchronizeID+'][step ' + (count) + ' push] succeed: [' + pushedDcmUIDs.length + '],total: ['+ls.length+'],use time:['+(new Date().getTime()-pushStart)+'ms]\n');
     //PauseUntillgetKeyPress();
