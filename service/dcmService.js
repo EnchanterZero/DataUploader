@@ -1,8 +1,11 @@
 var q = require('q');
 var fs = require("fs");
+var co = require('co');
 var path = require('path');
 var config = require('../config');
+var mongoDBService = require('./mongoDBService');
 var exec = require('child_process').exec;
+var spawn = require('child_process').spawn;
 
 var logger = config.logger;
 var dcmTempDir = config.dcmTempDir;
@@ -121,31 +124,38 @@ var parseStoreSCUStdout = function (stdout) {
     //logger.info('parsing StoreSCU Stdout:');
 
     //fs.writeFileSync(config.projectRoot+'/StoreSCUStdout.log', stdout,{flag:'a'});
-    var getUID = function (stdout, CODE) {
-        var UIDs = [];
-        var s = eval('/STORESCU->' + pushingSCP_AET + '\\(\\d\\) >> \\d*:C-STORE-RSP/');
-        var blocks = stdout.split(s);
-        var count = 0;
-        for (var i = 1; i < blocks.length; i++) {
+    var AffectedSOPInstanceUIDs = [];
+    var s = eval('/STORESCU->' + pushingSCP_AET + '\\(\\d\\) >> \\d*:C-STORE-RSP/');
+    var blocks = stdout.split(s);
+    var count = 0;
+    for (var i = 1; i < blocks.length; i++) {
+        if (blocks[i].search(/status=0H/) > -1) {
 
-            var regExp = eval("/" + CODE + ".*\\]/");
-            if (blocks[i].search(regExp) > -1 && blocks[i].search(/status=0H/) > -1) {
-
-                var matchedlines = blocks[i].match(/iuid=.*-/);
-                if (matchedlines) {
-                    //logger.info('-----matched '+(++count)+':  \n'+blocks[i]);
-                    var UID = matchedlines[0].replace('iuid=', '').replace(' -', '');
-                    UIDs.push(UID);
-                }
+            var matchedlines = blocks[i].match(/iuid=.*-/);
+            if (matchedlines) {
+                //logger.info('-----matched '+(++count)+':  \n'+blocks[i]);
+                var UID = matchedlines[0].replace('iuid=', '').replace(' -', '');
+                AffectedSOPInstanceUIDs.push(UID);
             }
-
         }
-        return UIDs;
-    }
-    var AffectedSOPInstanceUIDs = getUID(stdout, dcmAttrCode.AffectedSOPInstanceUID);
 
-    //logger.info('got AffectedSOPInstanceUIDs:  ' + AffectedSOPInstanceUIDs);
+    }
     return AffectedSOPInstanceUIDs;
+
+
+}
+var parseStoreSCUStdoutChunk = function (stdoutChunk) {
+
+    var AffectedSOPInstanceUID = '';
+    var storeRsp_ergExp = eval('/STORESCU->' + pushingSCP_AET + '\\(\\d\\) >> \\d*:C-STORE-RSP/');
+    if (stdoutChunk.search(storeRsp_ergExp) > -1 && stdoutChunk.search(/status=0H/) > -1) {
+        var matchedlines = stdoutChunk.match(/iuid=.*-/);
+        if (matchedlines) {
+            //logger.info('-----matched '+(++count)+':  \n'+blocks[i]);
+            AffectedSOPInstanceUID = matchedlines[0].replace('iuid=', '').replace(' -', '');
+        }
+    }
+    return AffectedSOPInstanceUID;
 
 
 }
@@ -202,7 +212,7 @@ exports.readDcm = function*(dcmPath) {
         /*}*/
     } else {
         var files = yield ls(dcmPath);
-        console.time('many files read--'+dcmPath);
+        console.time('many files read--' + dcmPath);
         for (var i = 0; i < files.length; i++) {
             /*if(path.extname(dcmPath)!='.dcm'){
              continue;
@@ -213,7 +223,7 @@ exports.readDcm = function*(dcmPath) {
             dcmMetas.push(dcmMeta);
             //if (i >= 9) break;
         }
-        console.timeEnd('many files read--'+dcmPath);
+        console.timeEnd('many files read--' + dcmPath);
     }
     return dcmMetas;
 }
@@ -354,7 +364,7 @@ exports.pullAllDcms = function*() {
     //logger.info('pulling all dcms:');
     var studies = yield findStudies();
     for (var i in studies) {
-        yield pullDcms(i + 1, 'STUDY', studies[i].StudyInstanceUID,null,null);
+        yield pullDcms(i + 1, 'STUDY', studies[i].StudyInstanceUID, null, null);
     }
     var files = yield ls(dcmTempDir);
     return files;
@@ -468,8 +478,42 @@ exports.pushDcms = function*(path) {
     var AffectedSOPClassUIDs = parseStoreSCUStdout(result.stdout);
     //var AffectedSOPClassUIDs = parseStoreSCUStdout(testStdout);
     return AffectedSOPClassUIDs;
+}
+exports.pushDcmsAndRecordOneByOne = function (synchronizeID, stepcount, path) {
+    //logger.info('pushing all dcms:');
+    var defer = q.defer();
+    var count = 0;
+    var AffectedSOPClassUIDs = [];
+    var command = dcm4cheBinPath + '/storescu';
+    var args = ['-c', pushingSCP_AET + '@' + pushingEnd, path];
 
+    var storescu = spawn(command, args);
 
+    storescu.stdout.on('data', (data) => {
+        // console.log('//////////');
+        // console.log(data.toString());
+        // console.log('//////////');
+
+        var pushedStudyIDs = parseStoreSCUStdout(data.toString());
+        if (pushedStudyIDs.length > 0) {
+            for (var i in pushedStudyIDs) {
+                count++;
+                logger.info('[synchronize ' + synchronizeID + '][step ' + (stepcount) + ' push] pushed Dcm :(' + (count) + ')[' + pushedStudyIDs[i] + ']');
+                AffectedSOPClassUIDs.push(pushedStudyIDs[i]);
+                co(function*() {
+                    yield mongoDBService.setDcmSynchronized(pushedStudyIDs[i]);
+                });
+            }
+        }
+    });
+    storescu.stderr.on('err', (data) => {
+        logger.error('stderr:' + data);
+    });
+    storescu.on('exit', () => {
+        //console.log('-----------------------------[On exit]');
+        defer.resolve(AffectedSOPClassUIDs);
+    });
+    return defer.promise;
 }
 
 

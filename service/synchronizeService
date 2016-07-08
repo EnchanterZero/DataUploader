@@ -419,9 +419,10 @@ exports.synchronizeOnce = function*(synchronizeID,studyID) {
     logger.info('[synchronize '+synchronizeID+'][step ' + (count) + ' push] pushing study :['+ studyID +']......');
     var ls =yield dcmService.listTempDcms(studyID);
     var pushStart = new Date().getTime();
-    var pushedDcmUIDs = yield dcmService.pushDcms(studyPath);
+    var pushedDcmUIDs = yield dcmService.pushDcmsAndRecordOneByOne(synchronizeID,count,studyPath);
     logger.info('[synchronize '+synchronizeID+'][step ' + (count) + ' push] succeed: [' + pushedDcmUIDs.length + '],total: ['+ls.length+'],use time:['+(new Date().getTime()-pushStart)+'ms]\n');
-    yield mongoDBService.setDcmsSynchronized(pushedDcmUIDs);
+    //PauseUntillgetKeyPress();
+    //yield mongoDBService.setDcmsSynchronized(pushedDcmUIDs);
 
     count++;
     //clear
@@ -536,5 +537,15 @@ var wait = function (millscends) {
         defer.resolve();
     },millscends,millscends);
 
+    return defer.promise;
+}
+var PauseUntillgetKeyPress = function () {
+    //logger.info('** run command: **\n'+cmd);
+    var defer = q.defer();
+    process.stdin.setEncoding('utf-8');
+    process.stdin.on('data',(data) =>{
+        console.log('program continue run')
+        defer.resolve();
+    });
     return defer.promise;
 }

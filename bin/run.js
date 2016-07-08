@@ -17,8 +17,8 @@ co(function* () {
   var synchronizingStudies = [];
   var diffID = 1;
   var synchronizeID = 1;
-
-  while(true){
+  var flag = true;
+  while(flag){
 
 
     if(diffID == 1){
@@ -64,16 +64,10 @@ co(function* () {
           logger.error(err+' : '+err.stack);
         });
       })(x);
-
     }
+
+    //flag = false;
   }
-
-
-
-  
-  
-  
-  
 }).catch(function (err) {
   logger.error(err+'\n'+err.stack,{time:new Date().getTime()});
 });

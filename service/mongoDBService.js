@@ -265,6 +265,12 @@ exports.setDcmsSynchronized = function*(dcmUIDs) {
     }
     db.close();
 }
+exports.setDcmSynchronized = function*(dcmUID) {
+    var db = yield MongoClient.connect(connUrl);
+    var collection = db.collection(collDcmMeta);
+    var r = yield collection.updateOne({_id: dcmUID},{$set:{isSynchronized:true}});
+    db.close();
+}
 exports.setSynchronizedDcmsDeleted = function*(dcmUIDs) {
     var db = yield MongoClient.connect(connUrl);
     var collection = db.collection(collDcmMeta);
