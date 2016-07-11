@@ -329,14 +329,28 @@ exports.findDcms = findDcms;
  *
  * @returns allDcms {Array}
  */
-exports.findAllSourceDcms = function*() {
+exports.findAllSourceDcms = function*(synchronizingStudies) {
     var allDcms = [];
-    var studies = yield findStudies('source');
-    for (var i in studies) {
-        var series = yield findSeries('source', studies[i].StudyInstanceUID);
-        for (var j in series) {
-            var dcms = yield findDcms('source', series[j].StudyInstanceUID, series[j].SeriesInstanceUID);
-            allDcms = allDcms.concat(dcms);
+    if(!synchronizingStudies){
+        var studies = yield findStudies('source');
+        for (var i in studies) {
+            var series = yield findSeries('source', studies[i].StudyInstanceUID);
+            for (var j in series) {
+                var dcms = yield findDcms('source', series[j].StudyInstanceUID, series[j].SeriesInstanceUID);
+                allDcms = allDcms.concat(dcms);
+            }
+        }
+    }else{
+        var studies = yield findStudies('source');
+        for (var i in studies) {
+            if(synchronizingStudies.indexOf(studies[i].StudyInstanceUID) > -1){
+                continue;
+            }
+            var series = yield findSeries('source', studies[i].StudyInstanceUID);
+            for (var j in series) {
+                var dcms = yield findDcms('source', series[j].StudyInstanceUID, series[j].SeriesInstanceUID);
+                allDcms = allDcms.concat(dcms);
+            }
         }
     }
     return allDcms;

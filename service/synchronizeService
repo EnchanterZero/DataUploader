@@ -59,9 +59,9 @@ var pushToClear = function* (stepCount) {
  * @param stepCount
  * @returns allDcmsMetas {Array}
  */
-var findAllSourceUID = function* (stepCount) {
+var findAllSourceUID = function* (stepCount,synchronizingStudies) {
 
-    var allDcms = yield dcmService.findAllSourceDcms();
+    var allDcms = yield dcmService.findAllSourceDcms(synchronizingStudies);
     var allDcmsMetas = dcmService.formatDcmForDB(allDcms);
     return allDcmsMetas;
 }
@@ -348,7 +348,7 @@ exports.getDiff = function* (round,synchronizingStudies) {
     //---findA端所有
     logger.info('[getDiff '+round+'][step ' + (count) + ' findA] finding all Source new files......');
     var findSourceStart = new Date().getTime();
-    var allSourceDcmsMetas = yield findAllSourceUID(count);
+    var allSourceDcmsMetas = yield findAllSourceUID(count,synchronizingStudies);
     logger.info('[getDiff '+round+'][step ' + (count) + ' findA] finished. found all Source dcms number: [' + allSourceDcmsMetas.length + '],use time:['+(new Date().getTime()-findSourceStart)+'ms]\n');
     count++
 
@@ -373,14 +373,14 @@ exports.getDiff = function* (round,synchronizingStudies) {
         logger.info('[getDiff '+round+'][step ' + (count) + ' findL] finished. found all synchronized recorded number: [' + allDestDcmsMetas.length + '],use time:['+(new Date().getTime()-findDestStart)+'ms]\n');
         count++;
     }
-    logger.info('++++++++++++++++++++++++ checking ++++++++++++++++++++++++++......');
-    var allDestDcmsMetasCheck = yield findAllDestUID(0);
-    var checkResult = yield getDifference(0,allDestDcmsMetasCheck,allDestDcmsMetas);
-    if(checkResult.newDcms.length >0){
-        console.log('!!!!!!!!!!!!!!!!!!!! unmatch found : ');
-        console.log(checkResult.newDcms);
-    }
-    logger.info('++++++++++++++++++++++++ check over ++++++++++++++++++++++++++......');
+    // logger.info('++++++++++++++++++++++++ checking ++++++++++++++++++++++++++......');
+    // var allDestDcmsMetasCheck = yield findAllDestUID(0);
+    // var checkResult = yield getDifference(0,allDestDcmsMetasCheck,allDestDcmsMetas);
+    // if(checkResult.newDcms.length >0){
+    //     console.log('!!!!!!!!!!!!!!!!!!!! unmatch found : ');
+    //     console.log(checkResult.newDcms);
+    // }
+    // logger.info('++++++++++++++++++++++++ check over ++++++++++++++++++++++++++......');
     
 
     //---3
