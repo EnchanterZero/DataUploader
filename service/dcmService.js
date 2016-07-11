@@ -3,7 +3,7 @@ var fs = require("fs");
 var co = require('co');
 var path = require('path');
 var config = require('../config');
-var mongoDBService = require('./mongoDBService');
+var mongoDBService = require('./dcmMongoService');
 var exec = require('child_process').exec;
 var spawn = require('child_process').spawn;
 
@@ -141,9 +141,8 @@ var parseStoreSCUStdout = function (stdout) {
 
     }
     return AffectedSOPInstanceUIDs;
-
-
 }
+exports.parseStoreSCUStdout = parseStoreSCUStdout;
 var parseStoreSCUStdoutChunk = function (stdoutChunk) {
 
     var AffectedSOPInstanceUID = '';
@@ -496,13 +495,16 @@ exports.pushDcmsAndRecordOneByOne = function (synchronizeID, stepcount, path) {
 
         var pushedStudyIDs = parseStoreSCUStdout(data.toString());
         if (pushedStudyIDs.length > 0) {
+            AffectedSOPClassUIDs = AffectedSOPClassUIDs.concat(pushedStudyIDs);
+            co(function*() {
+                yield mongoDBService.setDcmSynchronized(pushedStudyIDs);
+            }).catch(function (err) {
+                console.log(err+' : ' + err.stack);
+            });
             for (var i in pushedStudyIDs) {
                 count++;
                 logger.info('[synchronize ' + synchronizeID + '][step ' + (stepcount) + ' push] pushed Dcm :(' + (count) + ')[' + pushedStudyIDs[i] + ']');
-                AffectedSOPClassUIDs.push(pushedStudyIDs[i]);
-                co(function*() {
-                    yield mongoDBService.setDcmSynchronized(pushedStudyIDs[i]);
-                });
+                
             }
         }
     });

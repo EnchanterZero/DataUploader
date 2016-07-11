@@ -2,7 +2,7 @@ var q = require('q');
 var co = require('co');
 var config = require('../config');
 var dcmService = require('./dcmService');
-var mongoDBService = require('./mongoDBService');
+var mongoDBService = require('./dcmMongoService');
 var _ = require('lodash');
 
 var logger = config.logger;
@@ -341,7 +341,7 @@ exports.init = function* () {
     logger.info('[init step ' + '] finished ');
 }
 
-exports.getDiff = function* (round) {
+exports.getDiff = function* (round,synchronizingStudies) {
 
     var count = 1;
     //---1
@@ -373,7 +373,15 @@ exports.getDiff = function* (round) {
         logger.info('[getDiff '+round+'][step ' + (count) + ' findL] finished. found all synchronized recorded number: [' + allDestDcmsMetas.length + '],use time:['+(new Date().getTime()-findDestStart)+'ms]\n');
         count++;
     }
-
+    logger.info('++++++++++++++++++++++++ checking ++++++++++++++++++++++++++......');
+    var allDestDcmsMetasCheck = yield findAllDestUID(0);
+    var checkResult = yield getDifference(0,allDestDcmsMetasCheck,allDestDcmsMetas);
+    if(checkResult.newDcms.length >0){
+        console.log('!!!!!!!!!!!!!!!!!!!! unmatch found : ');
+        console.log(checkResult.newDcms);
+    }
+    logger.info('++++++++++++++++++++++++ check over ++++++++++++++++++++++++++......');
+    
 
     //---3
     //A端与B端比较

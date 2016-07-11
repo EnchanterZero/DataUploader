@@ -18,8 +18,9 @@ logger.info('Mongo url at '+ connUrl);
 /**
  * initiation of mongodb
  */
+var db;
 co(function* () {
-    var db = yield MongoClient.connect(connUrl);
+    db = yield MongoClient.connect(connUrl);
     yield db.createCollection(collDcmMeta);
     yield db.createCollection(collSynchronizingStudy);
 
@@ -268,7 +269,14 @@ exports.setDcmsSynchronized = function*(dcmUIDs) {
 exports.setDcmSynchronized = function*(dcmUID) {
     var db = yield MongoClient.connect(connUrl);
     var collection = db.collection(collDcmMeta);
-    var r = yield collection.updateOne({_id: dcmUID},{$set:{isSynchronized:true}});
+    if(Array.isArray(dcmUID)){
+        for(var i in dcmUID){
+            var r = yield collection.updateOne({_id: dcmUID[i]},{$set:{isSynchronized:true}});
+        }
+    }
+    if(typeof dcmUID == 'string'){
+        var r = yield collection.updateOne({_id: dcmUID},{$set:{isSynchronized:true}});
+    }
     db.close();
 }
 exports.setSynchronizedDcmsDeleted = function*(dcmUIDs) {
