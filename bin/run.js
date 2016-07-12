@@ -4,14 +4,12 @@ var config = require('../config');
 var dcmService = require('../service/dcmService');
 var sychronizeService = require('../service/synchronizeService');
 var mongoDBService = require('../service/mongoDBService');
-var _ = require('lodash');
 
 var logger = config.logger;
-var filePath = config.dcmTempDir;
-var pullDcmsTopullStudyThreshold = config.pullDcmsTopullStudyThreshold;
-var rePushTroubleCountThreshold = config.rePushTroubleCountThreshold;
-var rePushTroubleWait = config.rePushTroubleWait;
 
+/**
+ * run
+ */
 co(function*() {
 
     logger.info('\n\n//////////////////////////////////////////////////////////////////////' +

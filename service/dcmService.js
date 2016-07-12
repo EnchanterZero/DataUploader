@@ -46,6 +46,7 @@ var execCmd = function (cmd) {
         });
     return defer.promise;
 }
+exports.execCmd = execCmd;
 //var
 var parseDcmdumpStdout = function (stdout) {
     //logger.info('parsing Dcmdump Stdout...');
@@ -495,7 +496,9 @@ exports.pushDcms = function*(path) {
 exports.pushDcmsAndRecordOneByOne = function (synchronizeID, stepcount, path) {
     //logger.info('pushing all dcms:');
     var defer = q.defer();
-    var count = 0;
+    var countpush = 0;
+    var countrecord = 0;
+    var isExited = false;
     var AffectedSOPClassUIDs = [];
     var command = dcm4cheBinPath + '/storescu';
     var args = ['-c', pushingSCP_AET + '@' + pushingEnd, path];
@@ -509,16 +512,25 @@ exports.pushDcmsAndRecordOneByOne = function (synchronizeID, stepcount, path) {
 
         var pushedStudyIDs = parseStoreSCUStdout(data.toString());
         if (pushedStudyIDs.length > 0) {
-            AffectedSOPClassUIDs = AffectedSOPClassUIDs.concat(pushedStudyIDs);
+
             co(function*() {
                 yield mongoDBService.setDcmSynchronized(pushedStudyIDs);
+                for (var i in pushedStudyIDs) {
+                    countrecord++;
+                    logger.info('[synchronize ' + synchronizeID + '][step ' + (stepcount) + ' push] updated push Dcm :(' + (countrecord) + ')[' + pushedStudyIDs[i] + ']');
+
+                }
+                AffectedSOPClassUIDs = AffectedSOPClassUIDs.concat(pushedStudyIDs);
+                if(isExited) {
+                    storescu.emit('updated push Dcm', countrecord);
+                }
             }).catch(function (err) {
                 console.log(err+' : ' + err.stack);
             });
             for (var i in pushedStudyIDs) {
-                count++;
-                logger.info('[synchronize ' + synchronizeID + '][step ' + (stepcount) + ' push] pushed Dcm :(' + (count) + ')[' + pushedStudyIDs[i] + ']');
-                
+                countpush++;
+                logger.info('[synchronize ' + synchronizeID + '][step ' + (stepcount) + ' push] pushed Dcm :(' + (countpush) + ')[' + pushedStudyIDs[i] + ']');
+
             }
         }
     });
@@ -527,8 +539,21 @@ exports.pushDcmsAndRecordOneByOne = function (synchronizeID, stepcount, path) {
     });
     storescu.on('exit', () => {
         //console.log('-----------------------------[On exit]');
-        defer.resolve(AffectedSOPClassUIDs);
+        isExited = true;
+        if(countrecord == countpush && isExited){
+            console.log('-----------------------------[On resolve] '+countpush);
+            defer.resolve(AffectedSOPClassUIDs);
+        }
+
     });
+    storescu.on('updated push Dcm',(countrecord)=>{
+        //console.log('-----------------------------[get message] '+countpush);
+        if(countrecord == countpush && isExited){
+            console.log('-----------------------------[On resolve] '+countpush);
+            defer.resolve(AffectedSOPClassUIDs);
+        }
+    });
+
     return defer.promise;
 }
 

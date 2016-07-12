@@ -4,84 +4,36 @@ var config = require('../config');
 var dcmService = require('../service/dcmService');
 var sychronizeService = require('../service/synchronizeService');
 var mongoDBService = require('../service/mongoDBService');
-var dcmMongoService = require('../service/dcmMongoService');
-var _ = require('lodash');
 
 var logger = config.logger;
-var filePath = config.dcmTempDir;
-var pullDcmsTopullStudyThreshold = config.pullDcmsTopullStudyThreshold;
-var rePushTroubleCountThreshold = config.rePushTroubleCountThreshold;
-var rePushTroubleWait = config.rePushTroubleWait;
-
-var logger = config.logger;
-var dcmTempDir = config.dcmTempDir;
 var dcm4cheBinPath = config.dcm4cheBinPath;
-var pullingEnd = config.pullingSCP_Host + ':' + config.pullingSCP_Port;
-var pushingEnd = config.pushingSCP_Host + ':' + config.pushingSCP_Port;
-var pullingSCP_AET = config.pullingSCP_AET;
-var pushingSCP_AET = config.pushingSCP_AET;
+/**
+ * test
+ */
+co(function*(){
+    var cmdPre = dcm4cheBinPath + '/storescu -c DCM4CHEE@10.255.177.255:11112 ~intern07/Desktop/';
+    var cmds = [
+        ['dicom'     ,'DICOM'],
+        ['CXC_Dicom' ,'1.2.840.88888888.3.20150825145012.7421970'],
+        ['CYS_Dicom' ,'1.2.410.200010.86.101.5201411140048'],
+        ['TXM_Dicom' ,'1.2.410.200010.86.101.5201409020323'],
+        ['WLX_Dicom' ,'1.2.840.113704.1.111.3212.1421723265.341'],
+        ['WQP_Dicom' ,'1.2.840.88888888.3.20150817100406.7415099'],
+        ['WY_Dicom'  ,'1.2.410.200010.86.101.5201604130049'],
+        ['XGS_Dicom' ,'1.2.840.88888888.3.20150804152910.7405384'],
+        ['YLF_Dicom' ,'1.2.840.88888888.3.20150912121121.7436369'],
+        ['ZCH_Dicom' ,'1.2.410.200010.86.101.5201511200293']
+    ];
+    yield sychronizeService.wait(1000);
+    for(var i in cmds){
+        logger.info('                                               TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT------ adding :' + cmds[i][1]);
+        yield dcmService.execCmd(cmdPre+cmds[i][0]);
+        logger.info('                                               TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT------ finish :' + cmds[i][1]);
+        var time;
+        yield sychronizeService.wait(39231);
+    }
 
-/*var buffer = fs.readFileSync('/Users/intern07/Desktop/000000.dcm');
-console.log(buffer instanceof Buffer);
-console.log(buffer);
-var i = buffer.indexOf('\u0008 \u0018');
-console.log(i);*/
-/*
-var pushDcmsAndRecordOneByOne = function (synchronizeID, stepcount, path) {
-    //logger.info('pushing all dcms:');
-    var defer = q.defer();
-    var count = 0;
-    var AffectedSOPClassUIDs = [];
-    var command = dcm4cheBinPath + '/storescu';
-    var args = ['-c', pushingSCP_AET + '@' + pushingEnd, path];
-
-    var storescu = require('child_process').spawn(command, args);
-
-    storescu.stdout.on('data', (data) => {
-        console.log('//////////');
-        console.log(data.toString());
-        console.log('//////////');
-
-        var pushedStudyIDs = dcmService.parseStoreSCUStdout(data.toString());
-        if (pushedStudyIDs.length > 0) {
-            AffectedSOPClassUIDs = AffectedSOPClassUIDs.concat(pushedStudyIDs);
-            co(function*() {
-                yield mongoDBService.setDcmSynchronized(pushedStudyIDs);
-            }).catch(function (err) {
-                console.log(err+' : ' + err.stack);
-            });
-            for (var i in pushedStudyIDs) {
-                count++;
-                logger.info('[synchronize ' + synchronizeID + '][step ' + (stepcount) + ' push] pushed Dcm :(' + (count) + ')[' + pushedStudyIDs[i] + ']');
-
-            }
-        }
-    });
-    storescu.stderr.on('err', (data) => {
-        logger.error('stderr:' + data);
-    });
-    storescu.on('exit', () => {
-        //console.log('-----------------------------[On exit]');
-        defer.resolve(AffectedSOPClassUIDs);
-    });
-    return defer.promise;
-}*/
-
-co(function* () {
-    //var dcmMetas = yield dcmService.readDcm('/Users/intern07/Desktop/dicom3');
-    //var duplicatedDcmPaths = yield mongoDBService.setDcmsPath(dcmMetas);
-    //var result = yield pushDcmsAndRecordOneByOne(1,1,'/Users/intern07/Desktop/dicom3');
-    //console.log(result.length);
-
-    yield dcmMongoService.addSynchronizingStudy({
-        "_id" : "1",
-        "StudyInstanceUID" : "1"
-    });
-    var result = yield dcmMongoService.findSynchronizingStudy('1');
-    console.log(result);
-
-    var result = yield dcmMongoService.removeSynchronizingStudy('1');
-    console.log(result);
 }).catch(function (err) {
-    console.log(err+' : ' + err.stack);
+    logger.error(err + '\n' + err.stack, {time: new Date().getTime()});
 });
+require('./run');

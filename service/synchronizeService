@@ -71,9 +71,9 @@ var findAllDestUID = function* (stepCount) {
     var allDcmsMetas = dcmService.formatDcmForDB(allDcms);
     return allDcmsMetas;
 }
-var findAllDBSynchronizedUID = function* (stepCount) {
+var findAllDBSynchronizedUID = function* (stepCount,synchronizingStudies) {
 
-    var allDcmsMetas = yield mongoDBService.findAllSynchronizedDcms();
+    var allDcmsMetas = yield mongoDBService.findAllSynchronizedDcms(synchronizingStudies);
     return allDcmsMetas;
 }
 /**
@@ -341,8 +341,13 @@ exports.init = function* () {
     logger.info('[init step ' + '] finished ');
 }
 
-exports.getDiff = function* (round,synchronizingStudies) {
+exports.getDiff = function* (round,sStudies) {
 
+    var synchronizingStudies = [];
+    for(var i in sStudies){
+        var s = sStudies[i]
+        synchronizingStudies.push(s);
+    }
     var count = 1;
     //---1
     //---findA端所有
@@ -369,7 +374,7 @@ exports.getDiff = function* (round,synchronizingStudies) {
         //---find 本地记录的所有已同步dcm
         logger.info('[getDiff '+round+'][step ' + (count) + ' findL] finding all synchronized recorded......');
         var findDestStart = new Date().getTime();
-        var allDestDcmsMetas = yield findAllDBSynchronizedUID(count);
+        var allDestDcmsMetas = yield findAllDBSynchronizedUID(count,synchronizingStudies);
         logger.info('[getDiff '+round+'][step ' + (count) + ' findL] finished. found all synchronized recorded number: [' + allDestDcmsMetas.length + '],use time:['+(new Date().getTime()-findDestStart)+'ms]\n');
         count++;
     }
@@ -391,8 +396,8 @@ exports.getDiff = function* (round,synchronizingStudies) {
 
     var newDcms = result.newDcms;
     var newDcmsStudiesIds = result.newDcmsStudiesIds;
-    var newDcmDoc = dcmService.formatDcmForDB(newDcms);
-    yield mongoDBService.insert(newDcmDoc);
+    //var newDcmDoc = dcmService.formatDcmForDB(newDcms);
+    //yield mongoDBService.insert(newDcmDoc);
     logger.info('[getDiff '+round+'][step ' + (count) + ' diff] ready to get [' + newDcmsStudiesIds.length + '] studies; total [' + newDcms.length + '] dcms;');
     logger.info('[getDiff '+round+'][step ' + (count) + ' diff] finished. use time:['+(new Date().getTime()-diffStart)+'ms]\n');
     logger.info('[getDiff '+round+'] finished-------------------------------------\n');
@@ -548,6 +553,7 @@ var wait = function (millscends) {
 
     return defer.promise;
 }
+exports.wait = wait;
 var PauseUntillgetKeyPress = function () {
     //logger.info('** run command: **\n'+cmd);
     var defer = q.defer();

@@ -138,7 +138,8 @@ exports.setDcmsPath = function*(docs) {
             continue;
         }
         var r = yield DcmMetaModel.update({_id: docs[i]._id}, {dcmPath: docs[i].dcmPath}).exec();
-        if (r.matchedCount == 0) {
+        //console.log(r);
+        if (r.nModified == 0) {
             var DcmMeta = new DcmMetaModel(docs[i]);
             yield DcmMeta.save();
         }
@@ -163,9 +164,10 @@ exports.setDcmSynchronized = function*(dcmUID) {
 exports.setSynchronizedDcmsDeleted = function*(dcmUIDs) {
     for (var i in dcmUIDs) {
         var r = yield DcmMetaModel.update({_id: dcmUIDs[i]}, {dcmPath: ''}).exec();
-        var foundDcm = yield DcmMetaModel.find({_id: dcmUIDs[i], isSynchronized: true, dcmPath: ''}).exec();
+        var foundDcm = yield DcmMetaModel.findOne({_id: dcmUIDs[i], isSynchronized: false, dcmPath: ''}).exec();
         if (foundDcm) {
             throw 'UnsynchronizedDcmSetDeletedError: ' + dcmUIDs[i];
+            process.exit();
         }
     }
     db.close();
@@ -174,8 +176,8 @@ exports.findSynchronizedLocalDcms = function*() {
     var r = yield DcmMetaModel.find({isSynchronized: true, dcmPath: {$ne: ''}}).exec();
     return r;
 }
-exports.findAllSynchronizedDcms = function*() {
-    var r = yield DcmMetaModel.find({isSynchronized: true}).exec();
+exports.findAllSynchronizedDcms = function*(synchronizingStudies) {
+    var r = yield DcmMetaModel.find({isSynchronized: true , StudyInstanceUID : {$nin:synchronizingStudies}}).exec();
     return r;
 }
 exports.setSynchronizedDcmsDeleted = function*() {
