@@ -554,6 +554,7 @@ var wait = function (millscends) {
     return defer.promise;
 }
 exports.wait = wait;
+
 var PauseUntillgetKeyPress = function () {
     //logger.info('** run command: **\n'+cmd);
     var defer = q.defer();

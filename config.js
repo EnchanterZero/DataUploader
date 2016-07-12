@@ -19,6 +19,7 @@ console.log(logHomePath);
 /**
  * dcmService config
  */
+exports.maxsynchronizeNum = 3;
 exports.dcm4cheBinPath = __dirname +'/'+'dcm4che-3.3.7/bin';
 exports.dcmTempDir = __dirname + '/' + 'dcmTempDir';
 exports.pullingSCP_AET = 'DCM4CHEE';

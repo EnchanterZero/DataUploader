@@ -11,7 +11,7 @@ var dcm4cheBinPath = config.dcm4cheBinPath;
  * test
  */
 co(function*(){
-    var cmdPre = dcm4cheBinPath + '/storescu -c DCM4CHEE@10.255.177.255:11112 ~intern07/Desktop/';
+    var cmdPre = dcm4cheBinPath + '/storescu -c DCM4CHEE@10.255.177.255:11112 ~intern07/Desktop/dcms/';
     var cmds = [
         ['dicom'     ,'DICOM'],
         ['CXC_Dicom' ,'1.2.840.88888888.3.20150825145012.7421970'],
@@ -30,7 +30,7 @@ co(function*(){
         yield dcmService.execCmd(cmdPre+cmds[i][0]);
         logger.info('                                               TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT------ finish :' + cmds[i][1]);
         var time;
-        yield sychronizeService.wait(39231);
+        yield sychronizeService.wait(29231);
     }
 
 }).catch(function (err) {
