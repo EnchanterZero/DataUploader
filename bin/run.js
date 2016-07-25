@@ -1,4 +1,3 @@
-var q = require('q');
 var co = require('co');
 var config = require('../config');
 var dcmService = require('../service/dcmService');

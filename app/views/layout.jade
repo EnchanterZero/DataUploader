@@ -1,0 +1,27 @@
+doctype html
+html(lang='en',ng-app='Uploader')
+  head
+    meta(charset='utf-8')
+    meta(name='viewport', content='width=device-width,initial-scale=1, user-scalable=no')
+    title= title
+    link(rel='stylesheet', href='lib/bootstrap/dist/css/bootstrap.css')
+  body
+    nav.navbar.navbar-inverse(role='navigation')
+      div.navbar-header
+        a.navbar-brand(href='#/polls')= title
+      div
+        ul.nav.navbar-nav
+          li.active
+            a(href='/Upload') 上传图像
+          li
+            a(href='/AutoScan') 自动扫描
+          li
+            a(href='/Setting') 设置
+    div.container
+      block content
+
+    script(src='lib/jquery/dist/jquery.js')
+    script(src='lib/bootstrap/dist/js/bootstrap.js')
+    script(src='lib/angular/angular.js')
+    script(src='app/app.js')
+    script(src='app/controller.js')
