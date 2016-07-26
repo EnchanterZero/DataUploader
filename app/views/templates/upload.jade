@@ -3,6 +3,9 @@ block content
   div(ng-controller='UploadController')
     h1 #{menu}
     h3 选择想上传文件目录下的某一文件:
-    input(type='file',value="{{dir}}")
-    p {{dir}}
-    button.btn.btn-default(ng-click="upload()") 开始上传
+    input(id='fileinput',type='file')
+    h4 选择的目录: {{dir}}
+    button.btn.btn-default(ng-click="read()") 读取
+    h4 读取到的Study :{{readResults.studies}}
+    h4 读取到的DCM数 :{{readResults.dcmCount}}
+    button.btn.btn-default(ng-click="upload()") 上传

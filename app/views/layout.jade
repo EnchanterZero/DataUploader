@@ -12,16 +12,18 @@ html(lang='en',ng-app='Uploader')
       div
         ul.nav.navbar-nav
           li.active
-            a(href='/Upload') 上传图像
+            a(href='/upload') 上传图像
           li
-            a(href='/AutoScan') 自动扫描
+            a(href='/autoScan') 自动扫描
           li
-            a(href='/Setting') 设置
+            a(href='/setting') 设置
     div.container
       block content
 
     script(src='lib/jquery/dist/jquery.js')
     script(src='lib/bootstrap/dist/js/bootstrap.js')
     script(src='lib/angular/angular.js')
+    script(src='lib/lodash/dist/lodash.js')
     script(src='app/app.js')
     script(src='app/controller.js')
+    script(src='app/services.js')
