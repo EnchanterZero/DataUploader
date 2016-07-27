@@ -79,15 +79,32 @@ function uploaderController($scope, api) {
  * AutoScanController
  */
 'use strict';
-angular.module('Uploader').controller('AutoScanController', ['$scope', autoScanController]);
-function autoScanController($scope) {
-
+angular.module('Uploader').controller('AutoScanController', ['$scope','api', autoScanController]);
+function autoScanController($scope,api) {
+  $scope.dir = '';
+  $scope.startScan = function () {
+    var dir = $('input').val();
+    console.log(dir);
+    var t = dir.split('/');
+    t.pop();
+    $scope.dir = t.join('/');
+    api.startScan({
+    }).then(function (result) {
+      //console.log(result.file);
+    });
+  }
+  $scope.endScan = function () {
+    api.endScan({
+    }).then(function (result) {
+      //console.log(result.file);
+    });
+  }
 };
 
 /**
  * SettingController
  */
-angular.module('Uploader').controller('SettingController', ['$scope', settingController]);
-function settingController($scope) {
+angular.module('Uploader').controller('SettingController', ['$scope','api', settingController]);
+function settingController($scope,api) {
 
 };

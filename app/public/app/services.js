@@ -113,4 +113,26 @@ angular.module('Uploader')
       console.log(result);
     })
   }
+  
+  this.startScan = function (query) {
+    var option1 = {
+      method: 'POST',
+      url:   '/autoScan/start',
+      data: query,
+    }
+    authorize(option1)
+    return $http(option1)
+    .then(checkStatusCode)
+  }
+
+  this.endScan = function (query) {
+    var option1 = {
+      method: 'POST',
+      url:   '/autoScan/end',
+      data: query,
+    }
+    authorize(option1)
+    return $http(option1)
+    .then(checkStatusCode)
+  }
 }]);

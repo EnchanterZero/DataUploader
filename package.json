@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "nodemon --watch app --watch bin --watch models --watch service --watch util  app/bin/server.js --exec babel-node --presets es2015"
+    "start": "nodemon --watch app --watch bin --watch models --watch service --watch util --watch config app/bin/server.js --exec babel-node --presets es2015"
   },
   "dependencies": {
     "ali-oss": "^4.4.4",

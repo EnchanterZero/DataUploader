@@ -4,7 +4,7 @@ var co = require('co');
 var path = require('path');
 var config = require('../config');
 var mongoDBService = require('./dcmMongoService');
-var dirWalker = require('../util/dirWalker');
+import * as util from '../util/index';
 var exec = require('child_process').exec;
 var spawn = require('child_process').spawn;
 
@@ -258,7 +258,7 @@ exports.readDcmRecursion = function (Path) {
       }));
     }
   }
-  dirWalker.walk(Path, 0, handleFile);
+  util.walk(Path, 0, handleFile);
   return q.all(files).then(()=> {
     return dcmMetas;
   });

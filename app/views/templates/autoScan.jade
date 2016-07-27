@@ -1,0 +1,9 @@
+extends ../layout
+block content
+  div(ng-controller='AutoScanController')
+    h1 #{menu}
+    h3 选择想上传文件目录下的某一文件:
+    input(id='fileinput',type='file')
+    h4 选择的目录: {{dir}}
+    button.btn.btn-default(ng-click="startScan()") 开始
+    button.btn.btn-default(ng-click="endScan()") 结束

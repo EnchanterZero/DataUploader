@@ -58,6 +58,11 @@ var logger = new (winston.Logger)({
             filename: logHomePath + 'info.log',
             level: 'info'
         }),
+      new (winston.transports.File)({
+        name: 'debug-file',
+        filename: logHomePath + 'info.log',
+        level: 'debug'
+      }),
         new (winston.transports.File)({
             name: 'error-file',
             filename: logHomePath + 'error.log',

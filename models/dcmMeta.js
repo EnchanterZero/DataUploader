@@ -9,7 +9,8 @@ var Schema = mongoose.Schema;
     "SOPInstanceUID" : "1.3.12.2.1107.5.1.4.74080.30000015082400402627500032022",
     "dcmPath" : "",
     "isSynchronized" : true,
-    "syncId": 1469518737161 
+    "syncId": '1469518737161',
+    "uploadType":'autoScan'/'autoPush'/'manualUpload'
 }
  * collSynchronizingStudy :
  * {
@@ -27,7 +28,8 @@ var DcmMetaSchema = new Schema({
   SOPInstanceUID: String,
   dcmPath: String,
   isSynchronized: Boolean,
-  syncId: String
+  syncId: String,
+  uploadType: String,
 }, { collection: 'dcm_meta' });
 
 exports.DcmMetaModel = mongoose.model('DcmMeta', DcmMetaSchema);
