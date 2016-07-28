@@ -1,6 +1,7 @@
 var express = require('express');
 import * as dcmapi from '../services/dcmapi';
 import * as ossapi from '../services/ossapi';
+import * as DcmInfo from '../modules/dcminfo'
 var router = express.Router();
 var config = require('../../config');
 var co = require('co');
@@ -14,8 +15,21 @@ var rePushTroubleWait = config.rePushTroubleWait;
 var UPLOAD_DIR = '/Users/intern07/Desktop/dcms/test';
 var AUTOSCAN_DIR = '/Users/intern07/Desktop/dcms/autoscan';
 
+/**
+ * chilld process to process autoscan
+ */
+var autoScan;
 /* GET home page. */
 function getAuthPage(req, res, next) {
+  DcmInfo.createDcmInfo(
+    {
+      "StudyInstanceUID" : "1.2.840.88888888.3.20150825145012.7421970",
+      "SeriesInstanceUID" : "1.3.12.2.1107.5.1.4.74080.30000015082400402627500031888",
+      "SOPInstanceUID" : "1.3.12.2.1107.5.1.4.74080.30000015082400402627500032022",
+      "dcmPath" : "65446556564564885465468894",
+      "isSynchronized" : true,
+      "syncId": '1469518737161'
+    });
   res.render('auth', { title: 'Uploader' });
 }
 function getMainPage(req, res, next) {
@@ -34,7 +48,7 @@ function readDcm(req, res, next) {
   var transportId = new Date().getTime();
   co(function*() {
     var result = yield dcmapi.readDcm(UPLOAD_DIR, transportId.toString());
-    yield saveDcmMetas(result.dcmMetas);
+    yield dcmapi.saveDcmMetas(result.dcmMetas);
     res.json({
       code: 200,
       data: {
@@ -54,10 +68,10 @@ function startUpload(req, res, next) {
   let syncId = data.syncId;
   let file = data.file;
   // console.log(file);
-  // console.log(credential);
+  console.log(credential);
   // console.log(syncId);
-  credential.AccessKeyId = 'RiJBujTkdDUiFzus';
-  credential.AccessKeySecret = '3BN8bGcuS4rXat9wTVLCWFsM3EAbbK';
+  //credential.AccessKeyId = 'RiJBujTkdDUiFzus';
+  //credential.AccessKeySecret = '3BN8bGcuS4rXat9wTVLCWFsM3EAbbK';
   co(function*() {
     ossapi.putOSSObject(credential, false, file.id, syncId);
     var result = {};
@@ -72,21 +86,23 @@ function startUpload(req, res, next) {
 
 function startAutoScan(req, res, next) {
   var transportId = new Date().getTime();
-  autoScan  = dcmapi.startAutoScan(UPLOAD_DIR, transportId.toString());
+  if (!autoScan) {
+    autoScan = dcmapi.startAutoScan(AUTOSCAN_DIR, transportId.toString());
+  }
   res.json({
     code: 200,
-    data: {
-    }
+    data: {}
   });
 }
 
 function endAutoScan(req, res, next) {
   var transportId = new Date().getTime();
-  dcmapi.stopAutoScan();
+  if (autoScan) {
+    dcmapi.stopAutoScan(autoScan);
+  }
   res.json({
     code: 200,
-    data: {
-    }
+    data: {}
   });
 }
 

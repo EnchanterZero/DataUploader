@@ -7,20 +7,28 @@ import path from 'path';
 import * as util from '../../util/index';
 
 var config = require('../../config');
-var dcmapi = require('./dcmapi');
-var ossapi = require('./ossapi');
+import * as dcmapi from './dcmapi';
+import * as ossapi from './ossapi';
 var logger = config.logger;
 var localTempfilePath = config.dcmTempDir;
 
 console.log(process.argv);
-
+var AUTOSCAN_DIR = process.argv[2];
+var syncId = process.argv[3];
+var DELAY_TIME = process.argv[4];
 var FLAG = true;
 co(function*() {
   while (FLAG) {
-    //yield dcmapi.getDiff();
-    console.log('test!!!!!!!')
-    yield Promise.delay(1000);
+    var result = yield dcmapi.getDiff(AUTOSCAN_DIR,syncId);
+    var newDcmPaths = result.newDcmPaths;
+    var newDcmMetas = result.newDcmMetas
+    yield dcmapi.saveDcmMetas(newDcmMetas,syncId);
+    
+
+    yield Promise.delay(DELAY_TIME);
   }
+}).catch((err)=>{
+  console.log(err);
 });
 
 process.on('message', function (m) {

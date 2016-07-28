@@ -11,7 +11,7 @@ import _ from 'lodash';
  * @param floor 层数
  * @param handleFile 文件,文件夹处理函数
  */
-export function walk(path, floor, handleFile) {
+function walk(path, floor, handleFile) {
   handleFile(path, floor);
   floor++;
   var files = fs.readdirSync(path);
@@ -25,7 +25,21 @@ export function walk(path, floor, handleFile) {
     }
   });
 }
-
+export function walkDir(DirPath) {
+  var filePaths = [];
+  var handleFile = function (path, floor) {
+    var stats = fs.statSync(path)
+    if (stats.isDirectory()) {
+      process.stdout.write('*');
+    } else {
+      process.stdout.write('.');
+      filePaths.push(path);
+    }
+  }
+  walk(DirPath, 0, handleFile);
+  process.stdout.write('\n');
+  return filePaths;
+}
 export function size(filepath) {
   return Promise.promisify(fs.stat, fs)(filepath)
   .then((stat) => stat.size);

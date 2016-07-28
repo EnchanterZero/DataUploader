@@ -1,7 +1,6 @@
 /**
- * Created by intern07 on 16/7/26.
+ * Created by intern07 on 16/7/28.
  */
-
 import co from 'co';
 import OSS from 'ali-oss';
 import _ from 'lodash';
@@ -16,9 +15,9 @@ var dcmMongoService = require('../../service/dcmMongoService');
 var logger = config.logger;
 var localTempfilePath = config.dcmTempDir;
 
-export function getOSSClient(credential) {
+export function getOSSClient(credential,internal) {
   return new OSS({
-    secure: true,
+    secure: internal,
     region: credential.Region,
     accessKeyId: credential.AccessKeyId,
     accessKeySecret: credential.AccessKeySecret,
@@ -27,7 +26,10 @@ export function getOSSClient(credential) {
   });
 }
 
-function putOSSObjectFile(ossClient, objectKey, filepath, retry = 2) {
+function putOSSDcmFile(ossClient ,dcmInfo, retry = 2) {
+  const filepath = dcmInfo.dcmPath;
+  const objectKey = path.join(dcmInfo.fileId, dcmInfo.SOPInstanceUID);
+  logger.info('putting OSS DcmFile : ', objectKey, filepath);
   return co(function *() {
     do {
       try {
@@ -51,7 +53,8 @@ function putOSSObjectFile(ossClient, objectKey, filepath, retry = 2) {
             }
           });
         }
-        return true;
+        dcmInfo.isSynchronized = true;
+        return dcmInfo;
       } catch(err) {
         logger.error(`error when uploading ${filepath} to ${objectKey}`, err);
       }
@@ -61,23 +64,21 @@ function putOSSObjectFile(ossClient, objectKey, filepath, retry = 2) {
   });
 }
 
-export function putOSSObject(credential, internal, fileId, syncId) {
+export function putOSSDcms(credential, internal, dcmInfos) {
   logger.info('getOSSObject internal =', internal);
   const client = getOSSClient(credential, internal);
-  logger.info(`Start putOSSObject ${credential.Region} ${credential.Bucket} ${fileId} ${syncId}`);
-  co(function* () {
-    return yield dcmMongoService.findAllDcmBysyncId(syncId);
-  })
-  .then((filelist) =>{
-    return util.parallelReduce(filelist, 4, (uploadingFile) => {
-      const realPath = uploadingFile.dcmPath;
-      const objectKey = path.join(fileId, uploadingFile.SOPInstanceUID);
-      logger.info('putting OSSObject : ', objectKey, realPath);
-      return putOSSObjectFile(client, objectKey, realPath)
-      .then(() =>{
+  let fileIds = _.uniq(dcmInfos.map((item) =>{
+    return item.fileId
+  }));
+  logger.info(`Start putOSSObject ${credential.Region} ${credential.Bucket} ${fileIds} `);
+
+  util.parallelReduce(dcmInfos, 4, (dcmInfo) => {
+
+      return putOSSDcmFile(client, dcmInfo)
+      .then((dcmInfo) =>{
         return co(function* () {
-          yield dcmMongoService.setDcmSynchronized(syncId + '-' +uploadingFile.SOPInstanceUID,syncId);
-          logger.info('setDcmSynchronized : ', uploadingFile.SOPInstanceUID,syncId);
+          yield dcmMongoService.setDcmSynchronized(dcmInfo);
+          logger.info('setDcmSynchronized : ', dcmInfo.SOPInstanceUID,dcmInfo.syncId);
         });
       })
       .catch((err) =>{
@@ -86,5 +87,4 @@ export function putOSSObject(credential, internal, fileId, syncId) {
     }).then(() => {
       logger.info(`End putOSSObject ${credential.Region} ${credential.Bucket} ${fileId} ${syncId}`);
     });
-  });
 }

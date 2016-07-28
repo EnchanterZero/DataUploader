@@ -1,0 +1,6 @@
+{"level":"error","message":"err:SequelizeDatabaseError: SQLITE_ERROR: no such table: DcmInfos","timestamp":"2016-07-28T09:19:33.826Z"}
+{"level":"error","message":"err:SequelizeDatabaseError: SQLITE_ERROR: no such table: DcmInfos","timestamp":"2016-07-28T09:19:33.826Z"}
+{"level":"error","message":"err:SequelizeDatabaseError: SQLITE_ERROR: no such table: DcmInfos","timestamp":"2016-07-28T09:24:52.230Z"}
+{"level":"error","message":"err:SequelizeDatabaseError: SQLITE_ERROR: no such table: DcmInfos","timestamp":"2016-07-28T09:24:52.230Z"}
+{"level":"error","message":"err:SequelizeDatabaseError: SQLITE_ERROR: no such table: DcmInfos","timestamp":"2016-07-28T09:33:23.788Z"}
+{"level":"error","message":"err:SequelizeDatabaseError: SQLITE_ERROR: no such table: DcmInfos","timestamp":"2016-07-28T09:33:23.788Z"}

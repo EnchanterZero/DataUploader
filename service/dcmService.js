@@ -33,11 +33,13 @@ var execCmd = function (cmd) {
       //     stderr:stderr,
       //     err:err
       // });
-      if (err) {
-        logger.error('** exec err: **\n' + cmd + '\n' + err);
-      }
-      if (stderr) {
-        logger.error('** exec stderr: **\n' + cmd + '\n' + stderr);
+      if(cmd.indexOf('dcmdump') == -1) {
+        if (err) {
+          logger.error('** exec err: **\n' + cmd + '\n', err);
+        }
+        if (stderr) {
+          logger.error('** exec stderr: **\n' + cmd + '\n', stderr);
+        }
       }
       defer.resolve({
         stdout: stdout,
@@ -164,14 +166,15 @@ var parseStoreSCUStdoutChunk = function (stdoutChunk) {
 
 
 }
-var readOneDcm = function (dcmPath) {
+var readOneDcm = function (dcmPath,syncId) {
   var c = dcm4cheBinPath + '/dcmdump -w 150 ' + '"' + dcmPath + '"';
   return execCmd(c).then((result)=> {
     var dcmMeta = parseDcmdumpStdout(result.stdout);
     if(dcmMeta){
-      dcmMeta._id = dcmMeta.SOPInstanceUID;
+      dcmMeta._id = syncId + '-' +dcmMeta.SOPInstanceUID;
       dcmMeta.dcmPath = dcmPath;
       dcmMeta.isSynchronized = false;
+      dcmMeta.syncId = syncId;
     }
     return dcmMeta;
   });
@@ -233,33 +236,20 @@ exports.readDcm = function*(dcmPath) {
   return dcmMetas;
 }
 
-exports.readDcmRecursion = function (Path) {
-  var files = [];
+exports.readDcms = function (FilePaths,synId) {
   var dcmMetas = [];
-  var handleFile = function (path, floor) {
-    var blankStr = '';
-    for (var i = 0; i < floor; i++) {
-      blankStr += '    ';
-    }
-    var stats = fs.statSync(path)
-    if (stats.isDirectory()) {
-      console.log('+' + blankStr + path);
-    } else {
-      console.log('-' + blankStr + path);
-
-      files.push(readOneDcm(path).then((result) =>{
+  return util.parallelReduce(FilePaths,8,(item)=>{
+    return readOneDcm(item,synId).then((result) =>{
         if(result){
-          //console.log(result);
+          process.stdout.write('/');
           dcmMetas.push(result);
         }
         return result;
       }).catch((err)=> {
         logger.error(err);
-      }));
-    }
-  }
-  util.walk(Path, 0, handleFile);
-  return q.all(files).then(()=> {
+      });
+  }).then(()=> {
+    process.stdout.write('\n');
     return dcmMetas;
   });
 }
