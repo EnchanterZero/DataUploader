@@ -1,3 +1,18 @@
+/**
+ * PatientName
+ * PatientID
+ * StudyInstanceUID
+ * SeriesInstanceUID
+ * SOPInstanceUID
+ * fileId
+ * dcmPath
+ * syncId
+ * uploadType
+ *
+ * @param sequelize
+ * @param DataTypes
+ * @returns {Model}
+ */
 export function create(sequelize, DataTypes) {
   const DcmInfo = sequelize.define('DcmInfo', {
     id: {
@@ -8,6 +23,16 @@ export function create(sequelize, DataTypes) {
       defaultValue: DataTypes.UUIDV4,
       allowNull: false,
       primaryKey: true,
+    },
+    PatientName: {
+      type: DataTypes.STRING,
+      defaultValue: '',
+      allowNull: false,
+    },
+    PatientID: {
+      type: DataTypes.STRING,
+      defaultValue: '',
+      allowNull: false,
     },
     StudyInstanceUID: {
       type: DataTypes.STRING,
@@ -24,14 +49,24 @@ export function create(sequelize, DataTypes) {
       defaultValue: '',
       allowNull: false,
     },
+    fileId: {
+      type: DataTypes.STRING,
+      defaultValue: '',
+      allowNull: false,
+    },
     dcmPath: {
       type: DataTypes.STRING,
       defaultValue: '',
       allowNull: false,
     },
+    isSynchronized: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false,
+    },
     syncId: {
       type: DataTypes.STRING,
-      defaultValue: false,
+      defaultValue: '',
       allowNull: false,
     },
     uploadType: {

@@ -1,15 +1,14 @@
 import co from 'co';
 import OSS from 'ali-oss';
-import _ from 'lodash';
 import fs from 'fs';
 import Promise from 'bluebird';
 import path from 'path';
-import * as util from '../../util/index';
 
 var config = require('../../config');
 import * as dcmapi from './dcmapi';
 import * as ossapi from './ossapi';
-var logger = config.logger;
+import { util } from '../util'
+var logger = util.logger.getLogger('autoScan');
 var localTempfilePath = config.dcmTempDir;
 
 console.log(process.argv);

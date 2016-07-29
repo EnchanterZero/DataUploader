@@ -1,5 +1,6 @@
 import models from './db/models';
-import { logger } from '../config';
+import { util } from '../util';
+const logger = util.logger.getLogger('dicominfo');
 import Promise from  'bluebird';
 
 

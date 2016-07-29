@@ -1,6 +1,7 @@
 /**
  * Created by intern07 on 16/7/27.
  */
+import logger from './logger'
 import fs from 'fs';
 import Promise from 'bluebird';
 import q from 'q';
@@ -25,7 +26,7 @@ function walk(path, floor, handleFile) {
     }
   });
 }
-export function walkDir(DirPath) {
+function walkDir(DirPath) {
   var filePaths = [];
   var handleFile = function (path, floor) {
     var stats = fs.statSync(path)
@@ -40,18 +41,19 @@ export function walkDir(DirPath) {
   process.stdout.write('\n');
   return filePaths;
 }
-export function size(filepath) {
+function size(filepath) {
   return Promise.promisify(fs.stat, fs)(filepath)
   .then((stat) => stat.size);
 }
 
-export function remove(filepath) {
+function remove(filepath) {
   return Promise.promisify(fs.unlink, fs)(filepath)
   .then((err) => {
-    console.log(err);});
+    console.log(err);
+  });
 }
 
-export function parallelReduce(items, parallel, handler) {
+function parallelReduce(items, parallel, handler) {
   return Promise.all(
     _.map(
       _.chunk(items, Math.ceil(items.length / parallel)),
@@ -65,13 +67,22 @@ export function parallelReduce(items, parallel, handler) {
   );
 }
 
-export function wait(millscends) {
+function wait(millscends) {
   //logger.info('** run command: **\n'+cmd);
   var defer = q.defer();
   _.delay(function (millscends) {
-    console.log('waited for '+ millscends + 'ms');
+    console.log('waited for ' + millscends + 'ms');
     defer.resolve();
-  },millscends,millscends);
+  }, millscends, millscends);
 
   return defer.promise;
 }
+
+export {
+  logger,
+  wait,
+  parallelReduce,
+  remove,
+  size,
+  walkDir
+};

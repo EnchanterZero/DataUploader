@@ -10,7 +10,7 @@ function authController($scope, $http, $window, Session,api,serverUrl) {
   $scope.doLogin = function () {
     return $http({
       method: 'POST',
-      url:  serverUrl + '/user/authenticate',
+      url:  '/auth',
       data: {
         username: $scope.username,
         password: $scope.password,

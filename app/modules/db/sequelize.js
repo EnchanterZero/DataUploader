@@ -4,7 +4,8 @@ import co from 'co';
 import Promise from 'bluebird';
 
 import { dbConfig } from '../../config';
-import { logger } from '../../config';
+import { util } from '../../util';
+const logger = util.logger.getLogger('db');
 
 const sequelize = new Sequelize(dbConfig.database, dbConfig.username, dbConfig.password, {
   host: dbConfig.host,
