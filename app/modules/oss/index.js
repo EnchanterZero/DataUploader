@@ -66,7 +66,10 @@ export function putOSSDcms(credential, internal, dcmInfos) {
   let fileIds = _.uniq(dcmInfos.map((item) =>{
     return item.fileId
   }));
-  logger.info(`Start putOSSObject ${credential.Region} ${credential.Bucket} ${fileIds} `);
+  if (fileIds.length > 1){
+    throw new Error('file id duplicated');
+  }
+  logger.info(`Start putOSSObject ${credential.Region} ${credential.Bucket} ${fileIds[0]} `);
 
   return util.parallelReduce(dcmInfos, 4, (dcmInfo) => {
 

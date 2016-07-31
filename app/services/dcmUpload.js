@@ -1,5 +1,6 @@
 import { util } from '../util';
 const logger = util.logger.getLogger('upload');
+import * as DcmInfo from '../modules/dcminfo';
 import Promise from 'bluebird';
 import co from 'co';
 import request from 'request';
@@ -24,9 +25,11 @@ function uploadDiomsToOne(dcmInfos) {
   /**
    * create file
    */
+  DcmInfo.createMiltiDcmInfo(dcmInfos);
   /**
    * ask for token
    */
+
   /**
    * upload
    */
