@@ -84,6 +84,6 @@ export function putOSSDcms(credential, internal, dcmInfos) {
         logger.error(err);
       });
     }).then(() => {
-      logger.info(`End putOSSObject ${credential.Region} ${credential.Bucket} ${fileId} ${syncId}`);
+      logger.info(`End putOSSObject ${credential.Region} ${credential.Bucket} ${fileId[0]} ${syncId}`);
     });
 }

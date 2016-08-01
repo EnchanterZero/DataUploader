@@ -6,7 +6,15 @@ block content
     input(id='fileinput',type='file')
     h4 选择的目录: {{dir}}
     button.btn.btn-default(ng-click="read()") 读取
-    h4 读取到的Study :{{readResults.studies}}
-    h4 读取到的DCM数 :{{readResults.dcmCount}}
-    h4 传输的syncId :{{readResults.syncId}}
+    table.table
+      tr
+        th PatientID
+        th PatientName
+        th StudyInstanceUID
+      tr(ng-repeat='item in readResults.studies')
+        td {{item.PatientID}}
+        td {{item.PatientName}}
+        td {{item.StudyInstanceUID}}
+    h4  dcm文件数量: {{readResults.dcmCount}}
     button.btn.btn-default(ng-click="upload()") 上传
+    h4 {{message}}

@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { util } from '../util';
+import co from 'co';
 import { dcmParse,dcmUpload,serverApi } from '../services'
 const manualUploadApi = Router();
 
@@ -20,7 +22,8 @@ function readDcm(req, res, next) {
         StudyInstanceUID: item.StudyInstanceUID,
       }
     });
-    studies = _.uniqBy(studies,'StudyInstanceUID');
+    studies = util._.uniqBy(studies,'StudyInstanceUID');
+    console.log(studies);
     res.json({
       code: 200,
       data: {
@@ -37,7 +40,7 @@ function startUpload(req, res, next) {
   let data = req.body;
   let dcmInfos = data.dcmInfos;
   co(function*() {
-    yield dcmUpload.uploadDioms(dcmInfos);
+    yield dcmUpload.uploadDicoms(dcmInfos);
     var result = {};
     res.json({
       code: 200,

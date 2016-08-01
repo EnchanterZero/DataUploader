@@ -59,9 +59,7 @@ function parseAndAnymouse(srcDir, anonymousDir) {
         parser.parse().then(() => {
           const metadata = parser.metadata();
           delete metadata._dataSet;
-          console.log('-----console.log(metadata)-----start');
           dcmInfos.push(getDcmInfo(metadata, filepath));
-          console.log('-----console.log(metadata)-----end');
         });
       } catch (e) {
         logger.info(`pasering ${fileStats.name}`, e);
@@ -73,6 +71,7 @@ function parseAndAnymouse(srcDir, anonymousDir) {
       next();
     });
     walker.on("end", function () {
+      logger.debug('dead end!!!!')
       resolve(dcmInfos);
     });
   });
@@ -81,7 +80,8 @@ function parseAndAnymouse(srcDir, anonymousDir) {
 function parseDicom(srcDir) {
   return co(function*() {
     const dcmInfos = yield parseAndAnymouse(srcDir);
-    console.log(dcmInfos);
+    //console.log(dcmInfos);
+    return dcmInfos;
   });
 }
 

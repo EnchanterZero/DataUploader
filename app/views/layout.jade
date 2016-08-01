@@ -9,9 +9,9 @@ html(lang='en',ng-app='Uploader')
     nav.navbar.navbar-inverse(role='navigation')
       div.navbar-header
         a.navbar-brand(href='#/polls')= title
-      div
+      div(ng-controller='UserController')
         ul.nav.navbar-nav
-          li.active
+          li
             a(href='/upload') 上传图像
           li
             a(href='/autoScan') 自动扫描
@@ -19,6 +19,8 @@ html(lang='en',ng-app='Uploader')
             a(href='/history') 上传历史
           li
             a(href='/setting') 设置
+          li
+            a(ng-click='doLogout()') 退出
     div.container
       block content
 

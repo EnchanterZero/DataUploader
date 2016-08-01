@@ -1,7 +1,8 @@
 import { Router } from 'express';
-import { serverApi,dcmParse,dcmUpload } from '../services';
+import { dcmParse, dcmUpload, serverApi, autoScanUpload, dcmDiff } from '../services';
 const autoScanApi = Router();
 
+var AUTOSCAN_DIR = '/Users/intern07/Desktop/dcms/autoscan';
 let autoScan = null;
 function getAutoScanPage(req, res, next) {
     res.render('templates/autoScanUpload', { title: 'Uploader', menu: 'AutoScan' });
@@ -9,7 +10,7 @@ function getAutoScanPage(req, res, next) {
 function startAutoScan(req, res, next) {
     var transportId = new Date().getTime();
     if (!autoScan) {
-      autoScan = dcmapi.startAutoScan(AUTOSCAN_DIR, transportId.toString());
+      autoScan = autoScanUpload.start(AUTOSCAN_DIR, transportId.toString());
     }
   res.json({
     code: 200,
@@ -19,7 +20,7 @@ function startAutoScan(req, res, next) {
 function stopAutoScan(req, res, next) {
   var transportId = new Date().getTime();
   if (autoScan) {
-    dcmapi.stopAutoScan(autoScan);
+    autoScanUpload.stop(autoScan);
   }
   res.json({
     code: 200,

@@ -4,8 +4,8 @@ import fs from 'fs';
 import Promise from 'bluebird';
 import path from 'path';
 import { dcmDiff,dcmParse,dcmUpload }  from '../services';
-import { util } from '../util'
-var logger = util.logger.getLogger('autoScan');
+import { util } from '../util';
+var logger = util.logger.getLogger('cp_autoScan');
 
 console.log(process.argv);
 var AUTOSCAN_DIR = process.argv[2];

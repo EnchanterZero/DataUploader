@@ -86,6 +86,6 @@ var util = {
   parallelReduce,
   remove,
   size,
-  walkDir
+  walkDir,
 };
 export { util };

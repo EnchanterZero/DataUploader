@@ -4,36 +4,26 @@
 angular.module('Uploader').controller('AuthController', ['$scope','$http', '$window', 'Session','api','serverUrl', authController]);
 function authController($scope, $http, $window, Session,api,serverUrl) {
 
+  $scope.doLogin = function () {
+    var data =  {
+        username: $scope.username,
+        password: $scope.password,
+      };
+    api.login(data,$scope);
+  };
+}
+
+/**
+ * UserController
+ */
+angular.module('Uploader').controller('UserController', ['$scope','$http', '$window', 'Session','api','serverUrl', userController]);
+function userController($scope, $http, $window, Session,api,serverUrl) {
+
   var LOCAL_TOKEN_KEY = 'token';
   var LOCAL_CURRENT_USER = 'currentUser';
 
-  $scope.doLogin = function () {
-    return $http({
-      method: 'POST',
-      url:  '/auth',
-      data: {
-        username: $scope.username,
-        password: $scope.password,
-      }
-    })
-    .then(function (result) {
-      if (result.data.code !== 200) {
-        throw new Error(result.data.message);
-        return;
-      }
-      if (!result.data.data.token || !result.data.data.currentUser) {
-        throw new Error('empty response');
-        return;
-      }
-      Session.set(LOCAL_TOKEN_KEY, result.data.data.token);
-      Session.set(LOCAL_CURRENT_USER, result.data.data.currentUser);
-      api.setAuthToken(result.data.data.token);
-      console.log('login success!!!!!!');
-      $window.location.href = '/index';
-    })
-    .catch(function (err) {
-      $scope.errorMessage = err.message;
-    });
+  $scope.doLogout = function () {
+    api.logout();
   };
 }
 
@@ -47,8 +37,11 @@ function uploaderController($scope, api) {
   $scope.readResults = {
     studies:null,
     dcmCount: null,
-    syncId:''
+    dcmInfos :null,
+    syncId:'',
   }
+  $scope.message = '';
+
   $scope.read = function () {
     var dir = $('input').val();
     console.log(dir);
@@ -57,20 +50,20 @@ function uploaderController($scope, api) {
     $scope.dir = t.join('/');
     api.readDcm({ dir: $scope.dir })
     .then(function(result){
+      /*PatientName: item.PatientName,
+       PatientID: item.PatientID,
+       StudyInstanceUID: item.StudyInstanceUID,
+      * */
+      console.log(result);
       $scope.readResults.studies = result.studies;
-      $scope.readResults.dcmCount = result.dcmCount;
-      $scope.readResults.syncId = result.syncId;
+      $scope.readResults.dcmCount = result.dcmInfos.length;
+      $scope.readResults.dcmInfos = result.dcmInfos;
       });
   };
+
   $scope.upload = function () {
-    api.uploadFile({
-      type: 'dcm',
-      size: '15213',
-      hash: '9A8S6789A7WG69WDHNFA98HFAABOV9E8SHAVOA',
-      name: 'HAHAHAHAHAH',
-      isZip: false
-    },$scope.readResults.syncId).then(function(result){
-      //console.log(result.file);
+    api.uploadFile({dcmInfos: $scope.readResults.dcmInfos}).then(function(result){
+      $scope.message = result;
     });
   }
 }

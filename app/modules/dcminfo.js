@@ -5,7 +5,16 @@ import Promise from  'bluebird';
 
 
 export function createDcmInfo(dcmInfo) {
-  return models.DcmInfo.create(dcmInfo).then((result) => {
+  return models.DcmInfo.findOrCreate({
+    where: {
+      SOPInstanceUID: dcmInfo.SOPInstanceUID,
+      dcmPath: dcmInfo.dcmPath,
+      syncId: dcmInfo.syncId,
+    },
+    defaults: dcmInfo
+  }).then((result) => {
+    let [rs,created] = result;
+    return created;
   }).catch((err) => {
     logger.error('err:' + err)
   });
@@ -31,7 +40,7 @@ export function createMiltiDcmInfo(dcmInfoArr) {
       logger.error('err:' + err)
     });
   });
-  return Promise.all(queue)
+  return Promise.reduce(queue)
   .then(() => {
     return {
       succeedItems: succeedItems,

@@ -37,7 +37,7 @@ angular.module('Uploader')
 /**
  * service api
  */
-.service('api', ['$http', '$rootScope','serverUrl','Session', function ($http, $rootScope,serverUrl,Session) {
+.service('api', ['$http', '$rootScope','serverUrl','Session','$window', function ($http, $rootScope,serverUrl,Session,$window) {
   var LOCAL_TOKEN_KEY = 'token';
   var LOCAL_CURRENT_USER = 'currentUser';
   var api = this;
@@ -67,11 +67,52 @@ angular.module('Uploader')
     }
     return result.data.data;
   }
+  
+  this.login = function (query,$scope) {
+    var options = {
+      method: 'POST',
+      url: '/auth/login',
+      data: query,
+    };
+    return $http(options)
+    .then(function (result) {
+      if (result.data.code !== 200) {
+        throw new Error(result.data.message);
+        return;
+      }
+      if (!result.data.data.token || !result.data.data.currentUser) {
+        throw new Error('empty response');
+        return;
+      }
+      Session.set(LOCAL_TOKEN_KEY, result.data.data.token);
+      Session.set(LOCAL_CURRENT_USER, result.data.data.currentUser);
+      api.setAuthToken(result.data.data.token);
+      console.log('login success!!!!!!');
+      $window.location.href = '/index';
+    })
+    .catch(function (err) {
+      $scope.errorMessage = err.message;
+    });
+  };
+
+  this.logout = function(){
+    var options = {
+      method: 'POST',
+      url: '/auth/logout',
+    }
+    authorize(options)
+    return $http(options)
+    .then(checkStatusCode)
+    .then(() =>{
+      api.token = null;
+      $window.location.href = '/auth';
+    });
+  }
 
   this.readDcm = function (query) {
     var options = {
       method: 'POST',
-      url: '/upload/read',
+      url: '/manualUpload/read',
       data: query,
     }
     authorize(options)
@@ -79,35 +120,35 @@ angular.module('Uploader')
     .then(checkStatusCode);
   }
 
-  this.uploadFile = function (query,syncId) {
-    var option1 = {
-      method: 'POST',
-      url:  serverUrl + '/file/create',
-      data: query,
-    }
-    authorize(option1)
-    return $http(option1)
-    .then(checkStatusCode)
-    .then(function (result) {
-      var option2 = {
-        method: 'GET',
-        url:  serverUrl + '/file/upload/osstoken/'+result.file.id,
+  this.uploadFile = function (query) {
+      var option = {
+        method: 'POST',
+        url: '/manualUpload/start',
         data: query,
       }
-      authorize(option2);
-      return $http(option2)
-    })
+      authorize(option);
+      return $http(option)
     .then(checkStatusCode)
     .then(function (result) {
-      result.syncId = syncId;
-      var option3 = {
-        method: 'POST',
-        url: '/upload/start',
-        data: result,
-      }
-      authorize(option3);
-      return $http(option3)
+      console.log(result);
     })
+  }
+  
+  this.testCreateFile = function () {
+    var option = {
+      method: 'POST',
+      url: 'http://localhost:3000' + '/file/create',
+      data: {
+        type: 'uploadDcm',
+        size: '0',
+        hash: 'NONE',
+        name: 'test!!!!!!!!!!!!!!!',
+        isZip: false
+      },
+    }
+    authorize(option);
+    console.log(option);
+    return $http(option)
     .then(checkStatusCode)
     .then(function (result) {
       console.log(result);
