@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import { util } from '../util';
+const logger = util.logger.getLogger('manualUploadApi');
 import co from 'co';
-import { dcmParse,dcmUpload,serverApi } from '../services'
+import * as DcmInfo from '../modules/dcminfo'
+import { dcmParse, dcmUpload, serverApi } from '../services'
 const manualUploadApi = Router();
 
 var UPLOAD_DIR = '/Users/intern07/Desktop/dcms/test';
@@ -22,7 +24,7 @@ function readDcm(req, res, next) {
         StudyInstanceUID: item.StudyInstanceUID,
       }
     });
-    studies = util._.uniqBy(studies,'StudyInstanceUID');
+    studies = util._.uniqBy(studies, 'StudyInstanceUID');
     console.log(studies);
     res.json({
       code: 200,
@@ -39,19 +41,20 @@ function readDcm(req, res, next) {
 function startUpload(req, res, next) {
   let data = req.body;
   let dcmInfos = data.dcmInfos;
+  var syncId = new Date().getTime().toString();
+  res.json({
+    code: 200,
+    data: { syncId: syncId }
+  });
   co(function*() {
-    yield dcmUpload.uploadDicoms(dcmInfos);
-    var result = {};
-    res.json({
-      code: 200,
-      data: result
-    });
+    let r = yield dcmUpload.uploadDicoms(dcmInfos, syncId);
+    var uploadResult = yield DcmInfo.countDcmInfoBySyncId(r.syncId);
   }).catch((err) => {
     logger.error(err);
   });
 }
-manualUploadApi.get('/',getUploadPage);
-manualUploadApi.post('/read',readDcm);
-manualUploadApi.post('/start',startUpload);
+manualUploadApi.get('/', getUploadPage);
+manualUploadApi.post('/read', readDcm);
+manualUploadApi.post('/start', startUpload);
 
 export default manualUploadApi;

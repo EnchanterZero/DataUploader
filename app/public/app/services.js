@@ -65,6 +65,8 @@ angular.module('Uploader')
     if (result.data.code !== 200) {
       throw new Error('code ' + result.data.code);
     }
+    //log all response data
+    console.log(result.data.data);
     return result.data.data;
   }
   
@@ -130,7 +132,7 @@ angular.module('Uploader')
       return $http(option)
     .then(checkStatusCode)
     .then(function (result) {
-      console.log(result);
+      return result;
     })
   }
   
@@ -158,7 +160,7 @@ angular.module('Uploader')
   this.startScan = function (query) {
     var option1 = {
       method: 'POST',
-      url:   '/autoScan/start',
+      url:   '/autoscanUpload/start',
       data: query,
     }
     authorize(option1)
@@ -167,13 +169,34 @@ angular.module('Uploader')
   }
 
   this.endScan = function (query) {
-    var option1 = {
+    var option = {
       method: 'POST',
-      url:   '/autoScan/end',
+      url:   '/autoscanUpload/stop',
       data: query,
     }
-    authorize(option1)
-    return $http(option1)
+    authorize(option)
+    return $http(option)
+    .then(checkStatusCode)
+  }
+  
+  this.getUploadStatus = function (query) {
+    var option = {
+      method: 'GET',
+      url:   '/uploadStatus/' + query,
+      data: query,
+    }
+    authorize(option);
+    return $http(option)
+    .then(checkStatusCode)
+  }
+  this.listUpload = function (query) {
+    var option = {
+      method: 'GET',
+      url:   '/history/list/' + query.count + '/' +query.page,
+      data: query,
+    };
+    authorize(option);
+    return $http(option)
     .then(checkStatusCode)
   }
 }]);

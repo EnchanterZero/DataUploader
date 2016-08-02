@@ -1,9 +1,24 @@
 import models from './db/models';
+import { sequelize } from '../modules/db';
 import { util } from '../util';
 const logger = util.logger.getLogger('dicominfo');
 import Promise from  'bluebird';
 
-
+/**
+ * All columns fields of DcmInfo
+ *
+ * PatientName
+ * PatientID
+ * StudyInstanceUID
+ * SeriesInstanceUID
+ * SOPInstanceUID
+ * fileId
+ * dcmPath
+ * syncId
+ * uploadType
+ * updatedAt
+ * createdAt
+ */
 export function createDcmInfo(dcmInfo) {
   return models.DcmInfo.findOrCreate({
     where: {
@@ -65,11 +80,11 @@ export function updateDcmInfoSync(dcmInfo) {
       SOPInstanceUID: dcmInfo.SOPInstanceUID,
       dcmPath: dcmInfo.dcmPath,
       syncId: dcmInfo.syncId,
-    } 
+    }
   })
   .then((result) => {
     if (result) {
-      return models.DcmInfo.update({isSynchronized:true}, {
+      return models.DcmInfo.update({ isSynchronized: true }, {
         where: {
           SOPInstanceUID: dcmInfo.SOPInstanceUID,
           dcmPath: dcmInfo.dcmPath,
@@ -77,16 +92,16 @@ export function updateDcmInfoSync(dcmInfo) {
         }
       })
     } else {
-      throw ["no such dcmInfo",dcmInfo];
+      throw ["no such dcmInfo", dcmInfo];
     }
   })
   .then((result) => {
-    if(!result[0]){
-      logger.error('err: ' + 'update failed' , dcmInfo)
+    if (!result[0]) {
+      logger.error('err: ' + 'update failed', dcmInfo)
     }
   })
   .catch((err) => {
-    logger.error('err:' , err)
+    logger.error('err:', err)
   });
 }
 
@@ -100,18 +115,58 @@ export function getDcmInfoBySyncId(SyncId) {
     return results;
   })
   .catch((err) => {
-    logger.error('err:' , err)
+    logger.error('err:', err)
+  });
+
+}
+
+export function countDcmInfoBySyncId(SyncId) {
+  var result = {};
+  return models.DcmInfo.findAndCountAll({
+    where: {
+      SyncId: SyncId,
+      isSynchronized: true
+    }
+  })
+  .then((r) => {
+    result.success = r;
+  })
+  .then(() => {
+    return models.DcmInfo.findAndCountAll({
+      where: {
+        SyncId: SyncId,
+        isSynchronized: false
+      },
+    })
+  })
+  .then((r) => {
+    result.failed = r;
+    return result;
+  })
+  .catch((err) => {
+    logger.error('err:', err)
   });
 }
 
-
-
-
-
-
-
-
-
+export function listDcmInfo(count, page) {
+  let result = {};
+  return sequelize.query(`select id,PatientID,PatientName,StudyInstanceUID,fileId,syncId,updatedAt,count(StudyInstanceUID) as num ` +
+    `from DcmInfos ` +
+    `group by syncId,StudyInstanceUID ` +
+    `order by updatedAt DESC,syncId DESC ` +
+    `limit ${count} ` +
+    `offset ${count*(page-1)};`,
+    { type: sequelize.QueryTypes.SELECT })
+  .then(r => {
+    result.uploadList = r;
+    return sequelize.query('select count(*) as num from (select * from DcmInfos group by syncId,StudyInstanceUID);',
+      { type: sequelize.QueryTypes.SELECT }
+    )
+  }).then(r =>{
+    result.total = r[0].num;
+    return result;
+  });
+}
 
 
 export function deleteHospitalNames(hospitalNameIds) {

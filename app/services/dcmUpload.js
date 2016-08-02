@@ -1,4 +1,5 @@
 import { util } from '../util';
+import * as cp from 'child_process';
 const logger = util.logger.getLogger('upload');
 import { serverApi } from '../services';
 import * as DcmInfo from '../modules/dcminfo'
@@ -39,19 +40,18 @@ function uploadDiomsByStudy(StudyInstanceUID, dcmInfos) {
     let ossCredential = result.data.ossCredential;
 
     // record into sqlite
-    for(let i in dcmInfos)
-    {
+    for (let i in dcmInfos) {
       let result2 = yield DcmInfo.createDcmInfo(dcmInfos[i]);
       console.log(result2);
     }
     //upload
-    //OSS.putOSSDcms(ossCredential,false,dcmInfos);
+    yield OSS.putOSSDcms(ossCredential, false, dcmInfos);
   });
 }
 
 
-function uploadDicoms(dcmInfos) {
-  var syncId = new Date().getTime().toString();
+function uploadDicoms(dcmInfos,sId) {
+  var syncId = sId ? sId : new Date().getTime().toString();
   dcmInfos.map((item) => {
     item.syncId = syncId;
   });
@@ -61,12 +61,28 @@ function uploadDicoms(dcmInfos) {
       logger.debug('---------->' + key);
       yield uploadDiomsByStudy(key, uploadSequence[key]);
     }
+    return {
+      dcmInfos: dcmInfos,
+      syncId: syncId,
+    };
   }).catch(err => {
     logger.error(err);
   });
 }
 
+function startAutoScanUpload(UPLOAD_DIR, transportId, delayTime) {
+  let autoScan = cp.fork('app/services/dcmAutoScanUpload.js', [UPLOAD_DIR, transportId, delayTime]);
+  return autoScan;
+}
+
+function stopAutoScanUpload(autoScan) {
+  autoScan.send('stop');
+  autoScan = null;
+}
+
 export {
   setInternal,
   uploadDicoms,
+  startAutoScanUpload,
+  stopAutoScanUpload,
 }

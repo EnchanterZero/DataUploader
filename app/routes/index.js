@@ -1,30 +1,19 @@
-var express = require('express');
-import * as dcmapi from '../services/dcmapi';
-import * as Oss from '../modules/oss';
-import * as DcmInfo from '../modules/dcminfo';
-import { parseDicom, uploadDioms } from '../services';
-var api = express.Router();
-var config = require('../../config');
-var co = require('co');
-var _ = require('lodash');
+import express from 'express';
+
 import authapi from './auth';
-import manualUploadApi from './manualUpload'
+import manualUploadApi from './manualUpload';
+import autoscanUploadApi from './autoscanUpload';
+import uploadStatusApi from './uploadStatus';
+import historyApi from './history';
 
-// var logger = config.logger;
-// var localTempfilePath = config.dcmTempDir;
-// var pullDcmsTopullStudyThreshold = config.pullDcmsTopullStudyThreshold;
-// var rePushTroubleCountThreshold = config.rePushTroubleCountThreshold;
-// var rePushTroubleWait = config.rePushTroubleWait;
+var api = express.Router();
 
-/**
- * chilld process to process autoscan
- */
+api.use('/', manualUploadApi);
+api.use('/index', manualUploadApi);
 
-
-api.use('/',manualUploadApi);
-api.use('/index',manualUploadApi);
-
-api.use('/auth',authapi);
-api.use('/manualUpload',manualUploadApi);
-
+api.use('/auth', authapi);
+api.use('/manualUpload', manualUploadApi);
+api.use('/autoscanUpload', autoscanUploadApi);
+api.use('/uploadStatus', uploadStatusApi);
+api.use('/history', historyApi);
 export default api;

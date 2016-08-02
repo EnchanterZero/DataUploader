@@ -78,7 +78,7 @@ export function create(sequelize, DataTypes) {
     collate: 'utf8_general_ci',
     indexes: [
       {
-        fields: ['dcmPath'],
+        fields: ['dcmPath' , 'syncId' , 'SOPInstanceUID'],
         unique: true,
       },
     ],
