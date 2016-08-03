@@ -1,12 +1,11 @@
 
 import ImageFrame from './ImageFrame';
 import ImageSeries from './ImageSeries';
-import { DicomParser, DicomWriter, DicomReceiver } from './dicom';
+import { DicomParser, DicomWriter } from './dicom';
 
 export {
   ImageFrame,
   ImageSeries,
   DicomParser,
   DicomWriter,
-  DicomReceiver,
 };

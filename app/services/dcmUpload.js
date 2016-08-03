@@ -19,7 +19,7 @@ function createFile(filepath, name, type, meta) {
   console.log(JSON.stringify(meta))
 }
 
-function uploadDiomsByStudy(StudyInstanceUID, dcmInfos) {
+function uploadDiomsByStudy(StudyInstanceUID, dcmInfos, options) {
 
   //console.log(dcmInfos);
   let data = {
@@ -45,12 +45,12 @@ function uploadDiomsByStudy(StudyInstanceUID, dcmInfos) {
       console.log(result2);
     }
     //upload
-    yield OSS.putOSSDcms(ossCredential, false, dcmInfos);
+    yield OSS.putOSSDcms(ossCredential, false, dcmInfos, options);
   });
 }
 
 
-function uploadDicoms(dcmInfos,sId) {
+function uploadDicoms(dcmInfos, sId, options) {
   var syncId = sId ? sId : new Date().getTime().toString();
   dcmInfos.map((item) => {
     item.syncId = syncId;
@@ -59,7 +59,7 @@ function uploadDicoms(dcmInfos,sId) {
   return co(function*() {
     for (var key in uploadSequence) {
       logger.debug('---------->' + key);
-      yield uploadDiomsByStudy(key, uploadSequence[key]);
+      yield uploadDiomsByStudy(key, uploadSequence[key], options ? options : {});
     }
     return {
       dcmInfos: dcmInfos,
@@ -70,14 +70,19 @@ function uploadDicoms(dcmInfos,sId) {
   });
 }
 
-function startAutoScanUpload(UPLOAD_DIR, transportId, delayTime) {
-  let autoScan = cp.fork('app/services/dcmAutoScanUpload.js', [UPLOAD_DIR, transportId, delayTime]);
+function startAutoScanUpload(UPLOAD_DIR, syncId, delayTime, option) {
+  let args = [UPLOAD_DIR, syncId, delayTime];
+  if(option && option.afterDelete === true){
+    args = [UPLOAD_DIR, syncId, delayTime, 'afterDelete=true'];
+  }
+  let autoScan = cp.fork('app/services/dcmAutoScanUpload.js', args);
   return autoScan;
 }
 
 function stopAutoScanUpload(autoScan) {
   autoScan.send('stop');
   autoScan = null;
+  return autoScan;
 }
 
 export {

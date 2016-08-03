@@ -1,0 +1,7 @@
+extends ../layout
+block content
+  div(ng-controller='AutoPushController')
+    h1 #{menu}
+    button.btn.btn-default(ng-click="startListen()") 开始
+    button.btn.btn-default(ng-click="stopListen()") 结束
+    h4 {{message}}

@@ -120,6 +120,31 @@ function autoScanController($scope, api, $interval) {
   };
 };
 
+
+/**
+ * AutoPushController
+ */
+'use strict';
+angular.module('Uploader').controller('AutoPushController', ['$scope', 'api', '$interval', autoPushController]);
+function autoPushController($scope, api, $interval) {
+  $scope.dir = '';
+  $scope.message = '';
+  $scope.syncId = '';
+
+  $scope.startListen = function () {
+    api.startListen({}).then(function (result) {
+      $scope.message = result.status;
+    })
+  }
+
+  $scope.stopListen = function () {
+    api.stopListen({}).then(function (result) {
+      $scope.message = result.status;
+    });
+  }
+};
+
+
 /**
  * HistoryController
  */

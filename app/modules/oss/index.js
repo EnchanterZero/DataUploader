@@ -59,9 +59,21 @@ function putOSSDcmFile(ossClient ,dcmInfo, retry = 2) {
     throw new Error(`uploading ${filepath} to ${objectKey} failed`);
   });
 }
-
-export function putOSSDcms(credential, internal, dcmInfos) {
+/**
+ * 
+ * @param credential {object} from API Server
+ * @param internal {boolean}
+ * @param dcmInfos {array} Array of DcmInfo
+ * @param options {object} options.afterDelete: default false
+ * @returns none 
+ */
+export function putOSSDcms(credential, internal, dcmInfos,options) {
   logger.info('getOSSObject internal =', internal);
+  let afterDelete = false;
+  if(options && options.afterDelete === true) {
+    afterDelete = true;
+  }
+  logger.info('getOSSObject options.afterDelete =', afterDelete);
   const client = getOSSClient(credential, internal);
   let fileIds = _.uniq(dcmInfos.map((item) =>{
     return item.fileId
@@ -77,7 +89,12 @@ export function putOSSDcms(credential, internal, dcmInfos) {
       .then((dcmInfo) =>{
         return co(function* () {
           yield DcmInfo.updateDcmInfoSync(dcmInfo);
-          logger.info('setDcmSynchronized : ', dcmInfo.SOPInstanceUID,dcmInfo.syncId);
+          logger.info('update DcmInfo Synchronized : ', dcmInfo.SOPInstanceUID,dcmInfo.syncId);
+          if(afterDelete){
+            yield util.remove(dcmInfo.dcmPath);
+            logger.info('remove temp DcmInfo : ', dcmInfo.dcmPath ,dcmInfo.syncId);
+          }
+          
         });
       })
       .catch((err) =>{

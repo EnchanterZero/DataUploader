@@ -10,20 +10,19 @@ function getAutoScanPage(req, res, next) {
 }
 
 function startAutoScan(req, res, next) {
-  var transportId = new Date().getTime();
+  var syncId = new Date().getTime();
   res.json({
     code: 200,
-    data: { syncId: transportId }
+    data: { syncId: syncId }
   });
   if (!autoScan) {
-    autoScan = dcmUpload.startAutoScanUpload(AUTOSCAN_DIR, transportId.toString(), 5000);
+    autoScan = dcmUpload.startAutoScanUpload(AUTOSCAN_DIR, syncId.toString(), 5000);
   }
 }
 
 function stopAutoScan(req, res, next) {
   if (autoScan) {
-    dcmUpload.stopAutoScanUpload(autoScan);
-    autoScan = null;
+    autoScan = dcmUpload.stopAutoScanUpload(autoScan);
   }
   res.json({
     code: 200,

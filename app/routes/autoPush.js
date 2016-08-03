@@ -1,18 +1,26 @@
 import { Router } from 'express';
-import { dcmUpload } from '../services';
+import { dcmAutoPush } from '../services';
 const autoPushApi = Router();
 
-
+let autoPush = null;
 function getAutoPushPage(req, res, next) {
-  res.render('templates/autoScanUpload', { title: 'Uploader', menu: 'AutoScan' });
+  res.render('templates/autoPush', { title: 'Uploader', menu: 'autoPush' });
 }
 
 function startAutoPush(req, res, next) {
-
+  let result = dcmAutoPush.openPort();
+  res.json({
+    code: 200,
+    data: result,
+  });
 }
 
 function stopAutoPush(req, res, next) {
-  
+  let result = dcmAutoPush.closePort();
+  res.json({
+    code: 200,
+    data: result,
+  });
 }
 
 autoPushApi.get('/', getAutoPushPage);

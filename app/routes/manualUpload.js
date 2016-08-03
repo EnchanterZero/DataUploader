@@ -47,7 +47,7 @@ function startUpload(req, res, next) {
     data: { syncId: syncId }
   });
   co(function*() {
-    let r = yield dcmUpload.uploadDicoms(dcmInfos, syncId);
+    let r = yield dcmUpload.uploadDicoms(dcmInfos, syncId,{afterDelete:false});
     var uploadResult = yield DcmInfo.countDcmInfoBySyncId(r.syncId);
   }).catch((err) => {
     logger.error(err);

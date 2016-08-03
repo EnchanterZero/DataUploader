@@ -199,4 +199,26 @@ angular.module('Uploader')
     return $http(option)
     .then(checkStatusCode)
   }
+  
+  this.startListen = function (query) {
+    var option = {
+      method: 'POST',
+      url:   '/autoPush/start',
+      data: query,
+    };
+    authorize(option);
+    return $http(option)
+    .then(checkStatusCode)
+  }
+
+  this.stopListen = function (query) {
+    var option = {
+      method: 'POST',
+      url:   '/autoPush/stop',
+      data: query,
+    };
+    authorize(option);
+    return $http(option)
+    .then(checkStatusCode)
+  }
 }]);
