@@ -16,11 +16,7 @@ function startAutoPush(req, res, next) {
 }
 
 function stopAutoPush(req, res, next) {
-  let result = dcmAutoPush.closePort();
-  res.json({
-    code: 200,
-    data: result,
-  });
+  let result = dcmAutoPush.closePort(res);
 }
 
 autoPushApi.get('/', getAutoPushPage);

@@ -1,8 +1,33 @@
 <div ng-controller="UploadController">
   <h1 class="page-header">上传图像</h1>
-  <div>已监控本地文件夹：D:\DICOM数据<br/>请将DICOM文件拷贝至上述文件内，DICOM文件将会自动上传至CuraCloud云服务器。<br/>
-    如需要修改监控文件夹请点击
-    <button class="btn btn-sm btn-primary">修改路径</button>
+  <div>
+    请选择一个文件夹，点击读取后进行上传,DICOM文件将会上传至CuraCloud云服务器.<br/>
+    <h4>STEP 1 : 选择文件夹</h4>
+    <button class="btn btn-sm btn-primary" ng-click="browseFolder()">选 择</button>
+    <p ng-hide="dcmDir==''">您选择的文件夹：{{dcmDir}}</p>
+    <h4>STEP 2 : 读取dicom文件</h4>
+    <button ng-disabled="dcmDir==''" class="btn btn-sm btn-primary" ng-click="read()">读 取</button>
+    <div ng-hide="dcmDir=='' || readResults.studies==null">
+      <table class="table table-striped">
+        <thead>
+        <tr>
+          <th>#</th>
+          <th>患者姓名</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr ng-repeat='item in readResults.studies'>
+          <td>{{item.StudyInstanceUID}}</td>
+          <td>{{item.PatientName}}</td>
+        </tr>
+        </tbody>
+      </table>
+      <p>dcm文件数量: {{readResults.dcmCount}}</p>
+    </div>
+    <h4>STEP 3 : 进行上传</h4>
+    <button ng-disabled="dcmDir=='' || readResults.studies==null" class="btn btn-sm btn-primary" ng-click="upload()">上传</button>
+    <p>{{procession}}</p>
+
   </div>
 
 </div>

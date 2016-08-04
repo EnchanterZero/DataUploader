@@ -6,6 +6,7 @@ var session = require('express-session');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
+import { serverApi } from './services'
 import api from './routes';
 
 var app = express();
@@ -26,8 +27,22 @@ app.use(session({
   resave: false,
   saveUninitialized: true,
   cookie: { secure: true }
-}))
-
+}));
+app.use((req, res, next) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST,GET,OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'origin, content-type, accept');
+  next();
+});
+app.use((req, res, next) => {
+  if(req.params.token){
+    serverApi.setAuthToken(req.params.token);
+  }
+  else if(req.body.token) {
+    serverApi.setAuthToken(req.body.token);
+  }
+  next();
+});
 app.use(api);
 
 // catch 404 and forward to error handler

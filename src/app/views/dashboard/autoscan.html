@@ -3,29 +3,15 @@
     width: 100%;
   }
 </style>
-<div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-  <h1 class="page-header">自动推送</h1>
+<div ng-controller="AutoScanController">
+  <h1 class="page-header">监听文件夹</h1>
   <div>
-    自动推送服务已启动，请在图像服务器或工作站上设置推送服务器的地址：<br/>
-    IP：192.168.1.123<br/>
-    Port: 11112<br/>
+    已监控本地文件夹：{{dcmDir}}<br/>请将DICOM文件拷贝至上述文件内，DICOM文件将会自动上传至CuraCloud云服务器。<br/>
+    如需要修改监控文件夹请点击
+    <button ng-disabled="state != 0 " class="btn btn-sm btn-primary" ng-click="browseFolder()">修改路径</button>
+    <button ng-disabled="dcmDir=='' || state != 0 " class="btn btn-sm btn-primary" ng-click="startScan()">开始监控</button>
+    <button ng-disabled="dcmDir=='' || state != 1 " class="btn btn-sm btn-primary" ng-click="endScan()">停止监控</button>
+    <p>{{procession}}</p>
+    <p>{{message}}</p>
   </div>
-  <!-- <h2 class="sub-header">过滤条件</h2>
-  <div class="table-responsive">
-    <form class="form-horizontal" role="form">
-       <div class="form-group">
-          <label class="col-sm-3 control-label">BodyPartExamined</label>
-          <div class="col-sm-9">
-             <input type="text" class="form-control"
-                value="HEART">
-          </div>
-       </div>
-       <div class="form-group">
-          <div class="col-sm-offset-3 col-sm-3">
-             <button type="button" class="btn btn-default">添加</button>
-             <button type="submit" class="btn btn-default">保存</button>
-          </div>
-       </div>
-    </form>
-  </div> -->
 </div>

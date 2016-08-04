@@ -11,23 +11,29 @@ function getAutoScanPage(req, res, next) {
 
 function startAutoScan(req, res, next) {
   var syncId = new Date().getTime();
+  let data = req.body;
+  const scanDir = data.dir;
   res.json({
     code: 200,
     data: { syncId: syncId }
   });
   if (!autoScan) {
-    autoScan = dcmUpload.startAutoScanUpload(AUTOSCAN_DIR, syncId.toString(), 5000);
+    autoScan = dcmUpload.startAutoScanUpload(scanDir, syncId.toString(), 5000,{afterDelete:false,uploadType:'AutoScanUpload'});
   }
 }
 
 function stopAutoScan(req, res, next) {
   if (autoScan) {
+    autoScan.on('message',m =>{
+      if(m == 'autoUpload stopped'){
+        res.json({
+          code: 200,
+          data: {}
+        });
+      }
+    })
     autoScan = dcmUpload.stopAutoScanUpload(autoScan);
   }
-  res.json({
-    code: 200,
-    data: {}
-  });
 }
 
 autoScanUploadApi.get('/', getAutoScanPage);

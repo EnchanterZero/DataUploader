@@ -71,11 +71,29 @@ function uploadDicoms(dcmInfos, sId, options) {
 }
 
 function startAutoScanUpload(UPLOAD_DIR, syncId, delayTime, option) {
-  let args = [UPLOAD_DIR, syncId, delayTime];
-  if(option && option.afterDelete === true){
-    args = [UPLOAD_DIR, syncId, delayTime, 'afterDelete=true'];
+  let token = serverApi.getAuthToken();
+  if(!token) {
+    throw new Error('AUTO SCAN NO TOKEN');
+    return;
   }
+  let afterDelete = false;
+  let uploadType = '';
+  if(option && option.afterDelete === true){
+    afterDelete = false;
+  }
+  if(option && option.uploadType){
+    uploadType = option.uploadType;
+  }
+  let args = [
+    `dir=${UPLOAD_DIR}`,
+    `syncId=${syncId}`,
+    `delayTime=${delayTime}`,
+    `afterDelete=${afterDelete}`,
+    `token=${token}`,
+    `uploadType=${uploadType}`];
+  
   let autoScan = cp.fork('app/services/dcmAutoScanUpload.js', args);
+  console.log('autoScan child process ID : ' + autoScan.pid);
   return autoScan;
 }
 

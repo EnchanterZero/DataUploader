@@ -14,9 +14,10 @@ function getUploadPage(req, res, next) {
 
 function readDcm(req, res, next) {
   let data = req.body;
-  console.log(data.dir);
+  const readDir = data.dir;
+  console.log('readDcm:' +  readDir);
   co(function*() {
-    var dcmInfos = yield dcmParse.parseDicom(UPLOAD_DIR);
+    var dcmInfos = yield dcmParse.parseDicom(readDir);
     var studies = dcmInfos.map((item) => {
       return {
         PatientName: item.PatientName,
@@ -50,7 +51,7 @@ function startUpload(req, res, next) {
     let r = yield dcmUpload.uploadDicoms(dcmInfos, syncId,{afterDelete:false});
     var uploadResult = yield DcmInfo.countDcmInfoBySyncId(r.syncId);
   }).catch((err) => {
-    logger.error(err);
+    logger.error(err,err.stack);
   });
 }
 manualUploadApi.get('/', getUploadPage);

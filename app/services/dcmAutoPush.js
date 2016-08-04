@@ -36,7 +36,7 @@ function openPort() {
     
     //start child process to autoScan
     syncId = new Date().getTime();
-    autoScan = dcmUpload.startAutoScanUpload(TEMP_PATH, syncId, 5000, {afterDelete:true});
+    autoScan = dcmUpload.startAutoScanUpload(TEMP_PATH, syncId, 5000, {afterDelete:true,uploadType:'AutoPushUpload'});
 
     return {
       status:'opened',
@@ -45,8 +45,8 @@ function openPort() {
   }
 }
 
-function closePort() {
-  //storescp -b DCM4CHEE@localhost:11112 --directory ./tmp
+function closePort(res) {
+
   if(receiver && autoScan){
     logger.debug('kill the child process and close Port ' + RECEIVE_PORT);
     receiver.kill();
@@ -54,6 +54,14 @@ function closePort() {
     receiver.removeAllListeners('error');
     receiver.removeAllListeners('exit');
     receiver = null;
+    autoScan.on('message',m =>{
+      if(m == 'autoUpload stopped'){
+        res.json({
+          code: 200,
+          data: {}
+        });
+      }
+    });
     autoScan = dcmUpload.stopAutoScanUpload(autoScan);
 
     return {

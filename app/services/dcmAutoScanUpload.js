@@ -1,42 +1,89 @@
 import co from 'co';
-import fs from 'fs';
+import { dcmDiff, dcmUpload,serverApi }  from '../services';
 import Promise from 'bluebird';
-import path from 'path';
-import { dcmDiff, dcmUpload }  from '../services';
 import { util } from '../util';
 var logger = util.logger.getLogger('cp_autoScan');
 
-console.log(process.argv);
-var AUTOSCAN_DIR = process.argv[2];
-var syncId = process.argv[3];
-var DELAY_TIME = process.argv[4];
-var AFTER_DELETE = process.argv[5];
+/**
+ * parse args
+ * example : node dcmAutoScanUpload dir=PATH syncId=XXX delayTime=NUMBER afterDelete=BOOLEAN token=8WSA76D987G452F3B
+ */
+
+//params
+let _dir = '';
+let _syncId = '';
+let _delayTime = 5000;
+let _afterDelete = false;
+let _token = '';
+let _uploadType = '';
+
+//loop controller
 var FLAG = true;
+
+let args = util._.cloneDeep(process.argv);
+args.shift();
+args.shift();
+console.log(args);
+args.map(arg => {
+  if (arg) {
+    let s = arg.split("=");
+    if (s[0] == 'dir') {
+      _dir = s[1];
+    }
+    if (s[0] == 'syncId') {
+      _syncId = s[1];
+    }
+    if (s[0] == 'delayTime') {
+      _delayTime = Number(s[1]);
+    }
+    if (s[0] == 'afterDelete') {
+      if (s[1] === 'true')
+        _afterDelete = true;
+    }
+    if (s[0] == 'token') {
+      _token = s[1];
+    }
+    if (s[0] == 'uploadType') {
+      _uploadType = s[1];
+    }
+  }
+});
+
+if (!_dir || !_syncId || !_token) {
+  process.send('autoUpload error');
+  process.send('autoUpload stopped');
+  process.exit();
+}
+console.log(_dir);
+console.log(_syncId);
+console.log(_delayTime);
+console.log(_afterDelete);
+console.log(_token);
+console.log(_uploadType);
+
 
 co(function*() {
   /**
    * main loop
    */
+  serverApi.setAuthToken(_token);
   while (FLAG) {
     logger.debug('[cp_autoScan]--------new round of auto scan');
     //get diff
-    var result = yield dcmDiff.getDiff(AUTOSCAN_DIR, syncId);
+    var result = yield dcmDiff.getDiff(_dir, _syncId);
     var newDcmPaths = result.newDcmPaths;
     var newDcmInfos = result.newDcmInfos;
     logger.debug('[cp_autoScan]--------find new dicom file: ' + newDcmPaths.length, newDcmPaths);
     //upload
-    let afterDelete = false;
-    if (AFTER_DELETE) {
-      if (AFTER_DELETE == 'afterDelete=true')
-        afterDelete = true;
-    }
-    dcmUpload.uploadDicoms(newDcmInfos, syncId, { afterDelete: afterDelete });
+    dcmUpload.uploadDicoms(newDcmInfos, _syncId, { afterDelete: _afterDelete,uploadType:_uploadType });
     //delay
-    logger.debug('[cp_autoScan]--------sleep for ' + DELAY_TIME + 'ms\n');
-    yield Promise.delay(DELAY_TIME);
+     logger.debug('[cp_autoScan]--------sleep for ' + _delayTime + 'ms\n');
+     yield Promise.delay(_delayTime);
   }
+  process.send('autoUpload stopped');
+  process.exit();
 }).catch((err)=> {
-  console.log(err);
+  console.log(err, err.stack);
 });
 
 process.on('message', function (m) {

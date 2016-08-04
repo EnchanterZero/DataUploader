@@ -1,6 +1,9 @@
+/**
+ * service AuthService
+ */
 (function () {
 
-  angular.module('Uploader')
+  angular.module('Uploader.services')
   .service('AuthService', ['$rootScope', '$state', '$window','api', 'Session', authService]);
 
   function authService($rootScope, $state, $window, api, Session) {
@@ -16,7 +19,7 @@
     this.gotoLogin = function () {
       this.useCredentials(null, null);
       var currentState = $state.current.name;
-      $window.location.href = 'views/signin/auth.html';
+      $window.location.href = './auth.html';
     }
 
     this.loadCredentials = function () {
@@ -53,7 +56,7 @@
  */
 (function () {
 
-  angular.module('Uploader')
+  angular.module('Uploader.services')
   .service('Session', [function () {
     var SESSION_STORE_NAME = 'session_store';
 
@@ -91,7 +94,7 @@
  */
 (function () {
 
-  angular.module('Uploader')
+  angular.module('Uploader.services')
   .service('api', ['$http', '$rootScope','serverUrl','Session','$window', function ($http, $rootScope,serverUrl,Session,$window) {
     var LOCAL_TOKEN_KEY = 'token';
     var LOCAL_CURRENT_USER = 'currentUser';
@@ -145,7 +148,7 @@
         Session.set(LOCAL_CURRENT_USER, result.data.data.currentUser);
         api.setAuthToken(result.data.data.token);
         console.log('login success!!!!!!');
-        $window.location.href = '/index';
+        $window.location.href = './index.html';
       })
       .catch(function (err) {
         $scope.errorMessage = err.message;
@@ -161,16 +164,19 @@
       return $http(options)
       .then(checkStatusCode)
       .then(() =>{
-        api.token = null;
-        $window.location.href = '/auth';
+        Session.set(LOCAL_TOKEN_KEY, null);
+        Session.set(LOCAL_CURRENT_USER, null);
+        api.setAuthToken(null);
+        console.log('logout success!!!!!!');
+        $window.location.href = './auth.html';
       });
     }
 
-    this.readDcm = function (query) {
+    this.readDcm = function (data) {
       var options = {
         method: 'POST',
         url: serverUrl + '/manualUpload/read',
-        data: query,
+        data: data,
       }
       authorize(options)
       return $http(options)
@@ -186,9 +192,6 @@
       authorize(option);
       return $http(option)
       .then(checkStatusCode)
-      .then(function (result) {
-        return result;
-      })
     }
 
     this.testCreateFile = function () {
@@ -207,9 +210,6 @@
       console.log(option);
       return $http(option)
       .then(checkStatusCode)
-      .then(function (result) {
-        console.log(result);
-      })
     }
 
     this.startScan = function (query) {
