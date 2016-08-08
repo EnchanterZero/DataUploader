@@ -6,12 +6,12 @@
 <div ng-controller="AutoScanController">
   <h1 class="page-header">监听文件夹</h1>
   <div>
-    已监控本地文件夹：{{dcmDir}}<br/>请将DICOM文件拷贝至上述文件内，DICOM文件将会自动上传至CuraCloud云服务器。<br/>
+    已监控本地文件夹：{{autoScanControllerScope.dcmDir}}<br/>请将DICOM文件拷贝至上述文件内，DICOM文件将会自动上传至CuraCloud云服务器。<br/>
     如需要修改监控文件夹请点击
-    <button ng-disabled="state != 0 " class="btn btn-sm btn-primary" ng-click="browseFolder()">修改路径</button>
-    <button ng-disabled="dcmDir=='' || state != 0 " class="btn btn-sm btn-primary" ng-click="startScan()">开始监控</button>
-    <button ng-disabled="dcmDir=='' || state != 1 " class="btn btn-sm btn-primary" ng-click="endScan()">停止监控</button>
-    <p>{{procession}}</p>
-    <p>{{message}}</p>
+    <button ng-disabled="autoScanControllerScope.state != 0 " class="btn btn-sm btn-primary" ng-click="autoScanControllerScope.browseFolder()">修改路径</button>
+    <button ng-disabled="autoScanControllerScope.dcmDir=='' || autoScanControllerScope.state != 0 " class="btn btn-sm btn-primary" ng-click="autoScanControllerScope.startScan()">开始监控</button>
+    <button ng-disabled="autoScanControllerScope.dcmDir=='' || autoScanControllerScope.state != 1 " class="btn btn-sm btn-primary" ng-click="autoScanControllerScope.endScan()">停止监控</button>
+    <p>{{autoScanControllerScope.procession}}</p>
+    <p>{{autoScanControllerScope.message}}</p>
   </div>
 </div>

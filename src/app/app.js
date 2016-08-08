@@ -42,32 +42,26 @@
       .state('status', {
         url: "/status",
         templateUrl: 'views/dashboard/status.html',
-        controller: 'StatusController'
       })
       .state('upload', {
         url: "/upload",
         templateUrl: 'views/dashboard/upload.html',
-        controller: 'UploadController'
       })
       .state('autoscan', {
         url: "/autoscan",
         templateUrl: 'views/dashboard/autoscan.html',
-        controller: 'AutoScanController'
       })
       .state('autopush', {
         url: "/autopush",
         templateUrl: 'views/dashboard/autopush.html',
-        controller: 'AutoPushController'
       })
       .state('history', {
         url: "/history",
         templateUrl: 'views/dashboard/history.html',
-        controller: 'HistoryController'
       })
       .state('settings', {
         url: "/settings",
         templateUrl: 'views/dashboard/settings.html',
-        controller: 'SettingsController'
       })
     }]);
 })();
@@ -100,8 +94,8 @@
   app.config(['$stateProvider', function ($stateProvider) {
     console.log('app.config');
   }])
-  .run(['Session', 'AuthService', 'SettingService', '$state', '$timeout', '$window', '$rootScope',
-    function (Session, AuthService, SettingService, $state, $timeout, $window, $rootScope) {
+  .run(['Session', 'AuthService', 'SettingService', '$state', '$timeout', '$interval', '$window', '$rootScope',
+    function (Session, AuthService, SettingService, $state, $timeout, $interval, $window, $rootScope) {
       console.log('app.run');
       AuthService.loadCredentials();
       SettingService.loadSettings();
@@ -112,10 +106,21 @@
         }, 0);
       }
       $rootScope.$on('$stateChangeStart',
-        function(event, toState, toParams, fromState, fromParams){ 
-          console.log('$stateChangeStart'); 
+        function (event, toState, toParams, fromState, fromParams) {
+          if ($rootScope.statusControllerScope && $rootScope.statusControllerScope.intervalId) {
+            //console.log('$interval pause : ',$rootScope.statusControllerScope.intervalId);
+            $interval.cancel($rootScope.statusControllerScope.intervalId);
+          }
+          if ($rootScope.uploadControllerScope && $rootScope.uploadControllerScope.intervalId) {
+            //console.log('$interval pause : ',$rootScope.autoScanControllerScope.intervalId);
+            $interval.cancel($rootScope.uploadControllerScope.intervalId);
+          }
+          if ($rootScope.autoScanControllerScope && $rootScope.autoScanControllerScope.intervalId) {
+            //console.log('$interval pause : ',$rootScope.autoScanControllerScope.intervalId);
+            $interval.cancel($rootScope.autoScanControllerScope.intervalId);
+          }
         }
-    );
+      );
     }]);
 
 })();

@@ -41,22 +41,29 @@
 (function () {
 
   angular.module('Uploader.views')
-  .controller('StatusController', ['$scope', 'api', '$interval', uploadController]);
-  function uploadController($scope, api, $interval) {
-    $scope.uploadingList = [];
-    var intervalId = $interval(function () {
+  .controller('StatusController', ['$rootScope', 'api', '$interval', statusController]);
+  function statusController($rootScope, api, $interval) {
+    //$rootScope.statusControllerScope --> $scope
+    var getAllStatus = function ($scope) {
       return api.getAllUploadStatus().then(
         function (result) {
           $scope.uploadingList = result.uploadingList;
-        })
-    }, 500);
-
-    var getAllStatus = function () {
-      return api.getAllUploadStatus().then(
-        function (result) {
-          $scope.uploadingList = result.uploadingList;
-        })
-    };
+        });
+    }
+    if (!$rootScope.statusControllerScope) {
+      $rootScope.statusControllerScope = {};
+      var $scope = $rootScope.statusControllerScope;
+      $scope.uploadingList = [];
+      $scope.intervalId = $interval(function () {
+        getAllStatus($scope);
+      }, 500);
+    }else if ($rootScope.statusControllerScope.intervalId) {
+      var $scope = $rootScope.statusControllerScope;
+      $scope.intervalId = $interval(function () {
+        getAllStatus($scope);
+      }, 500);
+      //console.log('$interval continue : ', $rootScope.autoScanControllerScope.intervalId);
+    }
   }
 
 })();
@@ -65,63 +72,81 @@
  */
 (function () {
 
-  angular.module('Uploader.views').controller('UploadController', ['$scope', 'api', '$interval', uploadController]);
-  function uploadController($scope, api, $interval) {
-    $scope.dcmDir = '';
-    $scope.readResults = {
-      studies: null,
-      dcmCount: 0,
-      dcmInfos: null,
-      syncId: '',
-    }
-    $scope.procession = '';
-    var intervalId = null;
-
-    $scope.read = function () {
-      api.readDcm({ dir: $scope.dcmDir })
-      .then(function (result) {
-        $scope.readResults.studies = result.studies;
-        $scope.readResults.dcmCount = result.dcmInfos.length;
-        $scope.readResults.dcmInfos = result.dcmInfos;
-      });
-    };
-    $scope.upload = function () {
-      api.uploadFile({ dcmInfos: $scope.readResults.dcmInfos }).then(function (result) {
-        $scope.readResults.syncId = result.syncId;
-        intervalId = $interval(getStatus, 500);
-      });
-    }
-    var getStatus = function () {
+  angular.module('Uploader.views').controller('UploadController', ['$rootScope', 'api', '$interval', uploadController]);
+  function uploadController($rootScope, api, $interval) {
+    //$rootScope.uploadControllerScope --> $scope
+    var getStatus = function ($scope) {
       syncId = $scope.readResults.syncId;
       return api.getUploadStatus(syncId).then(
         function (result) {
           $scope.procession = result.success + '/' + $scope.readResults.dcmCount;
-          if (result.success == $scope.readResults.dcmCount && intervalId != null) {
-            $interval.cancel(intervalId);
+          if (result.success == $scope.readResults.dcmCount && $scope.intervalId != null) {
+            $interval.cancel($scope.intervalId);
             $scope.procession = 'upload finish';
           }
         })
     };
-    $scope.browseAndUpload = function () {
-      $scope.dcmDir = '/Users/intern07/Desktop/dcms/test';
-      api.readDcm({ dir: $scope.dcmDir })
-      .then(function (result) {
-        $scope.readResults.studies = result.studies;
-        $scope.readResults.dcmCount = result.dcmInfos.length;
-        $scope.readResults.dcmInfos = result.dcmInfos;
 
+    if (!$rootScope.uploadControllerScope) {
+      $rootScope.uploadControllerScope = {};
+      var $scope = $rootScope.uploadControllerScope;
+      $scope.dcmDir = '';
+      $scope.readResults = {
+        studies: null,
+        dcmCount: 0,
+        dcmInfos: null,
+        syncId: '',
+      }
+      $scope.procession = '';
+      $scope.working = false;
+      $scope.intervalId = null;
+
+      $scope.read = function () {
+        api.readDcm({ dir: $scope.dcmDir })
+        .then(function (result) {
+          $scope.readResults.studies = result.studies;
+          $scope.readResults.dcmCount = result.dcmInfos.length;
+          $scope.readResults.dcmInfos = result.dcmInfos;
+        });
+      };
+      $scope.upload = function () {
         api.uploadFile({ dcmInfos: $scope.readResults.dcmInfos }).then(function (result) {
           $scope.readResults.syncId = result.syncId;
-          intervalId = $interval(getStatus, 500);
+          $scope.intervalId = $interval(function () {
+            getStatus($scope);
+          }, 500);
         });
+      }
+      $scope.browseAndUpload = function () {
+        $scope.dcmDir = '/Users/intern07/Desktop/dcms/test';
+        api.readDcm({ dir: $scope.dcmDir })
+        .then(function (result) {
+          $scope.readResults.studies = result.studies;
+          $scope.readResults.dcmCount = result.dcmInfos.length;
+          $scope.readResults.dcmInfos = result.dcmInfos;
 
-      });
-    }
-    $scope.browseFolder = function (path) {
-      $scope.dcmDir = '/Users/intern07/Desktop/dcms/test';
-    }
+          api.uploadFile({ dcmInfos: $scope.readResults.dcmInfos }).then(function (result) {
+            $scope.readResults.syncId = result.syncId;
+            $scope.intervalId = $interval(function () {
+              getStatus($scope);
+            }, 500);
+          });
 
+        });
+      }
+      $scope.browseFolder = function (path) {
+        $scope.dcmDir = '/Users/intern07/Desktop/dcms/test';
+      };
+
+    }else if ($rootScope.uploadControllerScope.intervalId) {
+      var $scope = $rootScope.uploadControllerScope;
+      $scope.intervalId = $interval(function () {
+        getStatus($scope);
+      }, 500);
+      //console.log('$interval continue : ', $rootScope.autoScanControllerScope.intervalId);
+    }
   }
+
 
 })();
 
@@ -131,51 +156,68 @@
 (function () {
 
   'use strict';
-  angular.module('Uploader.views').controller('AutoScanController', ['$scope', 'api', '$interval','$rootScope', autoScanController]);
-  function autoScanController($scope, api, $interval,$rootScope) {
-    var WORKING = 1, STOPPING = -1, STOPPED = 0
-    var intervalId = null;
-
-    $scope.dcmDir = '';
-    $scope.procession = '';
-    $scope.syncId = '';
-    $scope.state = STOPPED;
-    $scope.message = '';
-    $scope.startScan = function () {
-
-      api.startScan({ dir: $scope.dcmDir }).then(function (result) {
-        console.log(result);
-        $scope.state = WORKING;
-        $scope.message = '文件夹监控已打开';
-        $scope.syncId = result.syncId;
-        intervalId = $interval(getStatus, 500);
-      });
-    }
-    $scope.endScan = function () {
-      api.endScan({}).then(function (result) {
-        //console.log(result.file);
-        $scope.state = STOPPED;
-        $scope.message = '文件夹监控已关闭';
-      });
-      $scope.state = STOPPING;
-      $scope.message = '正在关闭对文件夹的监控...'
-    }
-    $scope.browseFolder = function (path) {
-      $scope.dcmDir = '/Users/intern07/Desktop/dcms/autoscan';
-    }
-
-    var getStatus = function () {
+  angular.module('Uploader.views').controller('AutoScanController', ['$scope', 'api', '$interval', '$rootScope', autoScanController]);
+  function autoScanController($scope, api, $interval, $rootScope) {
+    //$rootScope.autoScanControllerScope --> $scope
+    var WORKING = 1, STOPPING = -1, STOPPED = 0;
+    var getStatus = function ($scope) {
       var syncId = $scope.syncId;
       return api.getUploadStatus(syncId).then(
         function (result) {
           $scope.procession = result.success + '/' + result.total;
-          if (result.success == result.total && intervalId != null && $scope.state == STOPPED) {
-            $interval.cancel(intervalId);
+          if (result.success == result.total && $scope.intervalId != null && $scope.state == STOPPED) {
+            $interval.cancel($scope.intervalId);
+            //console.log('$interval stop : ', $scope.intervalId);
+            $scope.intervalId = null;
             $scope.procession = 'upload finish';
           }
         })
     };
-  };
+    if (!$rootScope.autoScanControllerScope) {
+      $rootScope.autoScanControllerScope = {};
+      var $scope = $rootScope.autoScanControllerScope;
+      $scope.intervalId = null;
+
+      $scope.dcmDir = '';
+      $scope.procession = '';
+      $scope.syncId = '';
+      $scope.state = STOPPED;
+      $scope.message = '';
+      $scope.startScan = function () {
+
+        api.startScan({ dir: $scope.dcmDir }).then(function (result) {
+          console.log(result);
+          $scope.state = WORKING;
+          $scope.message = '文件夹监控已打开';
+          $scope.syncId = result.syncId;
+          $scope.intervalId = $interval(function () {
+            getStatus($scope);
+          }, 500);
+        });
+      }
+      $scope.endScan = function () {
+        api.endScan({}).then(function (result) {
+          //console.log(result.file);
+          $scope.state = STOPPED;
+          $scope.message = '文件夹监控已关闭';
+        });
+        $scope.state = STOPPING;
+        $scope.message = '正在关闭对文件夹的监控...'
+      }
+      $scope.browseFolder = function (path) {
+        $scope.dcmDir = '/Users/intern07/Desktop/dcms/autoscan';
+      }
+
+
+    }
+    else if ($rootScope.autoScanControllerScope.intervalId) {
+      var $scope = $rootScope.autoScanControllerScope;
+      $scope.intervalId = $interval(function () {
+        getStatus($scope);
+      }, 500);
+      //console.log('$interval continue : ', $rootScope.autoScanControllerScope.intervalId);
+    }
+  }
 
 })();
 
@@ -188,28 +230,32 @@
   'use strict';
   angular.module('Uploader.views').controller('AutoPushController', ['$scope', 'api', '$rootScope', '$interval', autoPushController]);
   function autoPushController($scope, api, $rootScope, $interval) {
-    $scope.PACSServerIP = $rootScope.$settings.PACSServerIP;
-    $scope.PACSServerPort = $rootScope.$settings.PACSServerPort;
+    //$rootScope.autoPushControllerScope --> $scope
     var WORKING = 1, STOPPING = -1, STOPPED = 0;
-    $scope.state = STOPPED;
-    $scope.message = '';
+    if (!$rootScope.autoPushControllerScope) {
+      $rootScope.autoPushControllerScope = {};
+      var $scope = $rootScope.autoPushControllerScope;
+      
+      $scope.state = STOPPED;
+      $scope.message = '';
 
-    $scope.startListen = function () {
-      api.startListen({}).then(function (result) {
-        $scope.state = WORKING;
-        $scope.message = '自动推送服务已启动';
-      })
-    }
+      $scope.startListen = function () {
+        api.startListen({}).then(function (result) {
+          $scope.state = WORKING;
+          $scope.message = '自动推送服务已启动';
+        })
+      }
 
-    $scope.stopListen = function () {
-      api.stopListen({}).then(function (result) {
-        $scope.state = STOPPED;
-        $scope.message = '自动推送服务已关闭';
-      });
-      $scope.state = STOPPING;
-      $scope.message = '正在关闭自动推送服务...'
+      $scope.stopListen = function () {
+        api.stopListen({}).then(function (result) {
+          $scope.state = STOPPED;
+          $scope.message = '自动推送服务已关闭';
+        });
+        $scope.state = STOPPING;
+        $scope.message = '正在关闭自动推送服务...'
+      }
     }
-  };
+  }
 
 })();
 
@@ -259,6 +305,7 @@
 
   angular.module('Uploader.views').controller('SettingsController', ['$scope', '$rootScope', 'SettingService', 'api', settingController]);
   function settingController($scope, $rootScope, SettingService, api) {
+    console.log('setting!!!!!!');
     $scope.PACSProvider = $rootScope.$settings.PACSProvider;
     $scope.PACSServerIP = $rootScope.$settings.PACSServerIP;
     $scope.PACSServerPort = $rootScope.$settings.PACSServerPort;
