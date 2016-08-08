@@ -5,57 +5,77 @@ import { util } from '../util';
 import { projectConfig } from '../config';
 const logger = util.logger.getLogger('dcmAutoPush');
 
-var EXEC_PATH = path.join(path.dirname(projectConfig.projectRoot) ,'/dcm4che-3.3.7/bin');
-var TEMP_PATH = path.join(path.dirname(projectConfig.projectRoot) ,'/dcmTempDir');
-var RECEIVE_PORT = 11112;
-var AE_TITLE = 'DCMUPLOADER';
+const DEFAULT_EXEC_PATH = path.join(path.dirname(projectConfig.projectRoot), '/dcm4che-3.3.7/bin');
+const DEFAULT_TEMP_PATH = path.join(path.dirname(projectConfig.projectRoot), '/dcmTempDir');
+const DEFAULT_RECEIVE_IP = '127.0.0.1'
+const DEFAULT_RECEIVE_PORT = 11112;
+const DEFAULT_AE_TITLE = 'DCMUPLOADER';
+const DEFAULT_INTERVAL = 5000;
 
 var receiver = null;
+var working_port;
 var autoScan = null;
 var syncId = '';
-function openPort() {
-  //storescp -b DCM4CHEE@localhost:11112 --directory ./tmp
-  const cmd = `${EXEC_PATH}/storescp`;
-  const args = ['-b', `${AE_TITLE}@127.0.0.1:${RECEIVE_PORT}`,'--directory', `${TEMP_PATH}`];
-  if(!receiver && !autoScan) {
-    //start child process to receive
-    logger.debug('start the child process and listen Port ' + RECEIVE_PORT);
-    receiver = cp.spawn(cmd, args);
-    receiver.stdout.on('data',(data)=>{
-      console.log(data.toString());
-    });
-    receiver.stderr.on('data',(data)=>{
-      console.log(data.toString());
-    });
-    receiver.on('error',(error)=>{
-      console.log(error);
-    });
-    receiver.on('exit',()=>{
-      console.log('EXIT');
-    });
-    
-    //start child process to autoScan
-    syncId = new Date().getTime();
-    autoScan = dcmUpload.startAutoScanUpload(TEMP_PATH, syncId, 5000, {afterDelete:true,uploadType:'AutoPushUpload'});
+function openPort(aet, ip, port, interval) {
+  try {
+    let AE_TITLE = aet ? aet : DEFAULT_AE_TITLE;
+    let IP = ip ? ip : DEFAULT_RECEIVE_IP;
+    let PORT = port ? port : DEFAULT_RECEIVE_PORT;
+    let INTERVAL = Number(interval) ? Number(interval) : DEFAULT_INTERVAL;
 
+
+    //storescp -b DCM4CHEE@localhost:11112 --directory ./tmp
+    const cmd = `${DEFAULT_EXEC_PATH}/storescp`;
+    const args = ['-b', `${AE_TITLE}@${IP}:${PORT}`, '--directory', `${DEFAULT_TEMP_PATH}`];
+    if (!receiver && !autoScan) {
+      //start child process to receive
+      logger.debug('start the child process and listen Port ' + PORT);
+      working_port = PORT;
+      receiver = cp.spawn(cmd, args);
+      receiver.stdout.on('data', (data)=> {
+        console.log(data.toString());
+      });
+      receiver.stderr.on('data', (data)=> {
+        console.log(data.toString());
+      });
+      receiver.on('error', (error)=> {
+        console.log(error);
+      });
+      receiver.on('exit', ()=> {
+        console.log('EXIT');
+      });
+
+      //start child process to autoScan
+      syncId = new Date().getTime();
+      autoScan = dcmUpload.startAutoScanUpload(DEFAULT_TEMP_PATH, syncId, INTERVAL, {
+        afterDelete: true,
+        uploadType: 'AutoPushUpload'
+      });
+
+      return {
+        status: 'opened',
+        syncId: syncId,
+      };
+    }
+  } catch (err) {
+    logger.error(err, err.stack);
     return {
-      status:'opened',
-      syncId:syncId,
+      status: 'closed'
     };
   }
 }
 
 function closePort(res) {
 
-  if(receiver && autoScan){
-    logger.debug('kill the child process and close Port ' + RECEIVE_PORT);
+  if (receiver && autoScan) {
+    logger.debug('kill the child process and close Port ' + working_port);
     receiver.kill();
     receiver.removeAllListeners('data');
     receiver.removeAllListeners('error');
     receiver.removeAllListeners('exit');
     receiver = null;
-    autoScan.on('message',m =>{
-      if(m == 'autoUpload stopped'){
+    autoScan.on('message', m => {
+      if (m == 'autoUpload stopped') {
         res.json({
           code: 200,
           data: {}
@@ -65,14 +85,14 @@ function closePort(res) {
     autoScan = dcmUpload.stopAutoScanUpload(autoScan);
 
     return {
-      status:'closed',
+      status: 'closed',
     };
-  }else{
+  } else {
     return {
-      status:'opened',
+      status: 'opened',
     };
   }
 
 }
 
-export { openPort,closePort }
+export { openPort, closePort }

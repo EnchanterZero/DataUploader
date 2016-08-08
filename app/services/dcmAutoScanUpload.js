@@ -54,12 +54,6 @@ if (!_dir || !_syncId || !_token) {
   process.send('autoUpload stopped');
   process.exit();
 }
-console.log(_dir);
-console.log(_syncId);
-console.log(_delayTime);
-console.log(_afterDelete);
-console.log(_token);
-console.log(_uploadType);
 
 
 co(function*() {

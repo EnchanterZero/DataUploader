@@ -168,83 +168,15 @@ export function listDcmInfo(count, page) {
   });
 }
 
-
-export function deleteHospitalNames(hospitalNameIds) {
-  let succeedIds = [];
-  let failedIds = [];
-  let queue = hospitalNameIds.map((id) => {
-    return models.DcmInfo.destroy({
-      where: {
-        id: id
-      }
-    }).then((result) => {
-      if (result != 1) {
-        failedIds.push(id);
-      } else {
-        succeedIds.push(id)
-      }
-    }).catch((err) => {
-      failedIds.push(id);
-      logger.error('err:' + err)
-    })
-  });
-  return Promise.all(queue)
-  .then(() => {
-    return {
-      succeedIds: succeedIds,
-      failedIds: failedIds
-    }
-  }).catch((err) => {
-    logger.error('err:' + err)
-  });
-}
-
-export function updateHospitalName(uid, dcmInfo) {
-  return models.DcmInfo.findOne({
-    where: {
-      id: { $ne: uid },
-      institutionname: dcmInfo.institutionname,
-      language: dcmInfo.language
-    }
-  }).then((result) => {
-    if (result) {
-      logger.debug('found duplicated Instance: ' + result);
-      return false;
-    } else {
-      return models.DcmInfo.update(dcmInfo, {
-        where: {
-          id: uid
-        }
-      }).then((result) => {
-        logger.debug(result);
-        return !!result[0];
-      })
-    }
-  })
-}
-
-export function getNamesByInstitutionName(institutionName) {
-  return models.DcmInfo.findAll({
-    where: {
-      institutionname: institutionName
-    }
-  }).then((results) => {
-    let displayName = {};
-    for (let item of results) {
-      displayName[item.dataValues.language] = item.dataValues.name;
-    }
-    return displayName;
-  })
-}
-
-export function listHospitalNames(options) {
-  return Promise.all([
-    models.DcmInfo.findAll(options),
-    models.DcmInfo.count(options.where),
-  ]).spread((hospitalNames, count) => {
-    return {
-      hospitalNamesList: hospitalNames,
-      totalCount: count
-    }
+export function listUploadingDcmInfo() {
+  let result = {};
+  return sequelize.query('select PatientID,PatientName,StudyInstanceUID,fileId,syncId,total,success from ' +
+    '(select *,count(StudyInstanceUID) as total, sum(isSynchronized) as success from DcmInfos group by syncId,StudyInstanceUID) ' +
+    'where total != success ' +
+    'order by updatedAt DESC,syncId DESC;',
+    { type: sequelize.QueryTypes.SELECT })
+  .then(r => {
+    result.uploadingList = r;
+    return result;
   });
 }

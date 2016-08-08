@@ -32,8 +32,8 @@
   var app = angular.module('Uploader.views', [
     'ui.router',
   ])
-  .config(['$stateProvider','$urlRouterProvider',
-    function ($stateProvider,$urlRouterProvider) {
+  .config(['$stateProvider', '$urlRouterProvider',
+    function ($stateProvider, $urlRouterProvider) {
 
       // For any unmatched url, send to /status
       $urlRouterProvider.otherwise("/status");
@@ -67,7 +67,7 @@
       .state('settings', {
         url: "/settings",
         templateUrl: 'views/dashboard/settings.html',
-        controller: 'SettingController'
+        controller: 'SettingsController'
       })
     }]);
 })();
@@ -100,15 +100,22 @@
   app.config(['$stateProvider', function ($stateProvider) {
     console.log('app.config');
   }])
-  .run(['Session', 'AuthService', '$state', '$timeout', '$window', function (Session, AuthService, $state, $timeout, $window) {
-    console.log('app.run');
-    AuthService.loadCredentials();
-    if (!AuthService.isAuthenticated()) {
-      $window.alert('请先登录!');
-      $timeout(function () {
-        AuthService.gotoLogin();
-      }, 0);
-    }
-  }]);
+  .run(['Session', 'AuthService', 'SettingService', '$state', '$timeout', '$window', '$rootScope',
+    function (Session, AuthService, SettingService, $state, $timeout, $window, $rootScope) {
+      console.log('app.run');
+      AuthService.loadCredentials();
+      SettingService.loadSettings();
+      if (!AuthService.isAuthenticated()) {
+        $window.alert('请先登录!');
+        $timeout(function () {
+          AuthService.gotoLogin();
+        }, 0);
+      }
+      $rootScope.$on('$stateChangeStart',
+        function(event, toState, toParams, fromState, fromParams){ 
+          console.log('$stateChangeStart'); 
+        }
+    );
+    }]);
 
 })();

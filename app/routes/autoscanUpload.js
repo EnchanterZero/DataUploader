@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { dcmUpload } from '../services';
+import { dcmUpload,uploadSetting } from '../services';
 const autoScanUploadApi = Router();
 
 var AUTOSCAN_DIR = '/Users/intern07/Desktop/dcms/autoscan';
@@ -18,7 +18,8 @@ function startAutoScan(req, res, next) {
     data: { syncId: syncId }
   });
   if (!autoScan) {
-    autoScan = dcmUpload.startAutoScanUpload(scanDir, syncId.toString(), 5000,{afterDelete:false,uploadType:'AutoScanUpload'});
+    let setting = uploadSetting.getConfig()
+    autoScan = dcmUpload.startAutoScanUpload(scanDir, syncId.toString(),setting.ScanInterval*1000,{afterDelete:false,uploadType:'AutoScanUpload'});
   }
 }
 

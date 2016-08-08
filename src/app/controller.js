@@ -43,7 +43,20 @@
   angular.module('Uploader.views')
   .controller('StatusController', ['$scope', 'api', '$interval', uploadController]);
   function uploadController($scope, api, $interval) {
+    $scope.uploadingList = [];
+    var intervalId = $interval(function () {
+      return api.getAllUploadStatus().then(
+        function (result) {
+          $scope.uploadingList = result.uploadingList;
+        })
+    }, 500);
 
+    var getAllStatus = function () {
+      return api.getAllUploadStatus().then(
+        function (result) {
+          $scope.uploadingList = result.uploadingList;
+        })
+    };
   }
 
 })();
@@ -74,7 +87,6 @@
     };
     $scope.upload = function () {
       api.uploadFile({ dcmInfos: $scope.readResults.dcmInfos }).then(function (result) {
-        console.log(result);
         $scope.readResults.syncId = result.syncId;
         intervalId = $interval(getStatus, 500);
       });
@@ -90,11 +102,25 @@
           }
         })
     };
+    $scope.browseAndUpload = function () {
+      $scope.dcmDir = '/Users/intern07/Desktop/dcms/test';
+      api.readDcm({ dir: $scope.dcmDir })
+      .then(function (result) {
+        $scope.readResults.studies = result.studies;
+        $scope.readResults.dcmCount = result.dcmInfos.length;
+        $scope.readResults.dcmInfos = result.dcmInfos;
 
+        api.uploadFile({ dcmInfos: $scope.readResults.dcmInfos }).then(function (result) {
+          $scope.readResults.syncId = result.syncId;
+          intervalId = $interval(getStatus, 500);
+        });
+
+      });
+    }
     $scope.browseFolder = function (path) {
       $scope.dcmDir = '/Users/intern07/Desktop/dcms/test';
     }
-    
+
   }
 
 })();
@@ -105,9 +131,9 @@
 (function () {
 
   'use strict';
-  angular.module('Uploader.views').controller('AutoScanController', ['$scope', 'api', '$interval', autoScanController]);
-  function autoScanController($scope, api, $interval) {
-    var WORKING = 1, STOPPING = -1 , STOPPED = 0
+  angular.module('Uploader.views').controller('AutoScanController', ['$scope', 'api', '$interval','$rootScope', autoScanController]);
+  function autoScanController($scope, api, $interval,$rootScope) {
+    var WORKING = 1, STOPPING = -1, STOPPED = 0
     var intervalId = null;
 
     $scope.dcmDir = '';
@@ -116,7 +142,7 @@
     $scope.state = STOPPED;
     $scope.message = '';
     $scope.startScan = function () {
-      
+
       api.startScan({ dir: $scope.dcmDir }).then(function (result) {
         console.log(result);
         $scope.state = WORKING;
@@ -160,9 +186,11 @@
 (function () {
 
   'use strict';
-  angular.module('Uploader.views').controller('AutoPushController', ['$scope', 'api', '$interval', autoPushController]);
-  function autoPushController($scope, api, $interval) {
-    var WORKING = 1, STOPPING = -1 , STOPPED = 0;
+  angular.module('Uploader.views').controller('AutoPushController', ['$scope', 'api', '$rootScope', '$interval', autoPushController]);
+  function autoPushController($scope, api, $rootScope, $interval) {
+    $scope.PACSServerIP = $rootScope.$settings.PACSServerIP;
+    $scope.PACSServerPort = $rootScope.$settings.PACSServerPort;
+    var WORKING = 1, STOPPING = -1, STOPPED = 0;
     $scope.state = STOPPED;
     $scope.message = '';
 
@@ -198,7 +226,7 @@
       page: 1,
       pageSize: 10,
       total: 0,
-      pageTotalNum:0,
+      pageTotalNum: 0,
     };
     list($scope.table.pageSize, $scope.table.page);
 
@@ -211,12 +239,13 @@
       list($scope.table.pageSize, $scope.table.page);
     };
 
-    function list(count,page){
+    function list(count, page) {
       api.listUpload({ page: page, count: count })
       .then(function (result) {
+        utils.formatList(result.uploadList)
         $scope.table.uploadList = result.uploadList;
         $scope.table.total = result.total;
-        $scope.table.pageTotalNum = _.ceil($scope.table.total/$scope.table.pageSize);
+        $scope.table.pageTotalNum = _.ceil($scope.table.total / $scope.table.pageSize);
       });
     }
   };
@@ -228,9 +257,30 @@
  */
 (function () {
 
-  angular.module('Uploader.views').controller('SettingController', ['$scope', 'api', settingController]);
-  function settingController($scope, api) {
+  angular.module('Uploader.views').controller('SettingsController', ['$scope', '$rootScope', 'SettingService', 'api', settingController]);
+  function settingController($scope, $rootScope, SettingService, api) {
+    $scope.PACSProvider = $rootScope.$settings.PACSProvider;
+    $scope.PACSServerIP = $rootScope.$settings.PACSServerIP;
+    $scope.PACSServerPort = $rootScope.$settings.PACSServerPort;
+    $scope.ScanInterval = $rootScope.$settings.ScanInterval;
+    $scope.UserValidateURL = $rootScope.$settings.UserValidateURL;
+    $scope.AnonymousMode = $rootScope.$settings.AnonymousMode;
 
+    $scope.AnonymousModeCheck = $scope.AnonymousMode == 1 ? true : false;
+    $scope.message = '';
+    $scope.saveSettings = function () {
+
+      SettingService.setSettings({
+        PACSProvider: $scope.PACSProvider,
+        PACSServerIP: $scope.PACSServerIP,
+        PACSServerPort: $scope.PACSServerPort,
+        ScanInterval: $scope.ScanInterval,
+        UserValidateURL: $scope.UserValidateURL,
+        AnonymousMode: $scope.AnonymousModeCheck ? 1 : 0,
+      }).then(function (result) {
+        $scope.message = '已保存设置';
+      })
+    }
   };
 
 })();

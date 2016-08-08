@@ -9,8 +9,8 @@
   <div>
     如需使用自动推送服务，请在图像服务器或工作站上设置推送服务器的地址：<br/>
     AE-title: DCMUPLOADER<br/>
-    IP：127.0.0.1<br/>
-    Port: 11112<br/>
+    IP：{{PACSServerIP}}<br/>
+    Port: {{PACSServerPort}}<br/>
     <button ng-disabled="state != 0 " class="btn btn-sm btn-primary" ng-click="startListen()">开启服务</button>
     <button ng-disabled="state != 1 " class="btn btn-sm btn-primary" ng-click="stopListen()">停止服务</button>
     <p>{{message}}</p>

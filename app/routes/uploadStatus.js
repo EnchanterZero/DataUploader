@@ -11,7 +11,6 @@ function getUploadStatus(req, res, next) {
     let result = yield DcmInfo.countDcmInfoBySyncId(syncId);
     let success = result.success.count
     let total = result.success.count + result.failed.count;
-    logger.debug( '--------------------------------' + success + '/' + total );
     res.json({
       code:200,
       data:{
@@ -20,9 +19,20 @@ function getUploadStatus(req, res, next) {
       }
     });
   })
-
 }
 
+function getAllUploadStatus(req, res, next) {
+  const syncId = req.params.syncId;
+  co(function*() {
+    let result = yield DcmInfo.listUploadingDcmInfo(syncId);
+    res.json({
+      code: 200,
+      data: result
+    });
+  })
+}
+
+uploadStatusApi.get('/',getAllUploadStatus);
 uploadStatusApi.get('/:syncId',getUploadStatus);
 
 export default uploadStatusApi;
