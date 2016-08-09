@@ -1,8 +1,44 @@
-require('./bin/httpserver');
+var path = require('path');
+var fs = require('fs');
+
+function ensureFolderExist(dir) {
+  const parent = path.dirname(dir);
+  if (!fs.existsSync(parent)) {
+    ensureFolderExist(parent);
+  }
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir);
+  }
+}
+
+let expressApp;
+let expressListener;
+
+function initExpress(electronApp) {
+  const userData = app.getPath('userData');
+
+  const config = require('./dist/config');
+  config.dbConfig.storage = path.join(userData, 'db', 'database.sqlite');
+  ensureFolderExist(path.dirname(config.dbConfig.storage));
+
+  expressApp = require('./dist/app');
+  let port = 30000;
+  while (true) {
+    try {
+      expressListener = expressApp.listen(port);
+      break;
+    } catch (e) {
+      port ++;
+    }
+  }
+}
 
 const electron = require('electron')
 // Module to control application life.
 const app = electron.app
+
+initExpress(app);
+
 // Module to create native browser window.
 const BrowserWindow = electron.BrowserWindow
 
@@ -12,11 +48,13 @@ let mainWindow
 
 function createWindow () {
   // Create the browser window.
+
   mainWindow = new BrowserWindow({width: 1000, height: 625})
 
   // and load the index.html of the app.
   //mainWindow.loadURL(`file://${__dirname}/src/app/index.html`)
-  mainWindow.loadURL('http://127.0.0.1:8181')
+  console.log('expressListener.address()',expressListener.address().port);
+  mainWindow.loadURL(`http://127.0.0.1:${expressListener.address().port}/`)
 
   // Open the DevTools.
   mainWindow.webContents.openDevTools()

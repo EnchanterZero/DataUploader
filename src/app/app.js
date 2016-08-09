@@ -7,7 +7,7 @@
   var app = angular.module('Uploader.config', []);
 
   var config_data = {
-    'serverUrl': 'http://localhost:3002',
+    'serverUrl': "http://" + window.location.host,
   };
 
   angular.forEach(config_data, function (value, key) {

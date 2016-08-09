@@ -5,13 +5,13 @@ import Promise from 'bluebird';
 import { dbConfig } from '../../config';
 import { util } from '../../util';
 const logger = util.logger.getLogger('db');
-var lib = require('./patch.js');
+
+require('sqlite3')
 
 var dbpath = dbConfig.storage;
 const sequelize = new Sequelize(dbConfig.database, dbConfig.username, dbConfig.password, {
   host: dbConfig.host,
   dialect: dbConfig.dialect,
-  //dialectModulePath: 'sql.js',
   pool: {
     max: 5,
     min: 0,

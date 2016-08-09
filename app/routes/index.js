@@ -10,8 +10,8 @@ import settingsApi from './settings';
 
 var api = express.Router();
 
-api.use('/', manualUploadApi);
-api.use('/index', manualUploadApi);
+//api.use('/', manualUploadApi);
+//api.use('/index', manualUploadApi);
 
 api.use('/auth', authapi);
 api.use('/manualUpload', manualUploadApi);
