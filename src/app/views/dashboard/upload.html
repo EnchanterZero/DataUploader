@@ -26,7 +26,8 @@
     <!--</div>-->
     <!--<h4>STEP 3 : 进行上传</h4>-->
     <!--<button ng-disabled="dcmDir=='' || readResults.studies==null" class="btn btn-sm btn-primary" ng-click="upload()">上传</button>-->
-    <p>{{uploadControllerScope.procession}}</p>
+    <p ng-hide="uploadControllerScope.procession == ''">{{uploadControllerScope.procession}}</p>
+    <p ng-hide="uploadControllerScope.message == ''">{{uploadControllerScope.message}}</p>
 
   </div>
 

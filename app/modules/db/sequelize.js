@@ -1,4 +1,3 @@
-
 import Sequelize from 'sequelize';
 import co from 'co';
 import Promise from 'bluebird';
@@ -6,18 +5,30 @@ import Promise from 'bluebird';
 import { dbConfig } from '../../config';
 import { util } from '../../util';
 const logger = util.logger.getLogger('db');
+var lib = require('./patch.js');
 
+var dbpath = dbConfig.storage;
 const sequelize = new Sequelize(dbConfig.database, dbConfig.username, dbConfig.password, {
   host: dbConfig.host,
   dialect: dbConfig.dialect,
-
+  //dialectModulePath: 'sql.js',
   pool: {
     max: 5,
     min: 0,
     idle: 10000
   },
-  storage: dbConfig.storage
+  storage: dbpath
 });
+sequelize
+.authenticate()
+.then(function(err) {
+  console.log(err);
+  console.log('Connection has been established successfully.',dbpath);
+})
+.catch(function (err) {
+  console.log('Unable to connect to the database:', err);
+});
+
 
 function isStringField(fieldType) {
   return fieldType instanceof Sequelize.TEXT

@@ -9,7 +9,7 @@ function getUploadStatus(req, res, next) {
   const syncId = req.params.syncId;
   co(function* () {
     let result = yield DcmInfo.countDcmInfoBySyncId(syncId);
-    let success = result.success.count
+    let success = result.success.count;
     let total = result.success.count + result.failed.count;
     res.json({
       code:200,

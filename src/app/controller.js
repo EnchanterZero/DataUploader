@@ -57,7 +57,7 @@
       $scope.intervalId = $interval(function () {
         getAllStatus($scope);
       }, 500);
-    }else if ($rootScope.statusControllerScope.intervalId) {
+    } else if ($rootScope.statusControllerScope.intervalId) {
       var $scope = $rootScope.statusControllerScope;
       $scope.intervalId = $interval(function () {
         getAllStatus($scope);
@@ -82,6 +82,7 @@
           $scope.procession = result.success + '/' + $scope.readResults.dcmCount;
           if (result.success == $scope.readResults.dcmCount && $scope.intervalId != null) {
             $interval.cancel($scope.intervalId);
+            $scope.intervalId = null;
             $scope.procession = 'upload finish';
           }
         })
@@ -98,6 +99,7 @@
         syncId: '',
       }
       $scope.procession = '';
+      $scope.message = '';
       $scope.working = false;
       $scope.intervalId = null;
 
@@ -118,27 +120,36 @@
         });
       }
       $scope.browseAndUpload = function () {
-        $scope.dcmDir = '/Users/intern07/Desktop/dcms/test';
-        api.readDcm({ dir: $scope.dcmDir })
-        .then(function (result) {
-          $scope.readResults.studies = result.studies;
-          $scope.readResults.dcmCount = result.dcmInfos.length;
-          $scope.readResults.dcmInfos = result.dcmInfos;
+        const { dialog } = require('electron').remote;
+        var path = dialog.showOpenDialog({ properties: ['openFile', 'openDirectory', 'multiSelections'] });
+        if (path) {
+          $scope.dcmDir = path[0];
 
-          api.uploadFile({ dcmInfos: $scope.readResults.dcmInfos }).then(function (result) {
-            $scope.readResults.syncId = result.syncId;
-            $scope.intervalId = $interval(function () {
-              getStatus($scope);
-            }, 500);
+          console.log($scope.dcmDir);
+          $scope.message = '正在准备上传...';
+          api.readDcm({ dir: $scope.dcmDir })
+          .then(function (result) {
+            $scope.readResults.studies = result.studies;
+            $scope.readResults.dcmCount = result.dcmInfos.length;
+            $scope.readResults.dcmInfos = result.dcmInfos;
+
+            api.uploadFile({ dcmInfos: $scope.readResults.dcmInfos }).then(function (result) {
+              $scope.readResults.syncId = result.syncId;
+              $scope.intervalId = $interval(function () {
+                getStatus($scope);
+              }, 500);
+            });
+
           });
-
-        });
+        }
       }
       $scope.browseFolder = function (path) {
-        $scope.dcmDir = '/Users/intern07/Desktop/dcms/test';
+        const { dialog } = require('electron').remote;
+        $scope.dcmDir = dialog.showOpenDialog({ properties: ['openFile', 'openDirectory', 'multiSelections'] })
+        //$scope.dcmDir = '/Users/intern07/Desktop/dcms/test';
       };
 
-    }else if ($rootScope.uploadControllerScope.intervalId) {
+    } else if ($rootScope.uploadControllerScope.intervalId) {
       var $scope = $rootScope.uploadControllerScope;
       $scope.intervalId = $interval(function () {
         getStatus($scope);
@@ -205,7 +216,11 @@
         $scope.message = '正在关闭对文件夹的监控...'
       }
       $scope.browseFolder = function (path) {
-        $scope.dcmDir = '/Users/intern07/Desktop/dcms/autoscan';
+        const { dialog } = require('electron').remote;
+        var path = dialog.showOpenDialog({ properties: ['openFile', 'openDirectory', 'multiSelections'] });
+        if (path) {
+          $scope.dcmDir = path[0];
+        }
       }
 
 
@@ -235,7 +250,7 @@
     if (!$rootScope.autoPushControllerScope) {
       $rootScope.autoPushControllerScope = {};
       var $scope = $rootScope.autoPushControllerScope;
-      
+
       $scope.state = STOPPED;
       $scope.message = '';
 
