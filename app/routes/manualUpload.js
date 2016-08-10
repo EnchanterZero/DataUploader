@@ -2,15 +2,13 @@ import { Router } from 'express';
 import { util } from '../util';
 const logger = util.logger.getLogger('manualUploadApi');
 import co from 'co';
-import * as DcmInfo from '../modules/dcminfo'
+import * as Status from '../modules/status'
 import { dcmParse, dcmUpload, serverApi } from '../services'
 const manualUploadApi = Router();
 
 var UPLOAD_DIR = '/Users/intern07/Desktop/dcms/test';
 
-function getUploadPage(req, res, next) {
-  res.render('templates/manualUpload', { title: 'Uploader', menu: 'Upload' });
-}
+
 
 function readDcm(req, res, next) {
   let data = req.body;
@@ -48,13 +46,16 @@ function startUpload(req, res, next) {
     data: { syncId: syncId }
   });
   co(function*() {
+    Status.updateStatus(Status.UPLOAD_TYPE.ManualUpload,syncId);
     let r = yield dcmUpload.uploadDicoms(dcmInfos, syncId,{afterDelete:false});
-    var uploadResult = yield DcmInfo.countDcmInfoBySyncId(r.syncId);
+    Status.updateStatus(Status.UPLOAD_TYPE.ManualUpload,'');
+    //console.log('upload result: ',r);
+    //var uploadResult = yield DcmInfo.countDcmInfoBySyncId(r.syncId);
   }).catch((err) => {
     logger.error(err,err.stack);
   });
 }
-manualUploadApi.get('/', getUploadPage);
+
 manualUploadApi.post('/read', readDcm);
 manualUploadApi.post('/start', startUpload);
 

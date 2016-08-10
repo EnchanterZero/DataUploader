@@ -15,8 +15,7 @@ const DEFAULT_INTERVAL = 5000;
 var receiver = null;
 var working_port;
 var autoScan = null;
-var syncId = '';
-function openPort(aet, ip, port, interval) {
+function openPort(aet, ip, port, interval, syncId) {
   try {
     let AE_TITLE = aet ? aet : DEFAULT_AE_TITLE;
     let IP = ip ? ip : DEFAULT_RECEIVE_IP;
@@ -46,10 +45,10 @@ function openPort(aet, ip, port, interval) {
       });
 
       //start child process to autoScan
-      syncId = new Date().getTime();
-      autoScan = dcmUpload.startAutoScanUpload(DEFAULT_TEMP_PATH, syncId, INTERVAL, {
+      autoScan = dcmUpload.startAutoScanUpload(DEFAULT_TEMP_PATH, syncId, {
         afterDelete: true,
-        uploadType: 'AutoPushUpload'
+        uploadType: 'AutoPushUpload',
+        delayTime: INTERVAL
       });
 
       return {
@@ -74,15 +73,8 @@ function closePort(res) {
     receiver.removeAllListeners('error');
     receiver.removeAllListeners('exit');
     receiver = null;
-    autoScan.on('message', m => {
-      if (m == 'autoUpload stopped') {
-        res.json({
-          code: 200,
-          data: {}
-        });
-      }
-    });
-    autoScan = dcmUpload.stopAutoScanUpload(autoScan);
+
+    autoScan = dcmUpload.stopAutoScanUpload(autoScan, res);
 
     return {
       status: 'closed',

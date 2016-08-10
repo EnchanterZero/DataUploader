@@ -2,12 +2,17 @@ import * as dcmParse from './dcmParse';
 import * as dcmUpload from './dcmUpload';
 import * as dcmDiff from './dcmDiff';
 import * as serverApi from './serverApi';
+import * as dcmAutoScan from './dcmAutoScan';
 import * as dcmAutoPush from './dcmAutoPush';
+import * as uploadRecovery from './uploadRecovery';
 import co from 'co';
-import * as Config from '../modules/config'
+import * as Config from '../modules/config';
 
+/**
+ * initializing of service
+ */
 dcmUpload.setInternal(false);
-serverApi.setBaseUrl('http://localhost:3000');
+serverApi.setBaseUrl('https://api-staging01.curacloudplatform.com:3001');
 
 var $settings = null;
 function loadConfig() {
@@ -30,5 +35,4 @@ var uploadSetting = {
   setConfig: setConfig,
 };
 
-
-export { dcmParse, dcmUpload, serverApi, dcmDiff, dcmAutoPush, uploadSetting }
+export { dcmParse, dcmUpload, serverApi, dcmDiff, dcmAutoScan, dcmAutoPush, uploadSetting, uploadRecovery }

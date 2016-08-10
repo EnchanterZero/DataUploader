@@ -49,12 +49,12 @@ let mainWindow
 function createWindow () {
   // Create the browser window.
 
-  mainWindow = new BrowserWindow({width: 1000, height: 625})
+  mainWindow = new BrowserWindow({width: 1200, height: 768})
 
   // and load the index.html of the app.
   //mainWindow.loadURL(`file://${__dirname}/src/app/index.html`)
   console.log('expressListener.address()',expressListener.address().port);
-  mainWindow.loadURL(`http://127.0.0.1:${expressListener.address().port}/`)
+  mainWindow.loadURL(`http://127.0.0.1:${expressListener.address().port}/index.html`)
 
   // Open the DevTools.
   mainWindow.webContents.openDevTools()

@@ -21,10 +21,10 @@ var app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use('/', express.static(path.join('src', 'app')));
-app.use('/dist', express.static(path.join('src', 'dist')));
-app.use('/lib', express.static(path.join('src', 'lib')));
-app.use('/assets', express.static(path.join('src', 'assets')));
+app.use('/', express.static(path.join(__dirname, '..', 'src', 'app')));
+app.use('/dist', express.static(path.join(__dirname, '..', 'src', 'dist')));
+app.use('/lib', express.static(path.join(__dirname, '..', 'src', 'lib')));
+app.use('/assets', express.static(path.join(__dirname, '..', 'src', 'assets')));
 app.use(session({
   secret: 'keyboard cat',
   resave: false,
@@ -56,19 +56,6 @@ app.use(function(req, res, next) {
 });
 
 // error handlers
-
-// development error handler
-// will print stacktrace
-if (app.get('env') === 'development') {
-  app.use(function(err, req, res, next) {
-    res.status(err.status || 500);
-    res.json({
-      stack: err.stack,
-      message: err.message,
-      error: err
-    });
-  });
-}
 
 // production error handler
 // no stacktraces leaked to user

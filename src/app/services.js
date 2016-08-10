@@ -361,6 +361,17 @@
       .then(checkStatusCode)
     }
 
+    this.getInitStauts = function (query) {
+      var option = {
+        method: 'GET',
+        url: serverUrl + '/uploadStatus/check',
+        data: {},
+      }
+      authorize(option);
+      return $http(option)
+      .then(checkStatusCode)
+    }
+
     /**
      * upload history api
      */

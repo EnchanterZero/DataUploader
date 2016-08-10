@@ -105,11 +105,16 @@ export function updateDcmInfoSync(dcmInfo) {
   });
 }
 
-export function getDcmInfoBySyncId(SyncId) {
+export function getDcmInfoBySyncId(SyncId, options) {
+  let where = { SyncId: SyncId };
+  if (options && options.isSynchronized === true) {
+    where.isSynchronized = true;
+  }
+  if (options && options.isSynchronized === false) {
+    where.isSynchronized = false;
+  }
   return models.DcmInfo.findAll({
-    where: {
-      SyncId: SyncId
-    }
+    where: where
   })
   .then((results) => {
     return results;
@@ -155,14 +160,14 @@ export function listDcmInfo(count, page) {
     `group by syncId,StudyInstanceUID ` +
     `order by updatedAt DESC,syncId DESC ` +
     `limit ${count} ` +
-    `offset ${count*(page-1)};`,
+    `offset ${count * (page - 1)};`,
     { type: sequelize.QueryTypes.SELECT })
   .then(r => {
     result.uploadList = r;
     return sequelize.query('select count(*) as num from (select * from DcmInfos group by syncId,StudyInstanceUID);',
       { type: sequelize.QueryTypes.SELECT }
     )
-  }).then(r =>{
+  }).then(r => {
     result.total = r[0].num;
     return result;
   });

@@ -1,9 +1,10 @@
 import { util } from '../util';
 import * as cp from 'child_process';
 const logger = util.logger.getLogger('upload');
-import { serverApi } from '../services';
+import { serverApi, dcmDiff, } from '../services';
 import * as DcmInfo from '../modules/dcminfo'
-import * as  OSS from '../modules/oss'
+import * as OSS from '../modules/oss'
+import * as chokidar from 'chokidar';
 import Promise from 'bluebird';
 import co from 'co';
 
@@ -69,14 +70,101 @@ function uploadDicoms(dcmInfos, sId, options) {
     logger.error(err);
   });
 }
+
+function autoScanUpload(dir, syncId, token, option) {
+  if (!dir || !syncId || !token) {
+    throw new Error(`Auto Scan Upload Arg Error: token=${token},syncId=${syncId},dir=${dir}`);
+    return;
+  }
+  let _dir = dir;
+  let _syncId = syncId;
+  let _token = token;
+  let _delayTime = option.delayTime ? option.delayTime : 5000;
+  let _afterDelete = option.afterDelete ? option.afterDelete : false;
+  let _uploadType = option.uploadType ? option.uploadType : '';
+
+  let ready = false;
+  let working = false;
+  let stopping = false;
+  let response = null;
+  var watcher = chokidar.watch(dir, {
+    //persistent: true
+    interval: _delayTime,
+    depth: 25,
+    awaitWriteFinish: {
+      stabilityThreshold: 2000,
+      pollInterval: 100
+    }
+  });
+  watcher.on('ready', () => {
+    ready = true;
+    logger.debug('Initial scan complete. Ready for changes');
+  });
+  watcher.on('add', (path) => {
+    if (!working) {
+      working = true;
+      logger.debug(`new Path : ${path}`);
+      co(function*() {
+        logger.debug('[autoScan]--------new round of auto scan');
+        //get diff
+        var result = yield dcmDiff.getDiff(_dir, _syncId);
+        var newDcmPaths = result.newDcmPaths;
+        var newDcmInfos = result.newDcmInfos;
+        logger.debug('[autoScan]--------find new dicom file: ' + newDcmPaths.length, newDcmPaths);
+        //upload
+        uploadDicoms(newDcmInfos, _syncId, { afterDelete: _afterDelete, uploadType: _uploadType });
+        // //delay
+        // logger.debug('[autoScan]--------sleep for ' + 10000 + 'ms\n');
+        // yield Promise.delay(10000);
+        logger.debug('[autoScan]--------this round finished. \n');
+        watcher.emit('One Round Finish');
+        working = false;
+      }).catch((err)=> {
+        console.log(err, err.stack);
+      });
+    }
+  });
+  watcher.once('AutoScanUpload Stop',(res)=>{
+    if(working) {
+      logger.debug('[autoScan]--stopping...');
+      response = res;
+      stopping = true;
+    }else{
+      watcher.close();
+      watcher.removeAllListeners();
+      res.json({
+        code: 200,
+        data: {}
+      });
+      logger.debug('[autoScan]--stopped...');
+    }
+  });
+  watcher.on('One Round Finish',()=>{
+    if(stopping){
+      watcher.close();
+      watcher.removeAllListeners();
+      response.json({
+        code: 200,
+        data: {}
+      });
+      logger.debug('[autoScan]--stopped...');
+    }
+  });
+
+  return watcher;
+
+}
+
+
 /**
  *
- * @param UPLOAD_DIR
+ * @param uploadDir
  * @param syncId
  * @param delayTime {Number}
  * @param option {Object}
  */
-function startAutoScanUpload(UPLOAD_DIR, syncId, delayTime, option) {
+function startAutoScanUpload(uploadDir, syncId, option) {
+  console.log('startAutoScanUpload-------------------------------------->', option)
   let token = serverApi.getAuthToken();
   if (!token) {
     throw new Error('AUTO SCAN NO TOKEN');
@@ -84,29 +172,31 @@ function startAutoScanUpload(UPLOAD_DIR, syncId, delayTime, option) {
   }
   let afterDelete = false;
   let uploadType = '';
+  let delayTime = 5000;
   if (option && option.afterDelete === true) {
-    afterDelete = false;
+    afterDelete = true;
   }
   if (option && option.uploadType) {
     uploadType = option.uploadType;
   }
-  let args = [
-    `dir=${UPLOAD_DIR}`,
-    `syncId=${syncId}`,
-    `delayTime=${delayTime}`,
-    `afterDelete=${afterDelete}`,
-    `token=${token}`,
-    `uploadType=${uploadType}`];
+  if (option && option.delayTime) {
+    delayTime = option.delayTime;
+  }
 
-  let autoScan = cp.fork('app/services/dcmAutoScanUpload.js', args);
-  console.log('autoScan child process ID : ' + autoScan.pid);
+  let autoScan = autoScanUpload(uploadDir, syncId, token,
+    { afterDelete: afterDelete,
+      uploadType: uploadType,
+      delayTime: delayTime,
+    });
   return autoScan;
 }
 
-function stopAutoScanUpload(autoScan) {
-  autoScan.send('stop');
-  autoScan = null;
-  return autoScan;
+function stopAutoScanUpload(autoScan,res) {
+  // autoScan.send('stop');
+  var watchedPaths = autoScan.getWatched();
+  logger.debug('watchedPaths : ', watchedPaths);
+  autoScan.emit('AutoScanUpload Stop',res);
+  return null;
 }
 
 export {

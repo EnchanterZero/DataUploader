@@ -1,43 +1,26 @@
 import { Router } from 'express';
-import { dcmUpload,uploadSetting } from '../services';
+import { dcmAutoScan } from '../services';
 const autoScanUploadApi = Router();
 
 var AUTOSCAN_DIR = '/Users/intern07/Desktop/dcms/autoscan';
-let autoScan = null;
 
-function getAutoScanPage(req, res, next) {
-  res.render('templates/autoScanUpload', { title: 'Uploader', menu: 'AutoScan' });
-}
+
 
 function startAutoScan(req, res, next) {
-  var syncId = new Date().getTime();
+  var syncId = new Date().getTime().toString();
   let data = req.body;
   const scanDir = data.dir;
+  dcmAutoScan.startScan(scanDir, syncId);
   res.json({
     code: 200,
     data: { syncId: syncId }
   });
-  if (!autoScan) {
-    let setting = uploadSetting.getConfig()
-    autoScan = dcmUpload.startAutoScanUpload(scanDir, syncId.toString(),setting.ScanInterval*1000,{afterDelete:false,uploadType:'AutoScanUpload'});
-  }
 }
 
 function stopAutoScan(req, res, next) {
-  if (autoScan) {
-    autoScan.on('message',m =>{
-      if(m == 'autoUpload stopped'){
-        res.json({
-          code: 200,
-          data: {}
-        });
-      }
-    })
-    autoScan = dcmUpload.stopAutoScanUpload(autoScan);
-  }
+  dcmAutoScan.stopScan(res);
 }
 
-autoScanUploadApi.get('/', getAutoScanPage);
 autoScanUploadApi.post('/start', startAutoScan);
 autoScanUploadApi.post('/stop', stopAutoScan);
 

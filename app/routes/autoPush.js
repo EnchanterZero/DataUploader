@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { dcmAutoPush,uploadSetting } from '../services';
+import { dcmAutoPush, uploadSetting } from '../services';
 const autoPushApi = Router();
 
 let autoPush = null;
@@ -8,8 +8,9 @@ function getAutoPushPage(req, res, next) {
 }
 
 function startAutoPush(req, res, next) {
+  var syncId = new Date().getTime().toString();
   var settings = uploadSetting.getConfig();
-  let result = dcmAutoPush.openPort('DCMUPLOADER', settings.PACSServerIP, settings.PACSServerPort, 5000);
+  let result = dcmAutoPush.openPort('DCMUPLOADER', settings.PACSServerIP, settings.PACSServerPort, 5000, syncId);
   res.json({
     code: 200,
     data: result,

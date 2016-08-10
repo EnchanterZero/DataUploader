@@ -5,7 +5,7 @@ import co from 'co';
 function getDiff(UPLOAD_DIR, syncId) {
   return co(function*() {
     var dcmInfosLocal = yield parseDicom(UPLOAD_DIR);
-    var dcmsInfosRecord = yield DcmInfo.getDcmInfoBySyncId(syncId);
+    var dcmsInfosRecord = yield DcmInfo.getDcmInfoBySyncId(syncId,{isSynchronized:true});
     var newDcmInfos = util._.differenceBy(dcmInfosLocal, dcmsInfosRecord, 'dcmPath');
     var newDcmPaths = newDcmInfos.map((item) => {
       return item.dcmPath;

@@ -84,6 +84,7 @@
             $interval.cancel($scope.intervalId);
             $scope.intervalId = null;
             $scope.procession = 'upload finish';
+            $scope.message = '';
           }
         })
     };
