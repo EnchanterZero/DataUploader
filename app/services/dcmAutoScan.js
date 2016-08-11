@@ -20,6 +20,7 @@ function startScan(scanDir, syncId) {
 function stopScan(res) {
   if (autoScan) {
     dcmUpload.stopAutoScanUpload(autoScan,res);
+    autoScan = null;
   }else{
     logger.debug('autoScan was not running!!!!')
   }

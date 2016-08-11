@@ -103,6 +103,24 @@ export function create(sequelize, DataTypes) {
         key: 'AnonymousMode',
         value: '0'
       }});
+  }).then(()=> {
+    return Config.findOrCreate({
+      where: {
+        key: 'UploadDir',
+      },
+      defaults: {
+        key: 'UploadDir',
+        value: ''
+      }});
+  }).then(()=> {
+    return Config.findOrCreate({
+      where: {
+        key: 'ScanDir',
+      },
+      defaults: {
+        key: 'ScanDir',
+        value: ''
+      }});
   });
   return Config;
 };

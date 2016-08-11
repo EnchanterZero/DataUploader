@@ -342,7 +342,7 @@
     this.getUploadStatus = function (query) {
       var option = {
         method: 'GET',
-        url: serverUrl + '/uploadStatus/' + query,
+        url: serverUrl + '/uploadStatus/one/' + query,
         data: {},
       }
       authorize(option);

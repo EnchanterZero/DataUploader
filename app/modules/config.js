@@ -26,29 +26,15 @@ export function setConfig(settings) {
     })
   }
   console.log(KVPairs);
-  // let queue = KVPairs.map((item) => {
-  //   return models.Config.update(
-  //     { value: item.value },
-  //     {
-  //       where: {
-  //         key: item.key,
-  //       },
-  //     })
-  //   .then((result) => {
-  //     successCount++;
-  //     return result;
-  //   }).catch((err) => {
-  //     logger.error(err, err.stack);
-  //   });
-  // });
-  return Promise.each(KVPairs,(item)=>{
+
+  return Promise.each(KVPairs, (item)=> {
     return models.Config.update(
       { value: item.value },
       {
         where: {
           key: item.key,
         },
-      },0)
+      }, 0)
     .then((result) => {
       successCount++;
       return result;
@@ -59,4 +45,15 @@ export function setConfig(settings) {
   .catch((err) => {
     logger.error(err, err.stack);
   });
+}
+
+export const CONFIG_FIELD = {
+  PACSProvider: 'PACSProvider',
+  PACSServerIP: 'PACSServerIP',
+  PACSServerPort: 'PACSServerPort',
+  ScanInterval: 'ScanInterval',
+  UserValidateURL: 'UserValidateURL',
+  AnonymousMode: 'AnonymousMode',
+  UploadDir: 'UploadDir',
+  ScanDir: 'ScanDir',
 }

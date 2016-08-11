@@ -42,6 +42,10 @@ function walkDir(DirPath) {
   process.stdout.write('\n');
   return filePaths;
 }
+function isDirectory(filepath) {
+  return Promise.promisify(fs.stat, fs)(filepath)
+  .then((stat) => stat.isDirectory());
+}
 function size(filepath) {
   return Promise.promisify(fs.stat, fs)(filepath)
   .then((stat) => stat.size);
@@ -84,6 +88,7 @@ var util = {
   logger,
   wait,
   parallelReduce,
+  isDirectory,
   remove,
   size,
   walkDir,

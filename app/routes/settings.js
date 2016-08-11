@@ -7,7 +7,7 @@ import { uploadSetting } from '../services'
 
 const settingsApi = Router();
 
-function getSettingPage(req, res, next) {
+function getSettings(req, res, next) {
   co(function*() {
     let settings = yield Config.getConfig();
     res.json({
@@ -49,7 +49,7 @@ function resetSettings(req, res, next) {
     data: {},
   })
 }
-settingsApi.get('/', getSettingPage);
+settingsApi.get('/', getSettings);
 settingsApi.post('/set', setSettings);
 settingsApi.post('/reset', resetSettings);
 

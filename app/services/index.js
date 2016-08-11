@@ -33,6 +33,7 @@ var uploadSetting = {
   loadConfig: loadConfig,
   getConfig: getConfig,
   setConfig: setConfig,
+  CONFIG_FIELD:Config.CONFIG_FIELD,
 };
 
 export { dcmParse, dcmUpload, serverApi, dcmDiff, dcmAutoScan, dcmAutoPush, uploadSetting, uploadRecovery }

@@ -41,7 +41,7 @@ function checkStatus(req, res, next) {
       code: 200,
       data: result,
     });
-    uploadRecovery.recover(result);
+    //uploadRecovery.recover(result);
   }).catch(err=> {
     logger.error(err);
   });
@@ -49,7 +49,8 @@ function checkStatus(req, res, next) {
 
 
 uploadStatusApi.get('/', getAllUploadStatus);
-uploadStatusApi.get('/:syncId', getUploadStatus);
+uploadStatusApi.get('/all', getAllUploadStatus);
+uploadStatusApi.get('/one/:syncId', getUploadStatus);
 uploadStatusApi.get('/check', checkStatus);
 
 export default uploadStatusApi;

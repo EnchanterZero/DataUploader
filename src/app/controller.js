@@ -76,7 +76,7 @@
   function uploadController($rootScope, api, $interval) {
     //$rootScope.uploadControllerScope --> $scope
     var getStatus = function ($scope) {
-      syncId = $scope.readResults.syncId;
+      var syncId = $scope.readResults.syncId;
       return api.getUploadStatus(syncId).then(
         function (result) {
           $scope.procession = result.success + '/' + $scope.readResults.dcmCount;
@@ -92,7 +92,7 @@
     if (!$rootScope.uploadControllerScope) {
       $rootScope.uploadControllerScope = {};
       var $scope = $rootScope.uploadControllerScope;
-      $scope.dcmDir = '';
+      $scope.dcmDir = $rootScope.$settings.UploadDir;
       $scope.readResults = {
         studies: null,
         dcmCount: 0,
@@ -105,12 +105,13 @@
       $scope.intervalId = null;
 
       $scope.read = function () {
-        api.readDcm({ dir: $scope.dcmDir })
-        .then(function (result) {
-          $scope.readResults.studies = result.studies;
-          $scope.readResults.dcmCount = result.dcmInfos.length;
-          $scope.readResults.dcmInfos = result.dcmInfos;
-        });
+
+          api.readDcm({ dir: $scope.dcmDir })
+          .then(function (result) {
+            $scope.readResults.studies = result.studies;
+            $scope.readResults.dcmCount = result.dcmInfos.length;
+            $scope.readResults.dcmInfos = result.dcmInfos;
+          });
       };
       $scope.upload = function () {
         api.uploadFile({ dcmInfos: $scope.readResults.dcmInfos }).then(function (result) {
@@ -125,23 +126,29 @@
         var path = dialog.showOpenDialog({ properties: ['openFile', 'openDirectory', 'multiSelections'] });
         if (path) {
           $scope.dcmDir = path[0];
+          var stat = require('fs').statSync($scope.dcmDir);
+          if (stat.isDirectory()) {
+            $scope.message = '';
+            console.log($scope.dcmDir);
+            $scope.message = '正在准备上传...';
+            api.readDcm({ dir: $scope.dcmDir })
+            .then(function (result) {
+              $scope.readResults.studies = result.studies;
+              $scope.readResults.dcmCount = result.dcmInfos.length;
+              $scope.readResults.dcmInfos = result.dcmInfos;
 
-          console.log($scope.dcmDir);
-          $scope.message = '正在准备上传...';
-          api.readDcm({ dir: $scope.dcmDir })
-          .then(function (result) {
-            $scope.readResults.studies = result.studies;
-            $scope.readResults.dcmCount = result.dcmInfos.length;
-            $scope.readResults.dcmInfos = result.dcmInfos;
+              api.uploadFile({ dcmInfos: $scope.readResults.dcmInfos }).then(function (result) {
+                $scope.readResults.syncId = result.syncId;
+                $scope.intervalId = $interval(function () {
+                  getStatus($scope);
+                }, 500);
+              });
 
-            api.uploadFile({ dcmInfos: $scope.readResults.dcmInfos }).then(function (result) {
-              $scope.readResults.syncId = result.syncId;
-              $scope.intervalId = $interval(function () {
-                getStatus($scope);
-              }, 500);
             });
-
-          });
+          }else{
+            $scope.message = '文件夹选择错误!请重新选择';
+            $scope.dcmDir = '';
+          }
         }
       }
       $scope.browseFolder = function (path) {
@@ -149,6 +156,11 @@
         $scope.dcmDir = dialog.showOpenDialog({ properties: ['openFile', 'openDirectory', 'multiSelections'] })
         //$scope.dcmDir = '/Users/intern07/Desktop/dcms/test';
       };
+
+      /**
+       * status recovery
+       */
+
 
     } else if ($rootScope.uploadControllerScope.intervalId) {
       var $scope = $rootScope.uploadControllerScope;
@@ -190,7 +202,7 @@
       var $scope = $rootScope.autoScanControllerScope;
       $scope.intervalId = null;
 
-      $scope.dcmDir = '';
+      $scope.dcmDir = $rootScope.$settings.ScanDir;
       $scope.procession = '';
       $scope.syncId = '';
       $scope.state = STOPPED;
@@ -221,6 +233,12 @@
         var path = dialog.showOpenDialog({ properties: ['openFile', 'openDirectory', 'multiSelections'] });
         if (path) {
           $scope.dcmDir = path[0];
+          $scope.message = '';
+          var stat = require('fs').statSync($scope.dcmDir);
+          if (!stat.isDirectory()) {
+            $scope.message = '文件夹选择错误!请重新选择';
+            $scope.dcmDir = '';
+          }
         }
       }
 

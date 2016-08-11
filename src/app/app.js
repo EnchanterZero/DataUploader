@@ -94,17 +94,35 @@
   app.config(['$stateProvider', function ($stateProvider) {
     console.log('app.config');
   }])
-  .run(['Session', 'AuthService', 'SettingService', '$state', '$timeout', '$interval', '$window', '$rootScope',
-    function (Session, AuthService, SettingService, $state, $timeout, $interval, $window, $rootScope) {
+  .run(['Session', 'AuthService', 'SettingService', '$state', '$timeout', '$interval', '$window', '$rootScope','api',
+    function (Session, AuthService, SettingService, $state, $timeout, $interval, $window, $rootScope,api) {
+      
       console.log('app.run');
-      AuthService.loadCredentials();
+      /**
+       * get settings
+       */
       SettingService.loadSettings();
+      
+      /**
+       * auth check
+       */
+      AuthService.loadCredentials();
       if (!AuthService.isAuthenticated()) {
         $window.alert('请先登录!');
         $timeout(function () {
           AuthService.gotoLogin();
         }, 0);
       }
+
+      /**
+       * init status check
+       */
+      api.getInitStauts().then(function (r) {
+        $rootScope.$initStatus = r;
+      });
+      /**
+       * page change check
+       */
       $rootScope.$on('$stateChangeStart',
         function (event, toState, toParams, fromState, fromParams) {
           if ($rootScope.statusControllerScope && $rootScope.statusControllerScope.intervalId) {
