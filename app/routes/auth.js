@@ -21,8 +21,16 @@ function unauthorize(req, res, next) {
   serverApi.deauthenticate()
   .then(result => res.json(result));
 }
+function setUserToken(req, res, next) {
+  let data = req.body;
+  const token = data.token;
+  if(token){
+    serverApi.setAuthToken(token);
+  }
+}
 authApi.get('/',getAuthPage);
 authApi.post('/login',authorize);
 authApi.post('/logout',unauthorize);
+authApi.post('/setToken',setUserToken);
 
 export default authApi;

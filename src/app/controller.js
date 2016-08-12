@@ -79,10 +79,12 @@
       var syncId = $scope.readResults.syncId;
       return api.getUploadStatus(syncId).then(
         function (result) {
+          $scope.readResults.dcmCount = result.total;
           $scope.procession = result.success + '/' + $scope.readResults.dcmCount;
           if (result.success == $scope.readResults.dcmCount && $scope.intervalId != null) {
             $interval.cancel($scope.intervalId);
             $scope.intervalId = null;
+            $scope.working = false;
             $scope.procession = 'upload finish';
             $scope.message = '';
           }
@@ -128,6 +130,7 @@
           $scope.dcmDir = path[0];
           var stat = require('fs').statSync($scope.dcmDir);
           if (stat.isDirectory()) {
+            $scope.working = true;
             $scope.message = '';
             console.log($scope.dcmDir);
             $scope.message = '正在准备上传...';
@@ -160,6 +163,13 @@
       /**
        * status recovery
        */
+      if($rootScope.$initStatus.ManualUpload){
+        $scope.working = true;
+        $scope.readResults.syncId = $rootScope.$initStatus.ManualUpload;
+        $scope.intervalId = $interval(function () {
+          getStatus($scope);
+        }, 500);
+      }
 
 
     } else if ($rootScope.uploadControllerScope.intervalId) {
@@ -241,7 +251,17 @@
           }
         }
       }
-
+      /**
+       * status recovery
+       */
+      if($rootScope.$initStatus.AutoScanUpload){
+        $scope.message = '文件夹监控已打开';
+        $scope.state = WORKING;
+        $scope.syncId = $rootScope.$initStatus.AutoScanUpload;
+        $scope.intervalId = $interval(function () {
+          getStatus($scope);
+        }, 500);
+      }
 
     }
     else if ($rootScope.autoScanControllerScope.intervalId) {
@@ -287,6 +307,14 @@
         });
         $scope.state = STOPPING;
         $scope.message = '正在关闭自动推送服务...'
+      }
+
+      /**
+       * status recovery
+       */
+      if($rootScope.$initStatus.AutoPushUpload){
+        $scope.state = WORKING;
+        $scope.message = '自动推送服务已启动';
       }
     }
   }

@@ -10,7 +10,7 @@ function getAutoPushPage(req, res, next) {
 function startAutoPush(req, res, next) {
   var syncId = new Date().getTime().toString();
   var settings = uploadSetting.getConfig();
-  let result = dcmAutoPush.openPort('DCMUPLOADER', settings.PACSServerIP, settings.PACSServerPort, 5000, syncId);
+  let result = dcmAutoPush.openPort('DCMUPLOADER', settings.PACSServerIP, settings.PACSServerPort, 3000, syncId);
   res.json({
     code: 200,
     data: result,

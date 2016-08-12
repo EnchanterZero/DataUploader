@@ -87,6 +87,7 @@ function autoScanUpload(dir, syncId, token, option) {
   let working = false;
   let stopping = false;
   let response = null;
+  logger.debug(`start watch ---> interval: ${_delayTime}`);
   var watcher = chokidar.watch(dir, {
     //persistent: true
     interval: _delayTime,
@@ -101,20 +102,29 @@ function autoScanUpload(dir, syncId, token, option) {
     logger.debug('Initial scan complete. Ready for changes');
   });
   watcher.on('add', (path) => {
+    logger.debug(`new Path : ${path}`);
     if (!working) {
       working = true;
-      logger.debug(`new Path : ${path}`);
       co(function*() {
         logger.debug('[autoScan]--------new round of auto scan');
         //get diff
         var result = yield dcmDiff.getDiff(_dir, _syncId);
         var newDcmPaths = result.newDcmPaths;
         var newDcmInfos = result.newDcmInfos;
+        var dupulicatedDcmPaths = result.dupulicatedDcmPaths;
         logger.debug('[autoScan]--------find new dicom file: ' + newDcmPaths.length, newDcmPaths);
+        //remove duplicated dcms if they came from pushing port
+        if(_afterDelete) {
+          for(let i in dupulicatedDcmPaths) {
+            yield util.remove(dupulicatedDcmPaths[i]);
+          }
+        }
         //upload
-        uploadDicoms(newDcmInfos, _syncId, { afterDelete: _afterDelete, uploadType: _uploadType });
+        if (newDcmPaths.length > 0) {
+          logger.debug('[autoScan]--------upload new dicom file...... ');
+          yield uploadDicoms(newDcmInfos, _syncId, { afterDelete: _afterDelete, uploadType: _uploadType });
+        }
         // //delay
-        // logger.debug('[autoScan]--------sleep for ' + 10000 + 'ms\n');
         // yield Promise.delay(10000);
         logger.debug('[autoScan]--------this round finished. \n');
         watcher.emit('One Round Finish');
@@ -124,12 +134,12 @@ function autoScanUpload(dir, syncId, token, option) {
       });
     }
   });
-  watcher.once('AutoScanUpload Stop',(res)=>{
-    if(working) {
+  watcher.once('AutoScanUpload Stop', (res)=> {
+    if (working) {
       logger.debug('[autoScan]--stopping...');
       response = res;
       stopping = true;
-    }else{
+    } else {
       watcher.close();
       watcher.removeAllListeners();
       res.json({
@@ -139,8 +149,8 @@ function autoScanUpload(dir, syncId, token, option) {
       logger.debug('[autoScan]--stopped...');
     }
   });
-  watcher.on('One Round Finish',()=>{
-    if(stopping){
+  watcher.on('One Round Finish', ()=> {
+    if (stopping) {
       watcher.close();
       watcher.removeAllListeners();
       response.json({
@@ -184,18 +194,19 @@ function startAutoScanUpload(uploadDir, syncId, option) {
   }
 
   let autoScan = autoScanUpload(uploadDir, syncId, token,
-    { afterDelete: afterDelete,
+    {
+      afterDelete: afterDelete,
       uploadType: uploadType,
       delayTime: delayTime,
     });
   return autoScan;
 }
 
-function stopAutoScanUpload(autoScan,res) {
+function stopAutoScanUpload(autoScan, res) {
   // autoScan.send('stop');
   var watchedPaths = autoScan.getWatched();
   logger.debug('watchedPaths : ', watchedPaths);
-  autoScan.emit('AutoScanUpload Stop',res);
+  autoScan.emit('AutoScanUpload Stop', res);
   return null;
 }
 

@@ -41,7 +41,7 @@ function checkStatus(req, res, next) {
       code: 200,
       data: result,
     });
-    //uploadRecovery.recover(result);
+    uploadRecovery.recover(result);
   }).catch(err=> {
     logger.error(err);
   });

@@ -26,6 +26,7 @@
       var token = Session.get(LOCAL_TOKEN_KEY);
       var currentUser = Session.get(LOCAL_CURRENT_USER);
       this.useCredentials(token, currentUser);
+      return token;
     }
 
     this.useCredentials = function (token, currentUser) {
@@ -99,47 +100,47 @@
 /**
  * service StateService
  */
-(function () {
-
-  angular.module('Uploader.services')
-  .service('PageStateService', ['$rootScope', '$state', '$window', 'api', 'Session', pageStateService]);
-
-  function pageStateService($rootScope, $state, $window, api, Session) {
-    var LOCAL_PACSProvider = 'PACSProvider';
-    var LOCAL_PACSServerIP = 'PACSServerIP';
-    var LOCAL_PACSServerPort = 'PACSServerPort';
-    var LOCAL_ScanInterval = 'ScanInterval';
-    var LOCAL_UserValidateURL = 'UserValidateURL';
-    var LOCAL_AnonymousMode = 'AnonymousMode';
-
-    var pageStateService = this;
-
-    this.loadSettings = function () {
-      api.getSettings()
-      .then(function (result) {
-        $rootScope.$settings = result.settings;
-      })
-    }
-
-    this.setSettings = function (settings) {
-      var settingsJSON = {
-        PACSProvider: settings.PACSProvider,
-        PACSServerIP: settings.PACSServerIP,
-        PACSServerPort: settings.PACSServerPort,
-        ScanInterval: settings.ScanInterval,
-        UserValidateURL: settings.UserValidateURL,
-        AnonymousMode: settings.AnonymousMode,
-      };
-      return api.setSettings({settings: settingsJSON})
-      .then(function (result) {
-        $rootScope.$settings = settingsJSON;
-        return result;
-      })
-    }
-
-    return pageStateService;
-  }
-})();
+// (function () {
+//
+//   angular.module('Uploader.services')
+//   .service('PageStateService', ['$rootScope', '$state', '$window', 'api', 'Session', pageStateService]);
+//
+//   function pageStateService($rootScope, $state, $window, api, Session) {
+//     var LOCAL_PACSProvider = 'PACSProvider';
+//     var LOCAL_PACSServerIP = 'PACSServerIP';
+//     var LOCAL_PACSServerPort = 'PACSServerPort';
+//     var LOCAL_ScanInterval = 'ScanInterval';
+//     var LOCAL_UserValidateURL = 'UserValidateURL';
+//     var LOCAL_AnonymousMode = 'AnonymousMode';
+//
+//     var pageStateService = this;
+//
+//     this.loadSettings = function () {
+//       api.getSettings()
+//       .then(function (result) {
+//         $rootScope.$settings = result.settings;
+//       })
+//     }
+//
+//     this.setSettings = function (settings) {
+//       var settingsJSON = {
+//         PACSProvider: settings.PACSProvider,
+//         PACSServerIP: settings.PACSServerIP,
+//         PACSServerPort: settings.PACSServerPort,
+//         ScanInterval: settings.ScanInterval,
+//         UserValidateURL: settings.UserValidateURL,
+//         AnonymousMode: settings.AnonymousMode,
+//       };
+//       return api.setSettings({settings: settingsJSON})
+//       .then(function (result) {
+//         $rootScope.$settings = settingsJSON;
+//         return result;
+//       })
+//     }
+//
+//     return pageStateService;
+//   }
+// })();
 
 /**
  * service Session
@@ -284,6 +285,16 @@
         console.log('logout success!!!!!!');
         $window.location.href = './auth.html';
       });
+    }
+    this.setUserToken = function (data) {
+      var options = {
+        method: 'POST',
+        url: serverUrl + '/auth/setToken',
+        data:data,
+      }
+      authorize(options)
+      return $http(options)
+      .then(checkStatusCode)
     }
 
     /**

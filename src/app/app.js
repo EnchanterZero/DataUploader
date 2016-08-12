@@ -94,24 +94,29 @@
   app.config(['$stateProvider', function ($stateProvider) {
     console.log('app.config');
   }])
-  .run(['Session', 'AuthService', 'SettingService', '$state', '$timeout', '$interval', '$window', '$rootScope','api',
-    function (Session, AuthService, SettingService, $state, $timeout, $interval, $window, $rootScope,api) {
-      
+  .run(['Session', 'AuthService', 'SettingService', '$state', '$timeout', '$interval', '$window', '$rootScope', 'api',
+    function (Session, AuthService, SettingService, $state, $timeout, $interval, $window, $rootScope, api) {
+
       console.log('app.run');
       /**
        * get settings
        */
       SettingService.loadSettings();
-      
+
       /**
        * auth check
        */
-      AuthService.loadCredentials();
+      var token = AuthService.loadCredentials();
       if (!AuthService.isAuthenticated()) {
         $window.alert('请先登录!');
         $timeout(function () {
           AuthService.gotoLogin();
         }, 0);
+      } else {
+        api.setUserToken({ token: token })
+        .then(function () {
+
+        });
       }
 
       /**

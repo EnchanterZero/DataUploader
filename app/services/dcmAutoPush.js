@@ -1,5 +1,6 @@
 import { dcmUpload } from '../services';
 import * as cp from 'child_process';
+import * as Status from '../modules/status';
 import path from 'path';
 import { util } from '../util';
 import { projectConfig } from '../config';
@@ -22,6 +23,7 @@ function openPort(aet, ip, port, interval, syncId) {
     let PORT = port ? port : DEFAULT_RECEIVE_PORT;
     let INTERVAL = Number(interval) ? Number(interval) : DEFAULT_INTERVAL;
 
+    Status.updateStatus(Status.UPLOAD_TYPE.AutoPushUpload,syncId);
 
     //storescp -b DCM4CHEE@localhost:11112 --directory ./tmp
     const cmd = `${DEFAULT_EXEC_PATH}/storescp`;
@@ -75,6 +77,8 @@ function closePort(res) {
     receiver = null;
 
     autoScan = dcmUpload.stopAutoScanUpload(autoScan, res);
+
+    Status.updateStatus(Status.UPLOAD_TYPE.AutoPushUpload,'');
 
     return {
       status: 'closed',

@@ -81,7 +81,7 @@ export function create(sequelize, DataTypes) {
       },
       defaults: {
         key: 'ScanInterval',
-        value: '5000'
+        value: '5'
       }});
   })
   .then(()=> {

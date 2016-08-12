@@ -3,7 +3,7 @@
   <div>
     请选择一个文件夹,DICOM文件将会将其中的dicom文件上传至CuraCloud云服务器.<br/>
     <h4>选择文件夹:</h4>
-    <button class="btn btn-sm btn-primary" ng-click="uploadControllerScope.browseAndUpload()">选择并上传</button>
+    <button class="btn btn-sm btn-primary" ng-disabled="uploadControllerScope.working" ng-click="uploadControllerScope.browseAndUpload()">选择并上传</button>
     <p ng-hide="uploadControllerScope.dcmDir==''">您选择的文件夹：{{uploadControllerScope.dcmDir}}</p>
     <!--<h4>STEP 2 : 读取dicom文件</h4>-->
     <!--<button ng-disabled="dcmDir==''" class="btn btn-sm btn-primary" ng-click="read()">读 取</button>-->
