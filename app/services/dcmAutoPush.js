@@ -16,6 +16,15 @@ const DEFAULT_INTERVAL = 5000;
 var receiver = null;
 var working_port;
 var autoScan = null;
+process.on('beforeExit',()=>{
+  console.log('beforeExit');
+});
+process.on('exit',()=>{
+  if(receiver){
+    receiver.kill();
+  }
+  console.log('exit');
+});
 function openPort(aet, ip, port, interval, syncId) {
   try {
     let AE_TITLE = aet ? aet : DEFAULT_AE_TITLE;
@@ -30,7 +39,7 @@ function openPort(aet, ip, port, interval, syncId) {
     const args = ['-b', `${AE_TITLE}@${IP}:${PORT}`, '--directory', `${DEFAULT_TEMP_PATH}`];
     if (!receiver && !autoScan) {
       //start child process to receive
-      logger.debug('start the child process and listen Port ' + PORT);
+      logger.debug(`start the child process and listen Port ${PORT} ---> ${cmd}`);
       working_port = PORT;
       receiver = cp.spawn(cmd, args);
       receiver.stdout.on('data', (data)=> {

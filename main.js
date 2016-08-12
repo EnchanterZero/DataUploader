@@ -83,11 +83,16 @@ app.on('window-all-closed', function () {
 })
 
 app.on('activate', function () {
+  console.log('app is  activate!!!!!!');
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   if (mainWindow === null) {
     createWindow()
   }
+})
+
+app.on('quit', function () {
+  console.log('app will quit!!!!!!');
 })
 
 // In this file you can include the rest of your app's specific main process
