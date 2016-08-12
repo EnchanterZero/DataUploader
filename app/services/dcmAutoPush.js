@@ -40,6 +40,8 @@ function openPort(aet, ip, port, interval, syncId) {
     if (!receiver && !autoScan) {
       //start child process to receive
       logger.debug(`start the child process and listen Port ${PORT} ---> ${cmd}`);
+      // console.log('util.isDirectory(DEFAULT_EXEC_PATH) --->' + util.isDirectory(DEFAULT_EXEC_PATH));
+      // console.log('util.walkDir(DEFAULT_EXEC_PATH)',util.walkDir(DEFAULT_EXEC_PATH))
       working_port = PORT;
       receiver = cp.spawn(cmd, args);
       receiver.stdout.on('data', (data)=> {
