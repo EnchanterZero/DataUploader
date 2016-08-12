@@ -81,7 +81,7 @@
         function (result) {
           $scope.readResults.dcmCount = result.total;
           $scope.procession = result.success + '/' + $scope.readResults.dcmCount;
-          if (result.success == $scope.readResults.dcmCount && $scope.intervalId != null) {
+          if (result.success == $scope.readResults.dcmCount && $scope.intervalId != null && $scope.readResults.dcmCount!=0) {
             $interval.cancel($scope.intervalId);
             $scope.intervalId = null;
             $scope.working = false;
@@ -140,7 +140,7 @@
               $scope.readResults.dcmCount = result.dcmInfos.length;
               $scope.readResults.dcmInfos = result.dcmInfos;
 
-              api.uploadFile({ dcmInfos: $scope.readResults.dcmInfos }).then(function (result) {
+              api.uploadFile({ dcmInfos: null }).then(function (result) {
                 $scope.readResults.syncId = result.syncId;
                 $scope.intervalId = $interval(function () {
                   getStatus($scope);

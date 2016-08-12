@@ -45,6 +45,7 @@ function uploadDiomsByStudy(StudyInstanceUID, dcmInfos, options) {
       let result2 = yield DcmInfo.createDcmInfo(dcmInfos[i]);
       console.log(result2);
     }
+    console.log('start upload!!!!!!!!!')
     //upload
     yield OSS.putOSSDcms(ossCredential, false, dcmInfos, options);
   });

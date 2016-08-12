@@ -10,7 +10,7 @@ const manualUploadApi = Router();
 
 var UPLOAD_DIR = '/Users/intern07/Desktop/dcms/test';
 
-
+var dcmInfos = null;
 function readDcm(req, res, next) {
   let data = req.body;
   const readDir = data.dir;
@@ -23,7 +23,7 @@ function readDcm(req, res, next) {
       let settings = {}
       settings[Config.CONFIG_FIELD.UploadDir] = readDir;
       yield Config.setConfig(settings);
-      var dcmInfos = yield dcmParse.parseDicom(readDir);
+      dcmInfos = yield dcmParse.parseDicom(readDir);
       var studies = dcmInfos.map((item) => {
         return {
           PatientName: item.PatientName,
@@ -58,7 +58,7 @@ function readDcm(req, res, next) {
 
 function startUpload(req, res, next) {
   let data = req.body;
-  let dcmInfos = data.dcmInfos;
+  //let dcmInfos = data.dcmInfos;
   var syncId = new Date().getTime().toString();
   res.json({
     code: 200,
@@ -68,6 +68,7 @@ function startUpload(req, res, next) {
     Status.updateStatus(Status.UPLOAD_TYPE.ManualUpload, syncId);
     let r = yield dcmUpload.uploadDicoms(dcmInfos, syncId, { afterDelete: false });
     Status.updateStatus(Status.UPLOAD_TYPE.ManualUpload, '');
+    dcmInfos = null;
     //console.log('upload result: ',r);
     //var uploadResult = yield DcmInfo.countDcmInfoBySyncId(r.syncId);
   }).catch((err) => {
