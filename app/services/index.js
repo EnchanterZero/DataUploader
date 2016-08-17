@@ -1,18 +1,18 @@
-import * as dcmParse from './dcmParse';
-import * as dcmUpload from './dcmUpload';
-import * as dcmDiff from './dcmDiff';
+import * as fileUpload from './fileUpload';
 import * as serverApi from './serverApi';
-import * as dcmAutoScan from './dcmAutoScan';
-import * as dcmAutoPush from './dcmAutoPush';
-import * as uploadRecovery from './uploadRecovery';
+import * as uploadRecovery from './uploadRecovery'
 import co from 'co';
+import * as FileInfo from  '../modules/fileinfo';
 import * as Config from '../modules/config';
 
 /**
  * initializing of service
  */
-dcmUpload.setInternal(false);
-serverApi.setBaseUrl('https://api-staging01.curacloudplatform.com:3001');
+co(function* () {
+  yield FileInfo.checkAndRepair();
+})
+//serverApi.setBaseUrl('https://api-staging01.curacloudplatform.com:3001');
+serverApi.setBaseUrl('http://127.0.0.1:3000/');
 
 var $settings = null;
 function loadConfig() {
@@ -35,5 +35,4 @@ var uploadSetting = {
   setConfig: setConfig,
   CONFIG_FIELD:Config.CONFIG_FIELD,
 };
-
-export { dcmParse, dcmUpload, serverApi, dcmDiff, dcmAutoScan, dcmAutoPush, uploadSetting, uploadRecovery }
+export { serverApi, uploadSetting, fileUpload, uploadRecovery }

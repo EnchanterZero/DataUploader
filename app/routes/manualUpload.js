@@ -3,80 +3,64 @@ import { util } from '../util';
 const logger = util.logger.getLogger('manualUploadApi');
 import co from 'co';
 import fs from 'fs';
-import * as Status from '../modules/status'
-import { dcmParse, dcmUpload, serverApi } from '../services';
-import * as Config from '../modules/config';
+import { dcmParse, dcmUpload, serverApi, fileUpload } from '../services';
+import * as FileInfo from '../modules/fileinfo';
 const manualUploadApi = Router();
 
 var UPLOAD_DIR = '/Users/intern07/Desktop/dcms/test';
 
 var dcmInfos = null;
-function readDcm(req, res, next) {
-  let data = req.body;
-  const readDir = data.dir;
-
-
-  co(function*() {
-    let isDir = yield util.isDirectory(readDir);
-    console.log('readDcm:' + readDir, isDir);
-    if (isDir) {
-      let settings = {}
-      settings[Config.CONFIG_FIELD.UploadDir] = readDir;
-      yield Config.setConfig(settings);
-      dcmInfos = yield dcmParse.parseDicom(readDir);
-      var studies = dcmInfos.map((item) => {
-        return {
-          PatientName: item.PatientName,
-          PatientID: item.PatientID,
-          StudyInstanceUID: item.StudyInstanceUID,
-        }
-      });
-      studies = util._.uniqBy(studies, 'StudyInstanceUID');
-      console.log(studies);
-      res.json({
-        code: 200,
-        data: {
-          studies: studies,
-          dcmInfos: dcmInfos,
-        }
-      });
-    } else {
-      res.json({
-        code: 701,
-        data: {
-          studies: null,
-          dcmInfos: null,
-          failed: 'not such Directory',
-        }
-      });
-    }
-  }).catch((err) => {
-    logger.error(err);
-  });
-
-}
 
 function startUpload(req, res, next) {
   let data = req.body;
-  //let dcmInfos = data.dcmInfos;
+  let filePath = data.dir;
   var syncId = new Date().getTime().toString();
   res.json({
     code: 200,
     data: { syncId: syncId }
   });
   co(function*() {
-    Status.updateStatus(Status.UPLOAD_TYPE.ManualUpload, syncId);
-    let r = yield dcmUpload.uploadDicoms(dcmInfos, syncId, { afterDelete: false });
-    Status.updateStatus(Status.UPLOAD_TYPE.ManualUpload, '');
-    dcmInfos = null;
-    //console.log('upload result: ',r);
-    //var uploadResult = yield DcmInfo.countDcmInfoBySyncId(r.syncId);
+    let r = yield fileUpload.uploadFiles([filePath], syncId, { afterDelete: false });
   }).catch((err) => {
     logger.error(err, err.stack);
   });
 }
+function listFiles(req, res, next) {
+  co(function*() {
+    let r = yield FileInfo.listFiles();
+    res.json({
+      code: 200,
+      data: { fileInfoList: r }
+    });
+  })
+  .catch((err) => {
+    logger.error(err, err.stack);
+  });
+}
+function resumeUpload(req, res, next) {
+  const syncId = req.params.syncId;
+  co(function*() {
+    let r = yield fileUpload.uploadFiles([], syncId, { afterDelete: false });
+  })
+  .catch((err) => {
+    logger.error(err, err.stack);
+  });
+}
 
-manualUploadApi.post('/read', readDcm);
+function stopUpload(req, res, next) {
+  const syncId = req.params.syncId;
+  fileUpload.stopUploadFiles(syncId)
+  .then((r)=> {
+    res.json({
+      code: 200,
+      data: { result: r }
+    });
+  });
+}
+
 manualUploadApi.post('/start', startUpload);
+manualUploadApi.get('/list', listFiles);
+manualUploadApi.post('/resume/:syncId', resumeUpload);
+manualUploadApi.post('/stop/:syncId', stopUpload);
 
 export default manualUploadApi;

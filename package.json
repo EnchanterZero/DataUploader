@@ -13,7 +13,7 @@
     "rebuild-sqlite3-win": "tools/rebuild-sqlite3.bat"
   },
   "dependencies": {
-    "ali-oss": "^4.4.4",
+    "ali-oss":"./app/exernal/ali-oss",
     "babel-register": "^6.11.6",
     "body-parser": "~1.15.1",
     "chokidar": "^1.6.0",
@@ -33,7 +33,8 @@
     "serve-favicon": "~2.3.0",
     "sqlite3": "^3.1.4",
     "walk": "^2.3.9",
-    "winston": "^2.2.0"
+    "winston": "^2.2.0",
+    "morgan": "~1.7.0"
   },
   "devDependencies": {
     "babel-cli": "^6.11.4",

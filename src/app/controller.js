@@ -38,35 +38,35 @@
 /**
  * StatusController
  */
-(function () {
-
-  angular.module('Uploader.views')
-  .controller('StatusController', ['$rootScope', 'api', '$interval', statusController]);
-  function statusController($rootScope, api, $interval) {
-    //$rootScope.statusControllerScope --> $scope
-    var getAllStatus = function ($scope) {
-      return api.getAllUploadStatus().then(
-        function (result) {
-          $scope.uploadingList = result.uploadingList;
-        });
-    }
-    if (!$rootScope.statusControllerScope) {
-      $rootScope.statusControllerScope = {};
-      var $scope = $rootScope.statusControllerScope;
-      $scope.uploadingList = [];
-      $scope.intervalId = $interval(function () {
-        getAllStatus($scope);
-      }, 500);
-    } else if ($rootScope.statusControllerScope.intervalId) {
-      var $scope = $rootScope.statusControllerScope;
-      $scope.intervalId = $interval(function () {
-        getAllStatus($scope);
-      }, 500);
-      //console.log('$interval continue : ', $rootScope.autoScanControllerScope.intervalId);
-    }
-  }
-
-})();
+// (function () {
+//
+//   angular.module('Uploader.views')
+//   .controller('StatusController', ['$rootScope', 'api', '$interval', statusController]);
+//   function statusController($rootScope, api, $interval) {
+//     //$rootScope.statusControllerScope --> $scope
+//     var getAllStatus = function ($scope) {
+//       return api.getAllUploadStatus().then(
+//         function (result) {
+//           $scope.uploadingList = result.uploadingList;
+//         });
+//     }
+//     if (!$rootScope.statusControllerScope) {
+//       $rootScope.statusControllerScope = {};
+//       var $scope = $rootScope.statusControllerScope;
+//       $scope.uploadingList = [];
+//       $scope.intervalId = $interval(function () {
+//         getAllStatus($scope);
+//       }, 500);
+//     } else if ($rootScope.statusControllerScope.intervalId) {
+//       var $scope = $rootScope.statusControllerScope;
+//       $scope.intervalId = $interval(function () {
+//         getAllStatus($scope);
+//       }, 500);
+//       //console.log('$interval continue : ', $rootScope.autoScanControllerScope.intervalId);
+//     }
+//   }
+//
+// })();
 /**
  * UploaderController
  */
@@ -75,95 +75,74 @@
   angular.module('Uploader.views').controller('UploadController', ['$rootScope', 'api', '$interval', uploadController]);
   function uploadController($rootScope, api, $interval) {
     //$rootScope.uploadControllerScope --> $scope
-    var getStatus = function ($scope) {
-      var syncId = $scope.readResults.syncId;
-      return api.getUploadStatus(syncId).then(
-        function (result) {
-          $scope.readResults.dcmCount = result.total;
-          $scope.procession = result.success + '/' + $scope.readResults.dcmCount;
-          if (result.success == $scope.readResults.dcmCount && $scope.intervalId != null && $scope.readResults.dcmCount!=0) {
-            $interval.cancel($scope.intervalId);
-            $scope.intervalId = null;
-            $scope.working = false;
-            $scope.procession = 'upload finish';
-            $scope.message = '';
-          }
-        })
+    var getFileUplodStatuses = function ($scope) {
+      $scope.intervalId = $interval(function () {
+        getFileList($scope);
+        }, 1500);
     };
+    var getFileList = function ($scope) {
+      return api.getFileInfoList().then(
+        function (result) {
+          utils.formatList(result.fileInfoList);
+          $scope.fileInfoList = result.fileInfoList;
+        }
+      );
+    }
 
     if (!$rootScope.uploadControllerScope) {
       $rootScope.uploadControllerScope = {};
       var $scope = $rootScope.uploadControllerScope;
-      $scope.dcmDir = $rootScope.$settings.UploadDir;
-      $scope.readResults = {
-        studies: null,
-        dcmCount: 0,
-        dcmInfos: null,
-        syncId: '',
+      if (!$rootScope.$settings) {
+        api.getSettings()
+        .then(function (result) {
+          $rootScope.$settings = result.settings;
+          $scope.dcmDir = $rootScope.$settings.UploadDir;
+        })
+      } else {
+        $scope.dcmDir = $rootScope.$settings.UploadDir;
       }
-      $scope.procession = '';
-      $scope.message = '';
-      $scope.working = false;
-      $scope.intervalId = null;
+      $scope.fileInfoList;
+      getFileUplodStatuses($scope);
 
-      $scope.read = function () {
-
-          api.readDcm({ dir: $scope.dcmDir })
-          .then(function (result) {
-            $scope.readResults.studies = result.studies;
-            $scope.readResults.dcmCount = result.dcmInfos.length;
-            $scope.readResults.dcmInfos = result.dcmInfos;
-          });
-      };
-      $scope.upload = function () {
-        api.uploadFile({ dcmInfos: $scope.readResults.dcmInfos }).then(function (result) {
-          $scope.readResults.syncId = result.syncId;
-          $scope.intervalId = $interval(function () {
-            getStatus($scope);
-          }, 500);
-        });
-      }
       $scope.browseAndUpload = function () {
         const { dialog } = require('electron').remote;
         var path = dialog.showOpenDialog({ properties: ['openFile', 'openDirectory', 'multiSelections'] });
         if (path) {
           $scope.dcmDir = path[0];
-          var stat = require('fs').statSync($scope.dcmDir);
-          if (stat.isDirectory()) {
+          var stat = require('fs').statSync(path[0]);
+          if (stat.isFile()) {
             $scope.working = true;
             $scope.message = '';
-            console.log($scope.dcmDir);
-            $scope.message = '正在准备上传...';
-            api.readDcm({ dir: $scope.dcmDir })
-            .then(function (result) {
-              $scope.readResults.studies = result.studies;
-              $scope.readResults.dcmCount = result.dcmInfos.length;
-              $scope.readResults.dcmInfos = result.dcmInfos;
-
-              api.uploadFile({ dcmInfos: null }).then(function (result) {
-                $scope.readResults.syncId = result.syncId;
-                $scope.intervalId = $interval(function () {
-                  getStatus($scope);
-                }, 500);
-              });
-
+            console.log(path[0]);
+            $scope.message = '正在上传...';
+            api.uploadFile({ dir: path[0] }).then(function (result) {
+              //$scope.readResults.syncId = result.syncId;
+              // $scope.intervalId = $interval(function () {
+              //   getStatus($scope);
+              // }, 1000);
             });
-          }else{
-            $scope.message = '文件夹选择错误!请重新选择';
+          } else {
+            $scope.message = '文件选择错误!请重新选择';
             $scope.dcmDir = '';
           }
         }
       }
       $scope.browseFolder = function (path) {
         const { dialog } = require('electron').remote;
-        $scope.dcmDir = dialog.showOpenDialog({ properties: ['openFile', 'openDirectory', 'multiSelections'] })
-        //$scope.dcmDir = '/Users/intern07/Desktop/dcms/test';
+        $scope.dcmDir = dialog.showOpenDialog({ properties: ['openFile', 'openDirectory', 'multiSelections'] });
       };
-
+      $scope.pauseUpload = function (sId) {
+        api.stopUploadFile(sId).then(function () {
+        });
+      };
+      $scope.resumeUpload = function (sId) {
+        api.resumeUploadFile(sId).then(function () {
+        });
+      };
       /**
        * status recovery
        */
-      if($rootScope.$initStatus.ManualUpload){
+      if ($rootScope.$initStatus && $rootScope.$initStatus.ManualUpload) {
         $scope.working = true;
         $scope.readResults.syncId = $rootScope.$initStatus.ManualUpload;
         $scope.intervalId = $interval(function () {
@@ -184,142 +163,142 @@
 
 })();
 
-/**
- * AutoScanController
- */
-(function () {
-
-  'use strict';
-  angular.module('Uploader.views').controller('AutoScanController', ['$scope', 'api', '$interval', '$rootScope', autoScanController]);
-  function autoScanController($scope, api, $interval, $rootScope) {
-    //$rootScope.autoScanControllerScope --> $scope
-    var WORKING = 1, STOPPING = -1, STOPPED = 0;
-    var getStatus = function ($scope) {
-      var syncId = $scope.syncId;
-      return api.getUploadStatus(syncId).then(
-        function (result) {
-          $scope.procession = result.success + '/' + result.total;
-          if (result.success == result.total && $scope.intervalId != null && $scope.state == STOPPED) {
-            $interval.cancel($scope.intervalId);
-            //console.log('$interval stop : ', $scope.intervalId);
-            $scope.intervalId = null;
-            $scope.procession = 'upload finish';
-          }
-        })
-    };
-    if (!$rootScope.autoScanControllerScope) {
-      $rootScope.autoScanControllerScope = {};
-      var $scope = $rootScope.autoScanControllerScope;
-      $scope.intervalId = null;
-
-      $scope.dcmDir = $rootScope.$settings.ScanDir;
-      $scope.procession = '';
-      $scope.syncId = '';
-      $scope.state = STOPPED;
-      $scope.message = '';
-      $scope.startScan = function () {
-
-        api.startScan({ dir: $scope.dcmDir }).then(function (result) {
-          console.log(result);
-          $scope.state = WORKING;
-          $scope.message = '文件夹监控已打开';
-          $scope.syncId = result.syncId;
-          $scope.intervalId = $interval(function () {
-            getStatus($scope);
-          }, 500);
-        });
-      }
-      $scope.endScan = function () {
-        api.endScan({}).then(function (result) {
-          //console.log(result.file);
-          $scope.state = STOPPED;
-          $scope.message = '文件夹监控已关闭';
-        });
-        $scope.state = STOPPING;
-        $scope.message = '正在关闭对文件夹的监控...'
-      }
-      $scope.browseFolder = function (path) {
-        const { dialog } = require('electron').remote;
-        var path = dialog.showOpenDialog({ properties: ['openFile', 'openDirectory', 'multiSelections'] });
-        if (path) {
-          $scope.dcmDir = path[0];
-          $scope.message = '';
-          var stat = require('fs').statSync($scope.dcmDir);
-          if (!stat.isDirectory()) {
-            $scope.message = '文件夹选择错误!请重新选择';
-            $scope.dcmDir = '';
-          }
-        }
-      }
-      /**
-       * status recovery
-       */
-      if($rootScope.$initStatus.AutoScanUpload){
-        $scope.message = '文件夹监控已打开';
-        $scope.state = WORKING;
-        $scope.syncId = $rootScope.$initStatus.AutoScanUpload;
-        $scope.intervalId = $interval(function () {
-          getStatus($scope);
-        }, 500);
-      }
-
-    }
-    else if ($rootScope.autoScanControllerScope.intervalId) {
-      var $scope = $rootScope.autoScanControllerScope;
-      $scope.intervalId = $interval(function () {
-        getStatus($scope);
-      }, 500);
-      //console.log('$interval continue : ', $rootScope.autoScanControllerScope.intervalId);
-    }
-  }
-
-})();
+// /**
+//  * AutoScanController
+//  */
+// (function () {
+//
+//   'use strict';
+//   angular.module('Uploader.views').controller('AutoScanController', ['$scope', 'api', '$interval', '$rootScope', autoScanController]);
+//   function autoScanController($scope, api, $interval, $rootScope) {
+//     //$rootScope.autoScanControllerScope --> $scope
+//     var WORKING = 1, STOPPING = -1, STOPPED = 0;
+//     var getStatus = function ($scope) {
+//       var syncId = $scope.syncId;
+//       return api.getUploadStatus(syncId).then(
+//         function (result) {
+//           $scope.procession = result.success + '/' + result.total;
+//           if (result.success == result.total && $scope.intervalId != null && $scope.state == STOPPED) {
+//             $interval.cancel($scope.intervalId);
+//             //console.log('$interval stop : ', $scope.intervalId);
+//             $scope.intervalId = null;
+//             $scope.procession = 'upload finish';
+//           }
+//         })
+//     };
+//     if (!$rootScope.autoScanControllerScope) {
+//       $rootScope.autoScanControllerScope = {};
+//       var $scope = $rootScope.autoScanControllerScope;
+//       $scope.intervalId = null;
+//
+//       $scope.dcmDir = $rootScope.$settings.ScanDir;
+//       $scope.procession = '';
+//       $scope.syncId = '';
+//       $scope.state = STOPPED;
+//       $scope.message = '';
+//       $scope.startScan = function () {
+//
+//         api.startScan({ dir: $scope.dcmDir }).then(function (result) {
+//           console.log(result);
+//           $scope.state = WORKING;
+//           $scope.message = '文件夹监控已打开';
+//           $scope.syncId = result.syncId;
+//           $scope.intervalId = $interval(function () {
+//             getStatus($scope);
+//           }, 500);
+//         });
+//       }
+//       $scope.endScan = function () {
+//         api.endScan({}).then(function (result) {
+//           //console.log(result.file);
+//           $scope.state = STOPPED;
+//           $scope.message = '文件夹监控已关闭';
+//         });
+//         $scope.state = STOPPING;
+//         $scope.message = '正在关闭对文件夹的监控...'
+//       }
+//       $scope.browseFolder = function (path) {
+//         const { dialog } = require('electron').remote;
+//         var path = dialog.showOpenDialog({ properties: ['openFile', 'openDirectory', 'multiSelections'] });
+//         if (path) {
+//           $scope.dcmDir = path[0];
+//           $scope.message = '';
+//           var stat = require('fs').statSync($scope.dcmDir);
+//           if (!stat.isDirectory()) {
+//             $scope.message = '文件夹选择错误!请重新选择';
+//             $scope.dcmDir = '';
+//           }
+//         }
+//       }
+//       /**
+//        * status recovery
+//        */
+//       if ($rootScope.$initStatus.AutoScanUpload) {
+//         $scope.message = '文件夹监控已打开';
+//         $scope.state = WORKING;
+//         $scope.syncId = $rootScope.$initStatus.AutoScanUpload;
+//         $scope.intervalId = $interval(function () {
+//           getStatus($scope);
+//         }, 500);
+//       }
+//
+//     }
+//     else if ($rootScope.autoScanControllerScope.intervalId) {
+//       var $scope = $rootScope.autoScanControllerScope;
+//       $scope.intervalId = $interval(function () {
+//         getStatus($scope);
+//       }, 500);
+//       //console.log('$interval continue : ', $rootScope.autoScanControllerScope.intervalId);
+//     }
+//   }
+//
+// })();
 
 
 /**
  * AutoPushController
  */
-(function () {
-
-  'use strict';
-  angular.module('Uploader.views').controller('AutoPushController', ['$scope', 'api', '$rootScope', '$interval', autoPushController]);
-  function autoPushController($scope, api, $rootScope, $interval) {
-    //$rootScope.autoPushControllerScope --> $scope
-    var WORKING = 1, STOPPING = -1, STOPPED = 0;
-    if (!$rootScope.autoPushControllerScope) {
-      $rootScope.autoPushControllerScope = {};
-      var $scope = $rootScope.autoPushControllerScope;
-
-      $scope.state = STOPPED;
-      $scope.message = '';
-
-      $scope.startListen = function () {
-        api.startListen({}).then(function (result) {
-          $scope.state = WORKING;
-          $scope.message = '自动推送服务已启动';
-        })
-      }
-
-      $scope.stopListen = function () {
-        api.stopListen({}).then(function (result) {
-          $scope.state = STOPPED;
-          $scope.message = '自动推送服务已关闭';
-        });
-        $scope.state = STOPPING;
-        $scope.message = '正在关闭自动推送服务...'
-      }
-
-      /**
-       * status recovery
-       */
-      if($rootScope.$initStatus.AutoPushUpload){
-        $scope.state = WORKING;
-        $scope.message = '自动推送服务已启动';
-      }
-    }
-  }
-
-})();
+// (function () {
+//
+//   'use strict';
+//   angular.module('Uploader.views').controller('AutoPushController', ['$scope', 'api', '$rootScope', '$interval', autoPushController]);
+//   function autoPushController($scope, api, $rootScope, $interval) {
+//     //$rootScope.autoPushControllerScope --> $scope
+//     var WORKING = 1, STOPPING = -1, STOPPED = 0;
+//     if (!$rootScope.autoPushControllerScope) {
+//       $rootScope.autoPushControllerScope = {};
+//       var $scope = $rootScope.autoPushControllerScope;
+//
+//       $scope.state = STOPPED;
+//       $scope.message = '';
+//
+//       $scope.startListen = function () {
+//         api.startListen({}).then(function (result) {
+//           $scope.state = WORKING;
+//           $scope.message = '自动推送服务已启动';
+//         })
+//       }
+//
+//       $scope.stopListen = function () {
+//         api.stopListen({}).then(function (result) {
+//           $scope.state = STOPPED;
+//           $scope.message = '自动推送服务已关闭';
+//         });
+//         $scope.state = STOPPING;
+//         $scope.message = '正在关闭自动推送服务...'
+//       }
+//
+//       /**
+//        * status recovery
+//        */
+//       if ($rootScope.$initStatus.AutoPushUpload) {
+//         $scope.state = WORKING;
+//         $scope.message = '自动推送服务已启动';
+//       }
+//     }
+//   }
+//
+// })();
 
 
 /**

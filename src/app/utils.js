@@ -14,6 +14,9 @@ var Utils = function(){
         date = new Date(Date.parse(item['updatedAt']));
         item['updatedAt'] = getFormatDateString(date);
       }
+      if(item['progress']){
+        item['progress'] = (item['progress']*100).toFixed(2);
+      }
     });
     return arr;
   };

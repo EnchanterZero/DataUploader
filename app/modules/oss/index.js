@@ -10,8 +10,9 @@ import path from 'path';
 import { util } from '../../util';
 const logger = util.logger.getLogger('oss');
 import * as DcmInfo from '../dcminfo';
+import * as FileInfo from '../fileinfo';
 
-export function getOSSClient(credential,internal) {
+export function getOSSClient(credential, internal) {
   return new OSS({
     secure: internal,
     region: credential.Region,
@@ -22,27 +23,32 @@ export function getOSSClient(credential,internal) {
   });
 }
 
-function putOSSDcmFile(ossClient ,dcmInfo, retry = 2) {
-  const filepath = dcmInfo.dcmPath;
+
+/**
+ * for dicom files
+ */
+
+function putOSSDcmFile(ossClient, dcmInfo, retry = 2) {
+  const filePath = dcmInfo.dcmPath;
   const objectKey = path.join(dcmInfo.fileId, dcmInfo.SOPInstanceUID);
-  logger.info('putting OSS DcmFile : ', objectKey, filepath);
+  logger.info('putting OSS DcmFile : ', objectKey, filePath);
   return co(function *() {
     do {
       try {
-        const fileSize = yield util.size(filepath);
+        const fileSize = yield util.size(filePath);
         if (fileSize > 1024 * 1024) {
-          const progress = function* (p, cpt) {
-            logger.debug(`uploading ${filepath} to ${objectKey}, progress: ${p}`);
+          const progress = function*(p, cpt) {
+            logger.debug(`uploading ${filePath} to ${objectKey}, progress: ${p}`);
           }
-          const result = yield ossClient.multipartUpload(objectKey, filepath, {
+          const result = yield ossClient.multipartUpload(objectKey, filePath, {
             partSize: 1024 * 1024,
             progress,
           });
         } else {
-          const result = yield ossClient.put(objectKey, filepath);
-          logger.debug(`uploading ${filepath} to ${objectKey}`);
+          const result = yield ossClient.put(objectKey, filePath);
+          logger.debug(`uploading ${filePath} to ${objectKey}`);
         }
-        if (filepath.endsWith('.stl')) {
+        if (filePath.endsWith('.stl')) {
           const copyresult = yield ossClient.copy(objectKey, objectKey, {
             headers: {
               'Content-Type': 'application/json',
@@ -51,56 +57,154 @@ function putOSSDcmFile(ossClient ,dcmInfo, retry = 2) {
         }
         dcmInfo.isSynchronized = true;
         return dcmInfo;
-      } catch(err) {
-        logger.error(`error when uploading ${filepath} to ${objectKey}`, err);
+      } catch (err) {
+        logger.error(`error when uploading ${filePath} to ${objectKey}`, err);
       }
-    } while(retry-- > 0);
+    } while (retry-- > 0);
 
-    throw new Error(`uploading ${filepath} to ${objectKey} failed`);
+    throw new Error(`uploading ${filePath} to ${objectKey} failed`);
   });
 }
 /**
- * 
+ *
  * @param credential {object} from API Server
  * @param internal {boolean}
  * @param dcmInfos {array} Array of DcmInfo
  * @param options {object} options.afterDelete: default false
- * @returns none 
+ * @returns none
  */
-export function putOSSDcms(credential, internal, dcmInfos,options) {
+export function putOSSDcms(credential, internal, dcmInfos, options) {
   logger.info('getOSSObject internal =', internal);
   let afterDelete = false;
-  if(options && options.afterDelete === true) {
+  if (options && options.afterDelete === true) {
     afterDelete = true;
   }
   logger.info('getOSSObject options.afterDelete =', afterDelete);
   const client = getOSSClient(credential, internal);
-  let fileIds = _.uniq(dcmInfos.map((item) =>{
+  let fileIds = _.uniq(dcmInfos.map((item) => {
     return item.fileId
   }));
-  if (fileIds.length > 1){
+  if (fileIds.length > 1) {
     throw new Error('file id duplicated');
   }
   logger.info(`Start putOSSObject ${credential.Region} ${credential.Bucket} ${fileIds[0]} `);
 
   return util.parallelReduce(dcmInfos, 4, (dcmInfo) => {
 
-      return putOSSDcmFile(client, dcmInfo)
-      .then((dcmInfo) =>{
-        return co(function* () {
-          yield DcmInfo.updateDcmInfoSync(dcmInfo);
-          logger.info('update DcmInfo Synchronized : ', dcmInfo.SOPInstanceUID,dcmInfo.syncId);
-          if(afterDelete){
-            yield util.remove(dcmInfo.dcmPath);
-            logger.info('remove temp DcmInfo : ', dcmInfo.dcmPath ,dcmInfo.syncId);
-          }
-          
-        });
-      })
-      .catch((err) =>{
-        logger.error(err);
+    return putOSSDcmFile(client, dcmInfo)
+    .then((dcmInfo) => {
+      return co(function*() {
+        yield DcmInfo.updateDcmInfoSync(dcmInfo);
+        logger.info('update DcmInfo Synchronized : ', dcmInfo.SOPInstanceUID, dcmInfo.syncId);
+        if (afterDelete) {
+          yield util.remove(dcmInfo.dcmPath);
+          logger.info('remove temp DcmInfo : ', dcmInfo.dcmPath, dcmInfo.syncId);
+        }
+
       });
-    }).then(() => {
-      logger.info(`End putOSSObject ${credential.Region} ${credential.Bucket} ${fileIds[0]} ${dcmInfos[0].syncId}`);
+    })
+    .catch((err) => {
+      logger.error(err);
     });
+  }).then(() => {
+    logger.info(`End putOSSObject ${credential.Region} ${credential.Bucket} ${fileIds[0]} ${dcmInfos[0].syncId}`);
+  });
+}
+
+/**
+ * for (big) files
+ */
+
+/**
+ *
+ * @param credential {object} from API Server
+ * @param internal {boolean}
+ * @param dcmInfos {array} Array of DcmInfo
+ * @param options {object} options.afterDelete: default false
+ * @returns none
+ */
+
+
+export function putOSSFile(credential, internal, fileInfo, options) {
+  logger.info('getOSSObject internal =', internal);
+  let afterDelete = false;
+  if (options && options.afterDelete === true) {
+    afterDelete = true;
+  }
+  logger.info('getOSSObject options.afterDelete =', afterDelete);
+  const ossClient = getOSSClient(credential, internal);
+  logger.info(`Start putOSSObject ${credential.Region} ${credential.Bucket} ${fileInfo.fileId} `);
+  const filePath = fileInfo.filePath;
+  const objectKey = fileInfo.fileId;
+  let retry = 2;
+  logger.info('putting OSS File : ', objectKey, filePath);
+  // start upload
+  return co(function *() {
+      do {
+        try {
+          const fileSize = yield util.size(filePath);
+          if (fileSize > 1024 * 1024) {
+            let progress = function*(p, cpt) {
+              logger.debug(`uploading ${filePath} to ${objectKey}, progress: ${p}`);
+              //store file upload info
+              cpt.doneParts = [];
+              let setField = {};
+              setField.progress = p;
+              setField.checkPoint = JSON.stringify(cpt);
+
+              let r = yield FileInfo.getFileInfoBySyncId(fileInfo.syncId);
+              if (r.status == FileInfo.FileInfoStatuses.pausing && p != 1) {
+                logger.debug(`[Pausing] uploading ${filePath} to ${objectKey}`);
+                setField.status = FileInfo.FileInfoStatuses.paused;
+              }
+              if (p === 1) {
+                setField.status = FileInfo.FileInfoStatuses.finished;
+                logger.info('update FileInfo Finished : ', fileInfo.filePath, fileInfo.syncId);
+                if (afterDelete) {
+                  yield util.remove(fileInfo.filePath);
+                  logger.info('remove temp DcmInfo : ', fileInfo.filePath, fileInfo.syncId);
+                }
+              }
+              yield FileInfo.updateFileInfo(fileInfo, setField);
+              return (r.status != FileInfo.FileInfoStatuses.pausing || p === 1);
+            };
+            //whether this is a resume upload or not
+            let f = yield FileInfo.getFileInfoBySyncId(fileInfo.syncId);
+            if (f.progress == 0 && f.checkPoint == '') {
+              const result = yield ossClient.multipartUpload(objectKey, filePath, {
+                partSize: 1024 * 1024,
+                progress,
+              });
+            } else {
+              yield ossClient.multipartUpload(objectKey, filePath, {
+                partSize: 1024 * 1024,
+                progress,
+                checkpoint: JSON.parse(f.checkPoint),
+              });
+            }
+          }
+          else {
+            const result = yield ossClient.put(objectKey, filePath);
+            logger.debug(`uploading ${filePath} to ${objectKey}`);
+          }
+
+          return fileInfo;
+        }
+        catch
+          (err) {
+          logger.error(`error when uploading ${filePath} to ${objectKey}`, err);
+        }
+      }
+      while (retry-- > 0);
+
+      throw new Error(`uploading ${filePath} to ${objectKey} failed`);
+    }
+  )
+  .then(() => {
+    logger.info(`End putOSSObject ${credential.Region} ${credential.Bucket} ${fileInfo.fileId} ${fileInfo.syncId}`);
+  })
+  .catch((err) => {
+    logger.error(err);
+    FileInfo.updateFileInfo(fileInfo, {status:FileInfo.FileInfoStatuses.failed});
+  });
 }

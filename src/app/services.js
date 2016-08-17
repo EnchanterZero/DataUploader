@@ -61,6 +61,7 @@
   .service('SettingService', ['$rootScope', '$state', '$window', 'api', 'Session', settingService]);
 
   function settingService($rootScope, $state, $window, api, Session) {
+    
     var LOCAL_PACSProvider = 'PACSProvider';
     var LOCAL_PACSServerIP = 'PACSServerIP';
     var LOCAL_PACSServerPort = 'PACSServerPort';
@@ -300,22 +301,43 @@
     /**
      * manual upload api
      */
-    this.readDcm = function (data) {
-      var options = {
-        method: 'POST',
-        url: serverUrl + '/manualUpload/read',
-        data: data,
+    this.getFileInfoList = function () {
+      var option = {
+        method: 'GET',
+        url: serverUrl + '/manualUpload/list',
+        data: {},
       }
-      authorize(options)
-      return $http(options)
-      .then(checkStatusCode);
+      authorize(option);
+      return $http(option)
+      .then(checkStatusCode)
     }
-
-    this.uploadFile = function (query) {
+    this.uploadFile = function (data) {
       var option = {
         method: 'POST',
         url: serverUrl + '/manualUpload/start',
-        data: query,
+        data: data,
+      }
+      authorize(option);
+      return $http(option)
+      .then(checkStatusCode)
+    }
+    
+    this.stopUploadFile = function (query) {
+      var option = {
+        method: 'POST',
+        url: serverUrl + '/manualUpload/stop/' + query,
+        data: {},
+      }
+      authorize(option);
+      return $http(option)
+      .then(checkStatusCode)
+    }
+    
+    this.resumeUploadFile = function (query) {
+      var option = {
+        method: 'POST',
+        url: serverUrl + '/manualUpload/resume/' + query,
+        data: {},
       }
       authorize(option);
       return $http(option)
