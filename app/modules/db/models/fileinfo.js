@@ -2,6 +2,7 @@
  * name
  * filePath
  * progress
+ * checkPointTime
  * speed
  * checkPoint
  * status   finished | uploading | paused | pausing
@@ -41,7 +42,12 @@ export function create(sequelize, DataTypes) {
     },
     speed:{
       type: DataTypes.STRING,
-      defaultValue: '',
+      defaultValue: '0',
+      allowNull: true,
+    },
+    checkPointTime:{
+      type: DataTypes.STRING,
+      defaultValue: '0',
       allowNull: true,
     },
     checkPoint: {

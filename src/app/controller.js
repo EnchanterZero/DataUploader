@@ -83,8 +83,17 @@
     var getFileList = function ($scope) {
       return api.getFileInfoList().then(
         function (result) {
-          utils.formatList(result.fileInfoList);
-          $scope.fileInfoList = result.fileInfoList;
+          if(!$scope.oldfileInfoList) {
+            utils.formatList(result.fileInfoList, result.fileInfoList);
+
+            $scope.oldfileInfoList = result.fileInfoList;
+            $scope.fileInfoList = result.fileInfoList;
+          }else{
+            utils.formatList(result.fileInfoList, $scope.oldfileInfoList);
+
+            $scope.oldfileInfoList = $scope.fileInfoList;
+            $scope.fileInfoList = result.fileInfoList;
+          }
         }
       );
     }
@@ -114,7 +123,7 @@
             $scope.working = true;
             $scope.message = '';
             console.log(path[0]);
-            $scope.message = '正在上传...';
+            $scope.message = '';
             api.uploadFile({ dir: path[0] }).then(function (result) {
               //$scope.readResults.syncId = result.syncId;
               // $scope.intervalId = $interval(function () {

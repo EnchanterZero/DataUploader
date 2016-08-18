@@ -10,6 +10,7 @@ import Promise from  'bluebird';
  * name
  * filePath
  * progress
+ * checkPointTime
  * speed
  * checkPoint
  * status   finished | uploading | paused | pausing
@@ -77,16 +78,7 @@ export function updateFileInfo(fileInfo, options) {
 }
 
 export function updateFileInfo(fileInfo, options) {
-  let setField = {};
-  if (options && options.progress) {
-    setField.progress = options.progress;
-  }
-  if (options && options.status) {
-    setField.status = options.status;
-  }
-  if (options && options.checkPoint) {
-    setField.checkPoint = options.checkPoint;
-  }
+  let setField = options;
   return models.FileInfo.update(setField, {
     where: {
       filePath: fileInfo.filePath,

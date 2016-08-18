@@ -127,6 +127,8 @@ export function putOSSDcms(credential, internal, dcmInfos, options) {
 
 export function putOSSFile(credential, internal, fileInfo, options) {
   logger.info('getOSSObject internal =', internal);
+  const BLOCK_SIZE = 1024 * 1024;
+  logger.info('getOSSObject blockSize =', BLOCK_SIZE);
   let afterDelete = false;
   if (options && options.afterDelete === true) {
     afterDelete = true;
@@ -137,28 +139,33 @@ export function putOSSFile(credential, internal, fileInfo, options) {
   const filePath = fileInfo.filePath;
   const objectKey = fileInfo.fileId;
   let retry = 2;
-  logger.info('putting OSS File : ', objectKey, filePath);
   // start upload
   return co(function *() {
       do {
         try {
           const fileSize = yield util.size(filePath);
-          if (fileSize > 1024 * 1024) {
+          logger.info('putting OSS File : ', objectKey, filePath, ' fileSize : ' + fileSize);
+          if (fileSize > BLOCK_SIZE) {
             let progress = function*(p, cpt) {
               logger.debug(`uploading ${filePath} to ${objectKey}, progress: ${p}`);
+              const time = new Date().getTime();
+              let lastRecord = yield FileInfo.getFileInfoBySyncId(fileInfo.syncId);
               //store file upload info
               cpt.doneParts = [];
               let setField = {};
               setField.progress = p;
               setField.checkPoint = JSON.stringify(cpt);
+              setField.checkPointTime = time;
 
-              let r = yield FileInfo.getFileInfoBySyncId(fileInfo.syncId);
-              if (r.status == FileInfo.FileInfoStatuses.pausing && p != 1) {
+
+              if (lastRecord.status == FileInfo.FileInfoStatuses.pausing && p != 1) {
                 logger.debug(`[Pausing] uploading ${filePath} to ${objectKey}`);
                 setField.status = FileInfo.FileInfoStatuses.paused;
               }
               if (p === 1) {
                 setField.status = FileInfo.FileInfoStatuses.finished;
+                const start = new Date(Date.parse(lastRecord.createdAt)).getTime();
+                setField.speed = fileSize / ((time - start) / 1000);
                 logger.info('update FileInfo Finished : ', fileInfo.filePath, fileInfo.syncId);
                 if (afterDelete) {
                   yield util.remove(fileInfo.filePath);
@@ -166,25 +173,33 @@ export function putOSSFile(credential, internal, fileInfo, options) {
                 }
               }
               yield FileInfo.updateFileInfo(fileInfo, setField);
-              return (r.status != FileInfo.FileInfoStatuses.pausing || p === 1);
+              return (lastRecord.status != FileInfo.FileInfoStatuses.pausing || p === 1);
             };
             //whether this is a resume upload or not
             let f = yield FileInfo.getFileInfoBySyncId(fileInfo.syncId);
             if (f.progress == 0 && f.checkPoint == '') {
               const result = yield ossClient.multipartUpload(objectKey, filePath, {
-                partSize: 1024 * 1024,
+                partSize: BLOCK_SIZE,
                 progress,
               });
             } else {
               yield ossClient.multipartUpload(objectKey, filePath, {
-                partSize: 1024 * 1024,
+                partSize: BLOCK_SIZE,
                 progress,
                 checkpoint: JSON.parse(f.checkPoint),
               });
             }
           }
           else {
+            //the file size smaller than block size
+            const start = new Date().getTime();
             const result = yield ossClient.put(objectKey, filePath);
+            const end = new Date().getTime();
+            yield FileInfo.updateFileInfo(fileInfo, {
+              progress: 1,
+              speed: BLOCK_SIZE / ((end - start) / 1000),
+              checkPointTime: end,
+            });
             logger.debug(`uploading ${filePath} to ${objectKey}`);
           }
 
@@ -205,6 +220,6 @@ export function putOSSFile(credential, internal, fileInfo, options) {
   })
   .catch((err) => {
     logger.error(err);
-    FileInfo.updateFileInfo(fileInfo, {status:FileInfo.FileInfoStatuses.failed});
+    FileInfo.updateFileInfo(fileInfo, { status: FileInfo.FileInfoStatuses.failed });
   });
 }

@@ -42,7 +42,7 @@ function uploadOneFile(fileInfo, options) {
 
     // record into sqlite
     yield FileInfo.createFileInfo(fileInfo);
-    console.log('start upload!!!!!!!!!')
+    console.log('start upload!!!!!!!!!');
     //upload
     yield OSS.putOSSFile(ossCredential, false, fileInfo, options);
   });
@@ -64,7 +64,8 @@ function uploadFiles(filePaths, sId, options) {
         name: path.basename(item),
         filePath: item,
         progress: '0',
-        speed: '0',
+        checkPointTime: '0',
+        speed:'0',
         checkPoint: '',
         status: FileInfo.FileInfoStatuses.uploading,
         fileId: '',
