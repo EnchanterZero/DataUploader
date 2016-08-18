@@ -99,51 +99,6 @@
 })();
 
 /**
- * service StateService
- */
-// (function () {
-//
-//   angular.module('Uploader.services')
-//   .service('PageStateService', ['$rootScope', '$state', '$window', 'api', 'Session', pageStateService]);
-//
-//   function pageStateService($rootScope, $state, $window, api, Session) {
-//     var LOCAL_PACSProvider = 'PACSProvider';
-//     var LOCAL_PACSServerIP = 'PACSServerIP';
-//     var LOCAL_PACSServerPort = 'PACSServerPort';
-//     var LOCAL_ScanInterval = 'ScanInterval';
-//     var LOCAL_UserValidateURL = 'UserValidateURL';
-//     var LOCAL_AnonymousMode = 'AnonymousMode';
-//
-//     var pageStateService = this;
-//
-//     this.loadSettings = function () {
-//       api.getSettings()
-//       .then(function (result) {
-//         $rootScope.$settings = result.settings;
-//       })
-//     }
-//
-//     this.setSettings = function (settings) {
-//       var settingsJSON = {
-//         PACSProvider: settings.PACSProvider,
-//         PACSServerIP: settings.PACSServerIP,
-//         PACSServerPort: settings.PACSServerPort,
-//         ScanInterval: settings.ScanInterval,
-//         UserValidateURL: settings.UserValidateURL,
-//         AnonymousMode: settings.AnonymousMode,
-//       };
-//       return api.setSettings({settings: settingsJSON})
-//       .then(function (result) {
-//         $rootScope.$settings = settingsJSON;
-//         return result;
-//       })
-//     }
-//
-//     return pageStateService;
-//   }
-// })();
-
-/**
  * service Session
  */
 (function () {
@@ -190,58 +145,22 @@
   var backendService = require('../../dist/services');
   var FileInfo = require('../../dist/modules/fileinfo');
   var Config = require('../../dist/modules/config');
+  var co = require('co');
+  var logger = require('../../dist/util').util.logger.getLogger('serviceApi');
+  //check upload
+  co(function* () {
+    let r = yield FileInfo.listUploadingFiles()
+    backendService.uploadRecovery.recover(r);
+  })
+
   angular.module('Uploader.services')
   .service('api', ['$http', '$rootScope', 'serverUrl', 'Session', '$window', function ($http, $rootScope, serverUrl, Session, $window) {
     var LOCAL_TOKEN_KEY = 'token';
     var LOCAL_CURRENT_USER = 'currentUser';
     var api = this;
 
-    function authorize(options) {
-      var token = Session.get(LOCAL_TOKEN_KEY);
-      var credential = { token: token };
-      if (options.method === 'GET') {
-        options.params = _.assign(options.params, credential);
-      } else {
-        options.data = _.assign(options.data, credential);
-      }
-    }
-
-    function checkStatusCode(result) {
-      if (!result || !result.data) {
-        throw new Error('empty response');
-      }
-      if (result.data.code === 1001) {
-        $rootScope.$emit('invalidTokenEvent');
-        api.token = null;
-      }
-      if (result.data.code !== 200) {
-        throw new Error('code ' + result.data.code);
-      }
-      //log all response data
-      console.log(result.data.data);
-      return result.data.data;
-    }
-
     this.setAuthToken = function (token) {
       this.token = token;
-    }
-
-    this.testCreateFile = function () {
-      var option = {
-        method: 'POST',
-        url: 'http://localhost:3000' + '/file/create',
-        data: {
-          type: 'uploadDcm',
-          size: '0',
-          hash: 'NONE',
-          name: 'test!!!!!!!!!!!!!!!',
-          isZip: false
-        },
-      }
-      authorize(option);
-      console.log(option);
-      return $http(option)
-      .then(checkStatusCode)
     }
 
     /**
@@ -281,8 +200,11 @@
     }
     this.setUserToken = function (data) {
       var token = Session.get(LOCAL_TOKEN_KEY);
-      if (!token)
-        backendService.serverApi.setAuthToken(token)
+      return co(function* () {
+        if (token)
+          backendService.serverApi.setAuthToken(token);
+        return {}
+      })
     }
 
     /**
@@ -295,37 +217,36 @@
       })
     }
 
-    this.uploadFile = function (data) {
-      var option = {
-        method: 'POST',
-        url: serverUrl + '/manualUpload/start',
-        data: data,
-      }
-      authorize(option);
-      return $http(option)
-      .then(checkStatusCode)
+    this.uploadFile = function (path) {
+      var syncId = new Date().getTime().toString();
+      co(function*() {
+        let r = yield backendService.fileUpload.uploadFiles([path], syncId, { afterDelete: false });
+      }).catch((err) => {
+        console.error(err, err.stack);
+      });
+      return co(function*() {
+        return { syncId: syncId }
+      });
+
     }
 
-    this.stopUploadFile = function (query) {
-      var option = {
-        method: 'POST',
-        url: serverUrl + '/manualUpload/stop/' + query,
-        data: {},
-      }
-      authorize(option);
-      return $http(option)
-      .then(checkStatusCode)
+    this.stopUploadFile = function (syncId) {
+      return backendService.fileUpload.stopUploadFiles(syncId)
+      .then((r)=> {
+        return { result: r }
+      });
     }
 
-    this.resumeUploadFile = function (query) {
-      var option = {
-        method: 'POST',
-        url: serverUrl + '/manualUpload/resume/' + query,
-        data: {},
-      }
-      authorize(option);
-      return $http(option)
-      .then(checkStatusCode)
+    this.resumeUploadFile = function (syncId) {
+      co(function*() {
+        let r = yield backendService.fileUpload.uploadFiles([], syncId, { afterDelete: false });
+      })
+      .catch((err) => {
+        logger.error(err, err.stack);
+      });
+      return co(function* () {
+        return {}
+      })
     }
 
     /**
@@ -333,10 +254,22 @@
      */
 
     this.setSettings = function (data) {
-      return Config.getConfig()
-      .then(function (r) {
-        return { settings: r }
-      })
+      var settings = data.settings;
+      var settingsJSON = {
+        PACSProvider: settings.PACSProvider,
+        PACSServerIP: settings.PACSServerIP,
+        PACSServerPort: settings.PACSServerPort,
+        ScanInterval: settings.ScanInterval,
+        UserValidateURL: settings.UserValidateURL,
+        AnonymousMode: settings.AnonymousMode,
+      };
+      return co(function*() {
+        yield Config.setConfig(settingsJSON);
+        backendService.uploadSetting.setConfig(settingsJSON);
+        return settingsJSON
+      }).catch(err => {
+        logger.error(err, err.stack);
+      });
     }
 
     this.getSettings = function () {

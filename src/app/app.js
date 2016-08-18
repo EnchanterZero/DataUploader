@@ -46,7 +46,6 @@
       .state('upload', {
         url: "/upload",
         templateUrl: './views/dashboard/upload.html',
-        //templateUrl: `file://${__dirname}/views/dashboard/upload.html`,
       })
       // .state('autoscan', {
       //   url: "/autoscan",
@@ -99,33 +98,33 @@
     function (Session, AuthService, SettingService, $state, $timeout, $interval, $window, $rootScope, api) {
 
       console.log('app.run');
-      /**
-       * get settings
-       */
-      SettingService.loadSettings();
+      
+      try{
+        /**
+         * get settings
+         */
+        SettingService.loadSettings();
 
-      /**
-       * auth check
-       */
-      var token = AuthService.loadCredentials();
-      if (!AuthService.isAuthenticated()) {
-        $window.alert('请先登录!');
-        $timeout(function () {
-          AuthService.gotoLogin();
-        }, 0);
-      } else {
-        api.setUserToken({ token: token })
-        .then(function () {
+        /**
+         * auth check
+         */
+        var token = AuthService.loadCredentials();
+        if (!AuthService.isAuthenticated()) {
+          $window.alert('请先登录!');
+          $timeout(function () {
+            AuthService.gotoLogin();
+          }, 0);
+        } else {
+          api.setUserToken({ token: token })
+          .then(function () {
 
-        });
+          });
+        }
+
+      }catch (err){
+        console.log(err,err.stack);
       }
-
-      /**
-       * init status check
-       */
-      api.getInitStauts().then(function (r) {
-        $rootScope.$initStatus = r;
-      });
+      
       /**
        * page change check
        */

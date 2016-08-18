@@ -64,8 +64,8 @@ function setBaseUrl(url) {
 }
 
 function setAuthToken(token) {
+  logger.debug('setUserToken', token);
   userToken = token;
-  logger.debug('setuserToken', userToken);
 }
 
 function getAuthToken() {

@@ -29,6 +29,7 @@
     var LOCAL_CURRENT_USER = 'currentUser';
 
     $scope.doLogout = function () {
+      alert('123123123');
       api.logout();
     };
   }
@@ -50,16 +51,18 @@
     var getFileList = function ($scope) {
       return api.getFileInfoList().then(
         function (result) {
-          if(!$scope.oldfileInfoList) {
-            utils.formatList(result.fileInfoList, result.fileInfoList);
+          if(result.fileInfoList) {
+            if (!$scope.oldfileInfoList) {
+              utils.formatList(result.fileInfoList, result.fileInfoList);
 
-            $scope.oldfileInfoList = result.fileInfoList;
-            $scope.fileInfoList = result.fileInfoList;
-          }else{
-            utils.formatList(result.fileInfoList, $scope.oldfileInfoList);
+              $scope.oldfileInfoList = result.fileInfoList;
+              $scope.fileInfoList = result.fileInfoList;
+            } else {
+              utils.formatList(result.fileInfoList, $scope.oldfileInfoList);
 
-            $scope.oldfileInfoList = $scope.fileInfoList;
-            $scope.fileInfoList = result.fileInfoList;
+              $scope.oldfileInfoList = $scope.fileInfoList;
+              $scope.fileInfoList = result.fileInfoList;
+            }
           }
         }
       );
@@ -91,7 +94,7 @@
             $scope.message = '';
             console.log(path[0]);
             $scope.message = '';
-            api.uploadFile({ dir: path[0] }).then(function (result) {
+            api.uploadFile(path[0]).then(function (result) {
               //$scope.readResults.syncId = result.syncId;
               // $scope.intervalId = $interval(function () {
               //   getStatus($scope);
@@ -115,23 +118,13 @@
         api.resumeUploadFile(sId).then(function () {
         });
       };
-      /**
-       * status recovery
-       */
-      if ($rootScope.$initStatus && $rootScope.$initStatus.ManualUpload) {
-        $scope.working = true;
-        $scope.readResults.syncId = $rootScope.$initStatus.ManualUpload;
-        $scope.intervalId = $interval(function () {
-          getStatus($scope);
-        }, 500);
-      }
 
 
     } else if ($rootScope.uploadControllerScope.intervalId) {
       var $scope = $rootScope.uploadControllerScope;
       $scope.intervalId = $interval(function () {
-        getStatus($scope);
-      }, 500);
+        getFileUplodStatuses($scope);
+      }, 1500);
       //console.log('$interval continue : ', $rootScope.autoScanControllerScope.intervalId);
     }
   }

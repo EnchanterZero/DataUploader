@@ -104,7 +104,7 @@ function uploadFiles(filePaths, sId, options) {
         syncId: syncId,
       };
     }).catch(err => {
-      logger.error(err);
+      logger.error(err,err.stack);
     });
   }
 }
