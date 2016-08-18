@@ -15,10 +15,13 @@
         <tr>
           <th>#</th>
           <th>Name</th>
+          <th>Project</th>
+          <th>Size</th>
           <th>Progress</th>
           <th>Speed</th>
           <th>Status</th>
           <th>CreatedAt</th>
+          <th></th>
           <th></th>
           <th></th>
         </tr>
@@ -27,6 +30,8 @@
         <tr ng-repeat="item in  uploadControllerScope.fileInfoList">
           <td>{{item.syncId}}</td>
           <td>{{item.name}}</td>
+          <td>{{item.project}}</td>
+          <td>{{item.size}}</td>
           <td>
             <div class="progress" style="margin-bottom: 0px;">
               <div class="progress-bar progress-bar-warning" role="progressbar" aria-valuenow="60" aria-valuemin="0"
@@ -45,6 +50,11 @@
           <td>
             <button class="btn btn-sm btn-primary" ng-disabled="item.status != 'paused' || item.status == 'failed'"
                     ng-click="uploadControllerScope.resumeUpload(item.syncId)">继续
+            </button>
+          </td>
+          <td>
+            <button class="btn btn-sm btn-primary" ng-disabled="item.status == 'finished' || item.status == 'aborted'"
+                    ng-click="uploadControllerScope.abortUpload(item.syncId)">放弃
             </button>
           </td>
         </tr>

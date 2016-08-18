@@ -143,7 +143,11 @@ export function putOSSFile(credential, internal, fileInfo, options) {
   return co(function *() {
       do {
         try {
-          const fileSize = yield util.size(filePath);
+          let fileSize;
+          if (fileInfo.size)
+            fileSize = fileInfo.size;
+          else
+            fileSize = yield util.size(filePath);
           logger.info('putting OSS File : ', objectKey, filePath, ' fileSize : ' + fileSize);
           if (fileSize > BLOCK_SIZE) {
             let progress = function*(p, cpt) {
@@ -156,12 +160,8 @@ export function putOSSFile(credential, internal, fileInfo, options) {
               setField.progress = p;
               setField.checkPoint = JSON.stringify(cpt);
               setField.checkPointTime = time;
-
-
-              if (lastRecord.status == FileInfo.FileInfoStatuses.pausing && p != 1) {
-                logger.debug(`[Pausing] uploading ${filePath} to ${objectKey}`);
-                setField.status = FileInfo.FileInfoStatuses.paused;
-              }
+              
+              //if upload finished, ignore pausing and continue
               if (p === 1) {
                 setField.status = FileInfo.FileInfoStatuses.finished;
                 const start = new Date(Date.parse(lastRecord.createdAt)).getTime();
@@ -171,9 +171,23 @@ export function putOSSFile(credential, internal, fileInfo, options) {
                   yield util.remove(fileInfo.filePath);
                   logger.info('remove temp DcmInfo : ', fileInfo.filePath, fileInfo.syncId);
                 }
+                yield FileInfo.updateFileInfo(fileInfo, setField);
+                return true;
               }
-              yield FileInfo.updateFileInfo(fileInfo, setField);
-              return (lastRecord.status != FileInfo.FileInfoStatuses.pausing || p === 1);
+              //if upload unfinished, status is not 'uploading' means upload need to stop
+              else if (lastRecord.status != FileInfo.FileInfoStatuses.uploading) {
+                logger.debug(`[Pausing] uploading ${filePath} to ${objectKey}`);
+                if(lastRecord.status == FileInfo.FileInfoStatuses.pausing)
+                  setField.status = FileInfo.FileInfoStatuses.paused;
+                yield FileInfo.updateFileInfo(fileInfo, setField);
+                return false;
+              }
+              //when upload unfinished and status is 'uploading', do nothing but update info continue
+              else {
+                yield FileInfo.updateFileInfo(fileInfo, setField);
+                return true;
+              }
+
             };
             //whether this is a resume upload or not
             let f = yield FileInfo.getFileInfoBySyncId(fileInfo.syncId);
@@ -221,5 +235,18 @@ export function putOSSFile(credential, internal, fileInfo, options) {
   .catch((err) => {
     logger.error(err);
     FileInfo.updateFileInfo(fileInfo, { status: FileInfo.FileInfoStatuses.failed });
+  });
+}
+
+export function abortMitiUpload(credential, internal, fileInfo) {
+  const ossClient = getOSSClient(credential, internal);
+  var ckp = JSON.parse(fileInfo.checkPoint);
+  return co(function* () {
+    var result = yield ossClient.abortMultipartUpload(ckp.name, ckp.uploadId);
+    logger.info(`Abort putOSSObject name -->${ckp.name}, uploadId--> ${ckp.uploadId}, result-->${result}`);
+    return result;
+  })
+  .catch((err) => {
+    logger.error(err);
   });
 }

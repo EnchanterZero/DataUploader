@@ -25,6 +25,7 @@ export const FileInfoStatuses = {
   paused: 'paused',
   pausing: 'pausing',
   failed: 'failed',
+  aborted: 'aborted',
 };
 
 export function createFileInfo(fileInfo) {
@@ -38,7 +39,7 @@ export function createFileInfo(fileInfo) {
     let [rs,created] = result;
     return created;
   }).catch((err) => {
-    logger.error('err:' + err)
+    logger.error(err, err.stack)
   });
 }
 
@@ -46,7 +47,7 @@ export function deleteAllFileInfos() {
   return models.FileInfo.destroy()
   .then((result) => {
   }).catch((err) => {
-    logger.error('err:' + err)
+    logger.error(err, err.stack)
   });
 }
 
@@ -73,7 +74,7 @@ export function updateFileInfo(fileInfo, options) {
     }
   })
   .catch((err) => {
-    logger.error('err:', err)
+    logger.error(err, err.stack)
   });
 }
 
@@ -92,7 +93,7 @@ export function updateFileInfo(fileInfo, options) {
     return !!result[0];
   })
   .catch((err) => {
-    logger.error('err:', err)
+    logger.error(err, err.stack)
   });
 }
 
@@ -107,7 +108,28 @@ export function setFileInfoPausing(syncId) {
   })
   .then(result => {
     if (!result[0]) {
-      logger.debug('err: ' + 'update failed', fileInfo)
+      logger.debug('err: ' + 'update failed', result)
+    }
+    return !!result[0];
+  })
+  .catch((err) => {
+    logger.error(err, err.stack)
+  });
+}
+
+export function setFileInfoAborted(syncId) {
+  return models.FileInfo.update({
+    status: FileInfoStatuses.aborted
+  }, {
+    where: {
+      syncId: syncId,
+      status: { $notIn: [FileInfoStatuses.finished, FileInfoStatuses.failed] },
+      progress: { $notIn: ['0', '1'] },
+    }
+  })
+  .then(result => {
+    if (!result[0]) {
+      logger.debug('err: ' + 'update failed', result)
     }
     return !!result[0];
   })

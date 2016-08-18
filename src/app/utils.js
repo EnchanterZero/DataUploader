@@ -1,6 +1,7 @@
 var Utils = function () {
-  var MB = 1024 * 1024;
   var KB = 1024;
+  var MB = 1024 * KB;
+  var GB = 1024 * MB;
   var getFormatDateString = function (date) {
     return date.getFullYear() + '年' + date.getMonth() + '月' + date.getDay() + '日 ' +
       date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
@@ -13,6 +14,16 @@ var Utils = function () {
     else
       return (speed / MB).toFixed(2) + 'MB/s';
   }
+  var getFormatSizeString = function (size) {
+    if (size < KB)
+      return (size).toFixed(2) + 'B';
+    else if (size <= MB)
+      return (size / KB).toFixed(2) + 'KB';
+    else if (size <= GB)
+      return (size / MB).toFixed(2) + 'MB';
+    else
+      return (size / GB).toFixed(2) + 'GB';
+  }
   this.formatList = function (arr, oldArr) {
     arr.map(function (item) {
       var date;
@@ -24,6 +35,9 @@ var Utils = function () {
       if (item['updatedAt']) {
         date = new Date(Date.parse(item['updatedAt']));
         item['updatedAt'] = getFormatDateString(date);
+      }
+      if(item['size']){
+        item['size'] = getFormatSizeString(item['size']);
       }
       if (item['speed']) {
         //the item is a finished or a pausing item

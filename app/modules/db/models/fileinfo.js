@@ -1,11 +1,13 @@
 /**
  * name
  * filePath
+ * size
+ * project
  * progress
  * checkPointTime
  * speed
  * checkPoint
- * status   finished | uploading | paused | pausing
+ * status   finished | uploading | paused | pausing | aborted
  * fileId
  * syncId
  * uploadType
@@ -33,6 +35,16 @@ export function create(sequelize, DataTypes) {
     filePath: {
       type: DataTypes.STRING,
       defaultValue: '',
+      allowNull: false,
+    },
+    project:{
+      type: DataTypes.STRING,
+      defaultValue: '',
+      allowNull: false,
+    },
+    size:{
+      type: DataTypes.STRING,
+      defaultValue: '0',
       allowNull: false,
     },
     progress: {

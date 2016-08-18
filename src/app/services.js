@@ -248,6 +248,18 @@
         return {}
       })
     }
+    
+    this.abortUploadFile = function (syncId) {
+      co(function*() {
+        yield backendService.fileUpload.abortUploadFiles(syncId);
+      })
+      .catch((err) => {
+        logger.error(err, err.stack);
+      });
+      return co(function* () {
+        return {}
+      })
+    }
 
     /**
      * settings api

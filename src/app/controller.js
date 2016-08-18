@@ -63,7 +63,9 @@
               $scope.oldfileInfoList = $scope.fileInfoList;
               $scope.fileInfoList = result.fileInfoList;
             }
+            console.log($scope.fileInfoList);
           }
+
         }
       );
     }
@@ -116,6 +118,10 @@
       };
       $scope.resumeUpload = function (sId) {
         api.resumeUploadFile(sId).then(function () {
+        });
+      };
+      $scope.abortUpload = function (sId) {
+        api.abortUploadFile(sId).then(function () {
         });
       };
 
