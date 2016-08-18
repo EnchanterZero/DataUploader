@@ -11,33 +11,19 @@ function ensureFolderExist(dir) {
   }
 }
 
-let expressApp;
-let expressListener;
 
-function initExpress(electronApp) {
-  const userData = app.getPath('userData');
-
+function initConfig(electronApp) {
+  const userData = electronApp.getPath('userData');
   const config = require('./dist/config');
   config.dbConfig.storage = path.join(userData, 'db', 'database.sqlite');
   ensureFolderExist(path.dirname(config.dbConfig.storage));
-
-  expressApp = require('./dist/app');
-  let port = 30000;
-  while (true) {
-    try {
-      expressListener = expressApp.listen(port);
-      break;
-    } catch (e) {
-      port ++;
-    }
-  }
 }
 
 const electron = require('electron')
 // Module to control application life.
 const app = electron.app
 
-initExpress(app);
+initConfig(app);
 
 // Module to create native browser window.
 const BrowserWindow = electron.BrowserWindow
@@ -53,8 +39,7 @@ function createWindow () {
 
   // and load the index.html of the app.
   //mainWindow.loadURL(`file://${__dirname}/src/app/index.html`)
-  console.log('expressListener.address()',expressListener.address().port);
-  mainWindow.loadURL(`http://127.0.0.1:${expressListener.address().port}/index.html`)
+  mainWindow.loadURL(`file://${__dirname}/src/app/index.html`)
 
   // Open the DevTools.
   mainWindow.webContents.openDevTools()

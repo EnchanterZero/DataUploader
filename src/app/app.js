@@ -45,7 +45,8 @@
       // })
       .state('upload', {
         url: "/upload",
-        templateUrl: 'views/dashboard/upload.html',
+        templateUrl: './views/dashboard/upload.html',
+        //templateUrl: `file://${__dirname}/views/dashboard/upload.html`,
       })
       // .state('autoscan', {
       //   url: "/autoscan",
@@ -61,7 +62,7 @@
       // })
       .state('settings', {
         url: "/settings",
-        templateUrl: 'views/dashboard/settings.html',
+        templateUrl: './views/dashboard/settings.html',
       })
     }]);
 })();

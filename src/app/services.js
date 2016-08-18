@@ -61,16 +61,16 @@
   .service('SettingService', ['$rootScope', '$state', '$window', 'api', 'Session', settingService]);
 
   function settingService($rootScope, $state, $window, api, Session) {
-    
+
     var LOCAL_PACSProvider = 'PACSProvider';
     var LOCAL_PACSServerIP = 'PACSServerIP';
     var LOCAL_PACSServerPort = 'PACSServerPort';
     var LOCAL_ScanInterval = 'ScanInterval';
     var LOCAL_UserValidateURL = 'UserValidateURL';
     var LOCAL_AnonymousMode = 'AnonymousMode';
-    
+
     var settingService = this;
-    
+
     this.loadSettings = function () {
       api.getSettings()
       .then(function (result) {
@@ -87,7 +87,7 @@
         UserValidateURL: settings.UserValidateURL,
         AnonymousMode: settings.AnonymousMode,
       };
-      return api.setSettings({settings: settingsJSON})
+      return api.setSettings({ settings: settingsJSON })
       .then(function (result) {
         $rootScope.$settings = settingsJSON;
         return result;
@@ -187,6 +187,9 @@
  */
 (function () {
 
+  var backendService = require('../../dist/services');
+  var FileInfo = require('../../dist/modules/fileinfo');
+  var Config = require('../../dist/modules/config');
   angular.module('Uploader.services')
   .service('api', ['$http', '$rootScope', 'serverUrl', 'Session', '$window', function ($http, $rootScope, serverUrl, Session, $window) {
     var LOCAL_TOKEN_KEY = 'token';
@@ -245,24 +248,19 @@
      * auth api
      */
     this.login = function (query, $scope) {
-      var options = {
-        method: 'POST',
-        url: serverUrl + '/auth/login',
-        data: query,
-      };
-      return $http(options)
+      return backendService.serverApi.authenticate(query.username, query.password)
       .then(function (result) {
-        if (result.data.code !== 200) {
+        if (result.code !== 200) {
           throw new Error(result.data.message);
           return;
         }
-        if (!result.data.data.token || !result.data.data.currentUser) {
+        if (!result.data.token || !result.data.currentUser) {
           throw new Error('empty response');
           return;
         }
-        Session.set(LOCAL_TOKEN_KEY, result.data.data.token);
-        Session.set(LOCAL_CURRENT_USER, result.data.data.currentUser);
-        api.setAuthToken(result.data.data.token);
+        Session.set(LOCAL_TOKEN_KEY, result.data.token);
+        Session.set(LOCAL_CURRENT_USER, result.data.currentUser);
+        api.setAuthToken(result.data.token);
         console.log('login success!!!!!!');
         $window.location.href = './index.html';
       })
@@ -272,13 +270,7 @@
     };
 
     this.logout = function () {
-      var options = {
-        method: 'POST',
-        url: serverUrl + '/auth/logout',
-      }
-      authorize(options)
-      return $http(options)
-      .then(checkStatusCode)
+      return backendService.serverApi.deauthenticate()
       .then(() => {
         Session.set(LOCAL_TOKEN_KEY, null);
         Session.set(LOCAL_CURRENT_USER, null);
@@ -288,29 +280,21 @@
       });
     }
     this.setUserToken = function (data) {
-      var options = {
-        method: 'POST',
-        url: serverUrl + '/auth/setToken',
-        data:data,
-      }
-      authorize(options)
-      return $http(options)
-      .then(checkStatusCode)
+      var token = Session.get(LOCAL_TOKEN_KEY);
+      if (!token)
+        backendService.serverApi.setAuthToken(token)
     }
 
     /**
      * manual upload api
      */
     this.getFileInfoList = function () {
-      var option = {
-        method: 'GET',
-        url: serverUrl + '/manualUpload/list',
-        data: {},
-      }
-      authorize(option);
-      return $http(option)
-      .then(checkStatusCode)
+      return FileInfo.listFiles()
+      .then(function (r) {
+        return { fileInfoList: r }
+      })
     }
+
     this.uploadFile = function (data) {
       var option = {
         method: 'POST',
@@ -321,7 +305,7 @@
       return $http(option)
       .then(checkStatusCode)
     }
-    
+
     this.stopUploadFile = function (query) {
       var option = {
         method: 'POST',
@@ -332,7 +316,7 @@
       return $http(option)
       .then(checkStatusCode)
     }
-    
+
     this.resumeUploadFile = function (query) {
       var option = {
         method: 'POST',
@@ -345,129 +329,21 @@
     }
 
     /**
-     * auto scan api
-     */
-    this.startScan = function (query) {
-      var option1 = {
-        method: 'POST',
-        url: serverUrl + '/autoscanUpload/start',
-        data: query,
-      }
-      authorize(option1)
-      return $http(option1)
-      .then(checkStatusCode)
-    }
-
-    this.endScan = function (query) {
-      var option = {
-        method: 'POST',
-        url: serverUrl + '/autoscanUpload/stop',
-        data: query,
-      }
-      authorize(option)
-      return $http(option)
-      .then(checkStatusCode)
-    }
-
-    /**
-     * upload status api
-     */
-    this.getUploadStatus = function (query) {
-      var option = {
-        method: 'GET',
-        url: serverUrl + '/uploadStatus/one/' + query,
-        data: {},
-      }
-      authorize(option);
-      return $http(option)
-      .then(checkStatusCode)
-    }
-
-    this.getAllUploadStatus = function (query) {
-      var option = {
-        method: 'GET',
-        url: serverUrl + '/uploadStatus',
-        data: {},
-      }
-      authorize(option);
-      return $http(option)
-      .then(checkStatusCode)
-    }
-
-    this.getInitStauts = function (query) {
-      var option = {
-        method: 'GET',
-        url: serverUrl + '/uploadStatus/check',
-        data: {},
-      }
-      authorize(option);
-      return $http(option)
-      .then(checkStatusCode)
-    }
-
-    /**
-     * upload history api
-     */
-    this.listUpload = function (query) {
-      var option = {
-        method: 'GET',
-        url: serverUrl + '/history/list/' + query.count + '/' + query.page,
-        data: query,
-      };
-      authorize(option);
-      return $http(option)
-      .then(checkStatusCode)
-    }
-
-    /**
-     * auto push api
-     */
-    this.startListen = function (query) {
-      var option = {
-        method: 'POST',
-        url: serverUrl + '/autoPush/start',
-        data: query,
-      };
-      authorize(option);
-      return $http(option)
-      .then(checkStatusCode)
-    }
-
-    this.stopListen = function (query) {
-      var option = {
-        method: 'POST',
-        url: serverUrl + '/autoPush/stop',
-        data: query,
-      };
-      authorize(option);
-      return $http(option)
-      .then(checkStatusCode)
-    }
-
-    /**
      * settings api
      */
 
     this.setSettings = function (data) {
-      var option = {
-        method: 'POST',
-        url: serverUrl + '/settings/set',
-        data: data,
-      };
-      authorize(option);
-      return $http(option)
-      .then(checkStatusCode)
+      return Config.getConfig()
+      .then(function (r) {
+        return { settings: r }
+      })
     }
 
     this.getSettings = function () {
-      var option = {
-        method: 'GET',
-        url: serverUrl + '/settings',
-        data: {},
-      };
-      authorize(option);
-      return $http(option)
-      .then(checkStatusCode)
+      return Config.getConfig()
+      .then(function (r) {
+        return { settings: r }
+      })
     }
 
   }]);
