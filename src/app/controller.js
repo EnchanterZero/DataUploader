@@ -40,18 +40,18 @@
  */
 (function () {
 
-  angular.module('Uploader.views').controller('UploadController', ['$rootScope', 'api', '$interval', uploadController]);
-  function uploadController($rootScope, api, $interval) {
+  angular.module('Uploader.views').controller('UploadController', ['$rootScope', 'api', '$interval', '$uibModal', uploadController]);
+  function uploadController($rootScope, api, $interval, $uibModal) {
     //$rootScope.uploadControllerScope --> $scope
     var getFileUplodStatuses = function ($scope) {
       $scope.intervalId = $interval(function () {
         getFileList($scope);
-        }, 1500);
+      }, 1500);
     };
     var getFileList = function ($scope) {
       return api.getFileInfoList().then(
         function (result) {
-          if(result.fileInfoList) {
+          if (result.fileInfoList) {
             if (!$scope.oldfileInfoList) {
               utils.formatList(result.fileInfoList, result.fileInfoList);
 
@@ -71,6 +71,11 @@
     }
 
     if (!$rootScope.uploadControllerScope) {
+      //check for recover only once
+      co(function* () {
+        let r = yield FileInfo.listUploadingFiles()
+        backendService.uploadRecovery.recover(r);
+      });
       $rootScope.uploadControllerScope = {};
       var $scope = $rootScope.uploadControllerScope;
       if (!$rootScope.$settings) {
@@ -83,30 +88,51 @@
         $scope.dcmDir = $rootScope.$settings.UploadDir;
       }
       $scope.fileInfoList;
+      $scope.chosenFileList = [];
       getFileUplodStatuses($scope);
 
       $scope.browseAndUpload = function () {
         const { dialog } = require('electron').remote;
-        var path = dialog.showOpenDialog({ properties: ['openFile', 'openDirectory', 'multiSelections'] });
+        var path = dialog.showOpenDialog({ properties: ['openFile', 'openDirectory', 'multiSelections',] });
         if (path) {
           $scope.dcmDir = path[0];
           var stat = require('fs').statSync(path[0]);
           if (stat.isFile()) {
-            $scope.working = true;
-            $scope.message = '';
-            console.log(path[0]);
-            $scope.message = '';
-            api.uploadFile(path[0]).then(function (result) {
-              //$scope.readResults.syncId = result.syncId;
-              // $scope.intervalId = $interval(function () {
-              //   getStatus($scope);
-              // }, 1000);
+            $scope.chosenFileList = [];
+            $scope.chosenFileList.push({
+              filePath: path[0],
+              size: stat.size
             });
+            $scope.message = '';
+            openUploadModal();
+
           } else {
             $scope.message = '文件选择错误!请重新选择';
             $scope.dcmDir = '';
           }
         }
+      }
+      var openUploadModal = function (size) {
+        var modalInstance = $uibModal.open({
+          animation: true,
+          templateUrl: './views/dashboard/uploadmodal.html',
+          controller: 'UploadModalController',
+          size: size,
+          resolve: {
+            fileList: function () {
+              return $scope.chosenFileList;
+            }
+          }
+        });
+
+        modalInstance.result.then(function (selectedProject) {
+          return api.uploadFile({
+            project: selectedProject,
+            fileList: $scope.chosenFileList,
+          })
+        }, function () {
+          console.log('Modal dismissed at: ' + new Date());
+        });
       }
       $scope.browseFolder = function (path) {
         const { dialog } = require('electron').remote;
@@ -135,7 +161,28 @@
     }
   }
 
+  /**
+   *
+   */
 
+  angular.module('Uploader.views').controller('UploadModalController', ['$scope', 'api', '$uibModalInstance', 'fileList', uploadModalController]);
+  function uploadModalController($scope, api, $uibModalInstance, fileList) {
+    var totalSize = _.reduce(fileList, function (sum, f) {
+      return sum + f.size;
+    }, 0);
+    $scope.totalSize = utils.getFormatSizeString(totalSize);
+    $scope.fileList = fileList;
+    $scope.projectList = ['project1', 'project2', 'project3'];
+    $scope.selectedProject = $scope.projectList[0];
+
+    $scope.ok = function () {
+      $uibModalInstance.close($scope.selectedProject);
+    };
+
+    $scope.cancel = function () {
+      $uibModalInstance.dismiss('cancel');
+    };
+  }
 })();
 
 /**

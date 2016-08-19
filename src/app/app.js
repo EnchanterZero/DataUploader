@@ -1,3 +1,9 @@
+//require backend services
+var _BackendService = require('../../dist/services');
+var _FileInfo = require('../../dist/modules/fileinfo');
+var _Config = require('../../dist/modules/config');
+var co = require('co');
+
 /**
  * Uploader.config
  */
@@ -31,6 +37,7 @@
 (function () {
   var app = angular.module('Uploader.views', [
     'ui.router',
+    'ui.bootstrap'
   ])
   .config(['$stateProvider', '$urlRouterProvider',
     function ($stateProvider, $urlRouterProvider) {
@@ -87,6 +94,7 @@
 
   var app = angular.module('Uploader', [
     'ui.router',
+    'ui.bootstrap',
     'Uploader.views',
     'Uploader.services',
   ]);

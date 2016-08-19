@@ -24,6 +24,9 @@ var Utils = function () {
     else
       return (size / GB).toFixed(2) + 'GB';
   }
+  this.getFormatDateString = getFormatDateString;
+  this.getFormatSpeedString = getFormatSpeedString;
+  this.getFormatSizeString = getFormatSizeString;
   this.formatList = function (arr, oldArr) {
     arr.map(function (item) {
       var date;

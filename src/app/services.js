@@ -141,17 +141,7 @@
  * service api
  */
 (function () {
-
-  var backendService = require('../../dist/services');
-  var FileInfo = require('../../dist/modules/fileinfo');
-  var Config = require('../../dist/modules/config');
-  var co = require('co');
   var logger = require('../../dist/util').util.logger.getLogger('serviceApi');
-  //check upload
-  co(function* () {
-    let r = yield FileInfo.listUploadingFiles()
-    backendService.uploadRecovery.recover(r);
-  })
 
   angular.module('Uploader.services')
   .service('api', ['$http', '$rootScope', 'serverUrl', 'Session', '$window', function ($http, $rootScope, serverUrl, Session, $window) {
@@ -167,7 +157,7 @@
      * auth api
      */
     this.login = function (query, $scope) {
-      return backendService.serverApi.authenticate(query.username, query.password)
+      return _BackendService.serverApi.authenticate(query.username, query.password)
       .then(function (result) {
         if (result.code !== 200) {
           throw new Error(result.data.message);
@@ -189,7 +179,7 @@
     };
 
     this.logout = function () {
-      return backendService.serverApi.deauthenticate()
+      return _BackendService.serverApi.deauthenticate()
       .then(() => {
         Session.set(LOCAL_TOKEN_KEY, null);
         Session.set(LOCAL_CURRENT_USER, null);
@@ -202,7 +192,7 @@
       var token = Session.get(LOCAL_TOKEN_KEY);
       return co(function* () {
         if (token)
-          backendService.serverApi.setAuthToken(token);
+          _BackendService.serverApi.setAuthToken(token);
         return {}
       })
     }
@@ -211,16 +201,18 @@
      * manual upload api
      */
     this.getFileInfoList = function () {
-      return FileInfo.listFiles()
+      return _FileInfo.listFiles()
       .then(function (r) {
         return { fileInfoList: r }
       })
     }
 
-    this.uploadFile = function (path) {
+    this.uploadFile = function (data) {
+      var project = data.project;
+      var path = data.fileList[0];
       var syncId = new Date().getTime().toString();
       co(function*() {
-        let r = yield backendService.fileUpload.uploadFiles([path], syncId, { afterDelete: false });
+        let r = yield _BackendService.fileUpload.uploadFiles(project,data.fileList, syncId, { afterDelete: false });
       }).catch((err) => {
         console.error(err, err.stack);
       });
@@ -231,7 +223,7 @@
     }
 
     this.stopUploadFile = function (syncId) {
-      return backendService.fileUpload.stopUploadFiles(syncId)
+      return _BackendService.fileUpload.stopUploadFiles(syncId)
       .then((r)=> {
         return { result: r }
       });
@@ -239,7 +231,7 @@
 
     this.resumeUploadFile = function (syncId) {
       co(function*() {
-        let r = yield backendService.fileUpload.uploadFiles([], syncId, { afterDelete: false });
+        let r = yield _BackendService.fileUpload.uploadFiles(null,[], syncId, { afterDelete: false });
       })
       .catch((err) => {
         logger.error(err, err.stack);
@@ -251,7 +243,7 @@
     
     this.abortUploadFile = function (syncId) {
       co(function*() {
-        yield backendService.fileUpload.abortUploadFiles(syncId);
+        yield _BackendService.fileUpload.abortUploadFiles(syncId);
       })
       .catch((err) => {
         logger.error(err, err.stack);
@@ -276,8 +268,8 @@
         AnonymousMode: settings.AnonymousMode,
       };
       return co(function*() {
-        yield Config.setConfig(settingsJSON);
-        backendService.uploadSetting.setConfig(settingsJSON);
+        yield _Config.setConfig(settingsJSON);
+        _BackendService.uploadSetting.setConfig(settingsJSON);
         return settingsJSON
       }).catch(err => {
         logger.error(err, err.stack);
@@ -285,7 +277,7 @@
     }
 
     this.getSettings = function () {
-      return Config.getConfig()
+      return _Config.getConfig()
       .then(function (r) {
         return { settings: r }
       })

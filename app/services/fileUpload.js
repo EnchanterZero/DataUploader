@@ -49,22 +49,22 @@ function uploadOneFile(fileInfo, options) {
 }
 
 /**
- *
+ * @param project {Array}
  * @param filePaths {Array}
  * @param sId
  * @param options
  * @returns {*|Promise.<T>}
  */
-function uploadFiles(filePaths, sId, options) {
+function uploadFiles(project,filePaths, sId, options) {
   //filePaths.length > 0 means this upload is a new upload
   if (filePaths.length > 0) {
     var syncId = sId ? sId : new Date().getTime().toString();
     var fileInfos = filePaths.map(item=> {
-      let stat = fs.statSync(item);
+      let stat = fs.statSync(item.filePath);
       return {
-        name: path.basename(item),
-        filePath: item,
-        project: '',
+        name: path.basename(item.filePath),
+        filePath: item.filePath,
+        project: project,
         size: stat.size,
         progress: '0',
         checkPointTime: '0',
