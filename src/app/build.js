@@ -163,17 +163,9 @@ var utils = new Utils();
        */
       $rootScope.$on('$stateChangeStart',
         function (event, toState, toParams, fromState, fromParams) {
-          if ($rootScope.statusControllerScope && $rootScope.statusControllerScope.intervalId) {
-            //console.log('$interval pause : ',$rootScope.statusControllerScope.intervalId);
-            $interval.cancel($rootScope.statusControllerScope.intervalId);
-          }
           if ($rootScope.uploadControllerScope && $rootScope.uploadControllerScope.intervalId) {
-            //console.log('$interval pause : ',$rootScope.autoScanControllerScope.intervalId);
+            console.log('$interval pause : ',$rootScope.uploadControllerScope.intervalId);
             $interval.cancel($rootScope.uploadControllerScope.intervalId);
-          }
-          if ($rootScope.autoScanControllerScope && $rootScope.autoScanControllerScope.intervalId) {
-            //console.log('$interval pause : ',$rootScope.autoScanControllerScope.intervalId);
-            $interval.cancel($rootScope.autoScanControllerScope.intervalId);
           }
         }
       );
@@ -577,7 +569,7 @@ var utils = new Utils();
 
   angular.module('Uploader.views').controller('UploadController', ['$rootScope', 'api', '$interval', '$uibModal', uploadController]);
   function uploadController($rootScope, api, $interval, $uibModal) {
-    //$rootScope.uploadControllerScope --> $scope
+    console.log('$rootScope.uploadControllerScope --> $scope');
     var getFileUplodStatuses = function ($scope) {
       $scope.intervalId = $interval(function () {
         getFileList($scope);
@@ -598,18 +590,17 @@ var utils = new Utils();
               $scope.oldfileInfoList = $scope.fileInfoList;
               $scope.fileInfoList = result.fileInfoList;
             }
-            console.log($scope.fileInfoList);
+            //console.log('one data load');
           }
-
         }
       );
     }
 
     if (!$rootScope.uploadControllerScope) {
       //check for recover only once
-      co(function* () {
-        let r = yield FileInfo.listUploadingFiles()
-        backendService.uploadRecovery.recover(r);
+      co(function*() {
+        let r = yield _FileInfo.listUploadingFiles()
+        _BackendService.uploadRecovery.recover(r);
       });
       $rootScope.uploadControllerScope = {};
       var $scope = $rootScope.uploadControllerScope;
@@ -686,13 +677,10 @@ var utils = new Utils();
         });
       };
 
-
     } else if ($rootScope.uploadControllerScope.intervalId) {
       var $scope = $rootScope.uploadControllerScope;
-      $scope.intervalId = $interval(function () {
-        getFileUplodStatuses($scope);
-      }, 1500);
-      //console.log('$interval continue : ', $rootScope.autoScanControllerScope.intervalId);
+      getFileUplodStatuses($scope);
+      console.log('$interval continue : ', $rootScope.uploadControllerScope.intervalId);
     }
   }
 

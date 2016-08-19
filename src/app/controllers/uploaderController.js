@@ -5,7 +5,7 @@
 
   angular.module('Uploader.views').controller('UploadController', ['$rootScope', 'api', '$interval', '$uibModal', uploadController]);
   function uploadController($rootScope, api, $interval, $uibModal) {
-    //$rootScope.uploadControllerScope --> $scope
+    console.log('$rootScope.uploadControllerScope --> $scope');
     var getFileUplodStatuses = function ($scope) {
       $scope.intervalId = $interval(function () {
         getFileList($scope);
@@ -26,18 +26,17 @@
               $scope.oldfileInfoList = $scope.fileInfoList;
               $scope.fileInfoList = result.fileInfoList;
             }
-            console.log($scope.fileInfoList);
+            //console.log('one data load');
           }
-
         }
       );
     }
 
     if (!$rootScope.uploadControllerScope) {
       //check for recover only once
-      co(function* () {
-        let r = yield FileInfo.listUploadingFiles()
-        backendService.uploadRecovery.recover(r);
+      co(function*() {
+        let r = yield _FileInfo.listUploadingFiles()
+        _BackendService.uploadRecovery.recover(r);
       });
       $rootScope.uploadControllerScope = {};
       var $scope = $rootScope.uploadControllerScope;
@@ -114,13 +113,10 @@
         });
       };
 
-
     } else if ($rootScope.uploadControllerScope.intervalId) {
       var $scope = $rootScope.uploadControllerScope;
-      $scope.intervalId = $interval(function () {
-        getFileUplodStatuses($scope);
-      }, 1500);
-      //console.log('$interval continue : ', $rootScope.autoScanControllerScope.intervalId);
+      getFileUplodStatuses($scope);
+      console.log('$interval continue : ', $rootScope.uploadControllerScope.intervalId);
     }
   }
 

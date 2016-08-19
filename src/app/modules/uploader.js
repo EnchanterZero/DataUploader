@@ -51,17 +51,9 @@
        */
       $rootScope.$on('$stateChangeStart',
         function (event, toState, toParams, fromState, fromParams) {
-          if ($rootScope.statusControllerScope && $rootScope.statusControllerScope.intervalId) {
-            //console.log('$interval pause : ',$rootScope.statusControllerScope.intervalId);
-            $interval.cancel($rootScope.statusControllerScope.intervalId);
-          }
           if ($rootScope.uploadControllerScope && $rootScope.uploadControllerScope.intervalId) {
-            //console.log('$interval pause : ',$rootScope.autoScanControllerScope.intervalId);
+            console.log('$interval pause : ',$rootScope.uploadControllerScope.intervalId);
             $interval.cancel($rootScope.uploadControllerScope.intervalId);
-          }
-          if ($rootScope.autoScanControllerScope && $rootScope.autoScanControllerScope.intervalId) {
-            //console.log('$interval pause : ',$rootScope.autoScanControllerScope.intervalId);
-            $interval.cancel($rootScope.autoScanControllerScope.intervalId);
           }
         }
       );

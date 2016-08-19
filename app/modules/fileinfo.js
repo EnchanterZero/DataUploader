@@ -152,7 +152,7 @@ export function getFileInfoBySyncId(SyncId) {
 }
 
 export function listFiles() {
-  let where = {};
+  let where = {status:{$ne:FileInfoStatuses.aborted}};
   return models.FileInfo.findAll({
     where: where,
     order: [['createdAt', 'DESC']]
