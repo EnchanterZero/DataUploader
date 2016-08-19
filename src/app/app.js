@@ -54,6 +54,10 @@ var co = require('co');
         url: "/upload",
         templateUrl: './views/dashboard/upload.html',
       })
+      .state('login', {
+        url: "/login",
+        templateUrl: './views/dashboard/auth.html',
+      })
       // .state('autoscan', {
       //   url: "/autoscan",
       //   templateUrl: 'views/dashboard/autoscan.html',
@@ -116,18 +120,18 @@ var co = require('co');
         /**
          * auth check
          */
-        var token = AuthService.loadCredentials();
-        if (!AuthService.isAuthenticated()) {
+        // var token = AuthService.loadCredentials();
+        // if (!AuthService.isAuthenticated()) {
           $window.alert('请先登录!');
           $timeout(function () {
             AuthService.gotoLogin();
           }, 0);
-        } else {
-          api.setUserToken({ token: token })
-          .then(function () {
-
-          });
-        }
+        // } else {
+        //   api.setUserToken({ token: token })
+        //   .then(function () {
+        //
+        //   });
+        // }
 
       }catch (err){
         console.log(err,err.stack);

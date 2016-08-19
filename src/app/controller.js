@@ -25,12 +25,27 @@
   angular.module('Uploader.views').controller('UserController', ['$scope', '$http', '$window', 'Session', 'api', 'serverUrl', userController]);
   function userController($scope, $http, $window, Session, api, serverUrl) {
 
-    var LOCAL_TOKEN_KEY = 'token';
-    var LOCAL_CURRENT_USER = 'currentUser';
-
     $scope.doLogout = function () {
       alert('123123123');
       api.logout();
+    };
+  }
+
+})();
+/**
+ * AuthController
+ */
+(function () {
+
+  angular.module('Uploader.views').controller('AuthController', ['$scope', '$http', '$window', 'Session', 'api', 'serverUrl', authController]);
+  function authController($scope, $http, $window, Session, api, serverUrl) {
+
+    $scope.doLogin = function () {
+      var data = {
+        username: $scope.username,
+        password: $scope.password,
+      };
+      api.login(data, $scope);
     };
   }
 

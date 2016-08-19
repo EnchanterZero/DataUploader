@@ -19,7 +19,7 @@
     this.gotoLogin = function () {
       this.useCredentials(null, null);
       var currentState = $state.current.name;
-      $window.location.href = './auth.html';
+      $window.location.hash = '#/login';
     }
 
     this.loadCredentials = function () {
@@ -171,7 +171,7 @@
         Session.set(LOCAL_CURRENT_USER, result.data.currentUser);
         api.setAuthToken(result.data.token);
         console.log('login success!!!!!!');
-        $window.location.href = './index.html';
+        $window.location.hash = '#/upload';
       })
       .catch(function (err) {
         $scope.errorMessage = err.message;
@@ -185,7 +185,7 @@
         Session.set(LOCAL_CURRENT_USER, null);
         api.setAuthToken(null);
         console.log('logout success!!!!!!');
-        $window.location.href = './auth.html';
+        $window.location.hash = '#/login';
       });
     }
     this.setUserToken = function (data) {
