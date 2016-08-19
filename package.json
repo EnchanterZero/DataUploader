@@ -13,7 +13,7 @@
     "rebuild-sqlite3-win": "tools/rebuild-sqlite3.bat"
   },
   "dependencies": {
-    "ali-oss":"./app/exernal/ali-oss",
+    "ali-oss": "./app/exernal/ali-oss",
     "babel-register": "^6.11.6",
     "body-parser": "~1.15.1",
     "chokidar": "^1.6.0",
@@ -27,14 +27,14 @@
     "lodash": "^4.13.1",
     "log4js": "^0.6.37",
     "loglevel": "^1.4.1",
+    "morgan": "~1.7.0",
     "q": "^1.4.1",
     "request": "^2.74.0",
     "sequelize": "^3.23.6",
     "serve-favicon": "~2.3.0",
     "sqlite3": "^3.1.4",
     "walk": "^2.3.9",
-    "winston": "^2.2.0",
-    "morgan": "~1.7.0"
+    "winston": "^2.2.0"
   },
   "devDependencies": {
     "babel-cli": "^6.11.4",
@@ -43,6 +43,8 @@
     "babel-preset-es2015-node5": "^1.2.0",
     "electron-packager": "^7.0.0",
     "electron-prebuilt": "^1.3.2",
-    "nodemon": "^1.10.0"
+    "nodemon": "^1.10.0",
+    "gulp": "^3.9.1",
+    "gulp-concat": "^2.6.0"
   }
 }
