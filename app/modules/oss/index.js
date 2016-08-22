@@ -9,7 +9,7 @@ import Promise from 'bluebird';
 import path from 'path';
 import { util } from '../../util';
 const logger = util.logger.getLogger('oss');
-import * as DcmInfo from '../dcminfo';
+//import * as DcmInfo from '../dcminfo';
 import * as FileInfo from '../fileinfo';
 
 export function getOSSClient(credential, internal) {
