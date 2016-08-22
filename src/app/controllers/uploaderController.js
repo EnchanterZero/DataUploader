@@ -35,8 +35,11 @@
     if (!$rootScope.uploadControllerScope) {
       //check for recover only once
       co(function*() {
-        let r = yield _FileInfo.listUploadingFiles()
-        _BackendService.uploadRecovery.recover(r);
+        let r = yield _FileInfo.listUploadingFiles();
+        if(r.length > 0){
+          alert('recovering the updating...');
+          _BackendService.uploadRecovery.recover(r);
+        }
       });
       $rootScope.uploadControllerScope = {};
       var $scope = $rootScope.uploadControllerScope;

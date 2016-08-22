@@ -29,7 +29,7 @@
         /**
          * auth check
          */
-        $window.alert('请先登录!');
+        //$window.alert('请先登录!');
         $timeout(function () {
           AuthService.gotoLogin();
         }, 0);

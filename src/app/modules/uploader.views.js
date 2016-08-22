@@ -10,7 +10,7 @@
     function ($stateProvider, $urlRouterProvider) {
 
       // For any unmatched url, send to /status
-      $urlRouterProvider.otherwise("/upload");
+      $urlRouterProvider.otherwise("/login");
 
       $stateProvider
       // .state('status', {

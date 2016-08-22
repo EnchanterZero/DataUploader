@@ -141,7 +141,7 @@ var utils = new Utils();
         /**
          * auth check
          */
-        $window.alert('请先登录!');
+        //$window.alert('请先登录!');
         $timeout(function () {
           AuthService.gotoLogin();
         }, 0);
@@ -184,7 +184,7 @@ var utils = new Utils();
     function ($stateProvider, $urlRouterProvider) {
 
       // For any unmatched url, send to /status
-      $urlRouterProvider.otherwise("/upload");
+      $urlRouterProvider.otherwise("/login");
 
       $stateProvider
       // .state('status', {
@@ -584,8 +584,11 @@ var utils = new Utils();
     if (!$rootScope.uploadControllerScope) {
       //check for recover only once
       co(function*() {
-        let r = yield _FileInfo.listUploadingFiles()
-        _BackendService.uploadRecovery.recover(r);
+        let r = yield _FileInfo.listUploadingFiles();
+        if(r){
+          alert('recovering the updating...');
+          _BackendService.uploadRecovery.recover(r);
+        }
       });
       $rootScope.uploadControllerScope = {};
       var $scope = $rootScope.uploadControllerScope;
@@ -703,7 +706,7 @@ var utils = new Utils();
   function userController($scope, $http, $window, Session, api, serverUrl) {
 
     $scope.doLogout = function () {
-      alert('123123123');
+      //alert('123123123');
       api.logout();
     };
   }

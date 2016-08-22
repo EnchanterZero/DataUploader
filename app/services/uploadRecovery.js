@@ -5,7 +5,7 @@ const logger = util.logger.getLogger('uploadRecovery');
 export function recover(uploadingFiles) {
   uploadingFiles.map(item=> {
     co(function*() {
-      yield fileUpload.uploadFiles([], item.syncId, { afterDelete: false });
+      yield fileUpload.uploadFiles(null,[], item.syncId, { afterDelete: false });
     })
   });
 }

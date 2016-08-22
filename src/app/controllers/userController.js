@@ -7,7 +7,7 @@
   function userController($scope, $http, $window, Session, api, serverUrl) {
 
     $scope.doLogout = function () {
-      alert('123123123');
+      //alert('123123123');
       api.logout();
     };
   }
