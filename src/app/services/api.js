@@ -6,13 +6,9 @@
 
   angular.module('Uploader.services')
   .service('api', ['$http', '$rootScope', 'serverUrl', 'Session', '$window', function ($http, $rootScope, serverUrl, Session, $window) {
-    var LOCAL_TOKEN_KEY = 'token';
+    var LOCAL_BASE_TOKEN_KEY = 'baseToken';
     var LOCAL_CURRENT_USER = 'currentUser';
     var api = this;
-
-    this.setAuthToken = function (token) {
-      this.token = token;
-    }
 
     /**
      * auth api
@@ -20,21 +16,13 @@
     this.login = function (query, $scope) {
       return _BackendService.serverApi.authenticate(query.username, query.password)
       .then(function (result) {
-        if (result.code !== 200) {
-          throw new Error(result.data.message);
-          return;
-        }
-        if (!result.data.token || !result.data.currentUser) {
-          throw new Error('empty response');
-          return;
-        }
-        Session.set(LOCAL_TOKEN_KEY, result.data.token);
+        Session.set(LOCAL_BASE_TOKEN_KEY, result.data.token);
         Session.set(LOCAL_CURRENT_USER, result.data.currentUser);
-        api.setAuthToken(result.data.token);
         console.log('login success!!!!!!');
         $window.location.hash = '#/upload';
       })
       .catch(function (err) {
+        console.log(err);
         $scope.errorMessage = err.message;
       });
     };
@@ -42,18 +30,18 @@
     this.logout = function () {
       return _BackendService.serverApi.deauthenticate()
       .then(() => {
-        Session.set(LOCAL_TOKEN_KEY, null);
+        Session.set(LOCAL_BASE_TOKEN_KEY, null);
         Session.set(LOCAL_CURRENT_USER, null);
-        api.setAuthToken(null);
         console.log('logout success!!!!!!');
         $window.location.hash = '#/login';
       });
     }
-    this.setUserToken = function (data) {
-      var token = Session.get(LOCAL_TOKEN_KEY);
-      return co(function* () {
-        if (token)
-          _BackendService.serverApi.setAuthToken(token);
+    this.setUserToken = function () {
+      var token = Session.get(LOCAL_BASE_TOKEN_KEY);
+      return co(function*() {
+        if (token) {
+          _BackendService.serverApi.setBaseAuthToken(token);
+        }
         return {}
       })
     }
@@ -73,7 +61,7 @@
       var path = data.fileList[0];
       var syncId = new Date().getTime().toString();
       co(function*() {
-        let r = yield _BackendService.fileUpload.uploadFiles(project,data.fileList, syncId, { afterDelete: false });
+        let r = yield _BackendService.fileUpload.uploadFiles(project, data.fileList, syncId, { afterDelete: false });
       }).catch((err) => {
         console.error(err, err.stack);
       });
@@ -92,12 +80,12 @@
 
     this.resumeUploadFile = function (syncId) {
       co(function*() {
-        let r = yield _BackendService.fileUpload.uploadFiles(null,[], syncId, { afterDelete: false });
+        let r = yield _BackendService.fileUpload.uploadFiles(null, [], syncId, { afterDelete: false });
       })
       .catch((err) => {
         logger.error(err, err.stack);
       });
-      return co(function* () {
+      return co(function*() {
         return {}
       })
     }
@@ -109,9 +97,13 @@
       .catch((err) => {
         logger.error(err, err.stack);
       });
-      return co(function* () {
+      return co(function*() {
         return {}
       })
+    }
+    
+    this.getProjects = function () {
+      return _BackendService.serverApi.getGenoProjects()
     }
 
     /**

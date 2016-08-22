@@ -176,7 +176,7 @@ function autoScanUpload(dir, syncId, token, option) {
  */
 function startAutoScanUpload(uploadDir, syncId, option) {
   console.log('startAutoScanUpload-------------------------------------->', option)
-  let token = serverApi.getAuthToken();
+  let token = serverApi.getBaseAuthToken();
   if (!token) {
     throw new Error('AUTO SCAN NO TOKEN');
     return;

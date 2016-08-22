@@ -7,7 +7,7 @@
   .service('AuthService', ['$rootScope', '$state', '$window', 'api', 'Session', authService]);
 
   function authService($rootScope, $state, $window, api, Session) {
-    var LOCAL_TOKEN_KEY = 'token';
+    var LOCAL_BASE_TOKEN_KEY = 'baseToken';
     var LOCAL_CURRENT_USER = 'currentUser';
 
     var authService = this;
@@ -23,21 +23,21 @@
     }
 
     this.loadCredentials = function () {
-      var token = Session.get(LOCAL_TOKEN_KEY);
+      var token = Session.get(LOCAL_BASE_TOKEN_KEY);
       var currentUser = Session.get(LOCAL_CURRENT_USER);
       this.useCredentials(token, currentUser);
-      return token;
+      return  token;
     }
 
-    this.useCredentials = function (token, currentUser) {
-      this.token = token;
+    this.useCredentials = function (baseToken, currentUser) {
+      this.baseToken = baseToken;
       this.currentUser = currentUser;
-      $rootScope.$isAuthenticated = !!token;
-      api.setAuthToken(token);
+      $rootScope.$isAuthenticated = !!(baseToken && baseToken);
+      //api.setAuthToken(token);
     }
 
     this.isAuthenticated = function () {
-      return !!this.token;
+      return !!(this.baseToken);
     };
 
     this.getCurrentUser = function () {

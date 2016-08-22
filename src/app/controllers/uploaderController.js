@@ -131,8 +131,10 @@
     }, 0);
     $scope.totalSize = utils.getFormatSizeString(totalSize);
     $scope.fileList = fileList;
-    $scope.projectList = ['project1', 'project2', 'project3'];
-    $scope.selectedProject = $scope.projectList[0];
+    api.getProjects().then(function (list) {
+      $scope.projectList = list;
+      $scope.selectedProject = $scope.projectList[0];
+    })
 
     $scope.ok = function () {
       $uibModalInstance.close($scope.selectedProject);

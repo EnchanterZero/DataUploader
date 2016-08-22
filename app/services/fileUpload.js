@@ -3,6 +3,7 @@ import * as path from 'path';
 import fs from 'fs';
 const logger = util.logger.getLogger('upload');
 import { serverApi, dcmDiff, } from '../services';
+import { ossConfig } from '../config';
 import * as FileInfo from '../modules/fileinfo'
 import * as OSS from '../modules/oss';
 import Promise from 'bluebird';
@@ -33,13 +34,10 @@ function uploadOneFile(fileInfo, options) {
   return co(function*() {
     //create file and ask for token if it it a new upload
     if (!fileInfo.fileId) {
-      let createFileResult = yield serverApi.createFile(data);
-      let file = createFileResult.data.file;
+      let file = yield serverApi.createFile(data);
       fileInfo.fileId = file.id;
     }
-    let getTokenResult = yield serverApi.getOSSToken(fileInfo.fileId);
-    let ossCredential = getTokenResult.data.ossCredential;
-
+    let ossCredential = yield serverApi.getOSSToken(fileInfo.fileId);
     // record into sqlite
     yield FileInfo.createFileInfo(fileInfo);
     console.log('start upload!!!!!!!!!');
@@ -64,7 +62,8 @@ function uploadFiles(project,filePaths, sId, options) {
       return {
         name: path.basename(item.filePath),
         filePath: item.filePath,
-        project: project,
+        projectName: project.name,
+        projectId: project.id,
         size: stat.size,
         progress: '0',
         checkPointTime: '0',
@@ -125,8 +124,7 @@ function abortUploadFiles(syncId) {
     if(result) {
       logger.debug('abort upload---------->' + syncId);
       var fileInfo = yield FileInfo.getFileInfoBySyncId(syncId);
-      let getTokenResult = yield serverApi.getOSSToken(fileInfo.fileId);
-      let ossCredential = getTokenResult.data.ossCredential;
+      let ossCredential = yield serverApi.getOSSToken(fileInfo.fileId);
       //abort the upload
       yield OSS.abortMitiUpload(ossCredential, false, fileInfo);
     }

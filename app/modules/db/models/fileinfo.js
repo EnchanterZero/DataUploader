@@ -2,7 +2,8 @@
  * name
  * filePath
  * size
- * project
+ * projectName
+ * projectId
  * progress
  * checkPointTime
  * speed
@@ -37,7 +38,12 @@ export function create(sequelize, DataTypes) {
       defaultValue: '',
       allowNull: false,
     },
-    project:{
+    projectName:{
+      type: DataTypes.STRING,
+      defaultValue: '',
+      allowNull: false,
+    },
+    projectId:{
       type: DataTypes.STRING,
       defaultValue: '',
       allowNull: false,

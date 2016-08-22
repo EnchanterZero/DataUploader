@@ -141,18 +141,10 @@ var utils = new Utils();
         /**
          * auth check
          */
-        // var token = AuthService.loadCredentials();
-        // if (!AuthService.isAuthenticated()) {
         $window.alert('请先登录!');
         $timeout(function () {
           AuthService.gotoLogin();
         }, 0);
-        // } else {
-        //   api.setUserToken({ token: token })
-        //   .then(function () {
-        //
-        //   });
-        // }
 
       }catch (err){
         console.log(err,err.stack);
@@ -233,13 +225,9 @@ var utils = new Utils();
 
   angular.module('Uploader.services')
   .service('api', ['$http', '$rootScope', 'serverUrl', 'Session', '$window', function ($http, $rootScope, serverUrl, Session, $window) {
-    var LOCAL_TOKEN_KEY = 'token';
+    var LOCAL_BASE_TOKEN_KEY = 'baseToken';
     var LOCAL_CURRENT_USER = 'currentUser';
     var api = this;
-
-    this.setAuthToken = function (token) {
-      this.token = token;
-    }
 
     /**
      * auth api
@@ -247,21 +235,13 @@ var utils = new Utils();
     this.login = function (query, $scope) {
       return _BackendService.serverApi.authenticate(query.username, query.password)
       .then(function (result) {
-        if (result.code !== 200) {
-          throw new Error(result.data.message);
-          return;
-        }
-        if (!result.data.token || !result.data.currentUser) {
-          throw new Error('empty response');
-          return;
-        }
-        Session.set(LOCAL_TOKEN_KEY, result.data.token);
+        Session.set(LOCAL_BASE_TOKEN_KEY, result.data.token);
         Session.set(LOCAL_CURRENT_USER, result.data.currentUser);
-        api.setAuthToken(result.data.token);
         console.log('login success!!!!!!');
         $window.location.hash = '#/upload';
       })
       .catch(function (err) {
+        console.log(err);
         $scope.errorMessage = err.message;
       });
     };
@@ -269,18 +249,18 @@ var utils = new Utils();
     this.logout = function () {
       return _BackendService.serverApi.deauthenticate()
       .then(() => {
-        Session.set(LOCAL_TOKEN_KEY, null);
+        Session.set(LOCAL_BASE_TOKEN_KEY, null);
         Session.set(LOCAL_CURRENT_USER, null);
-        api.setAuthToken(null);
         console.log('logout success!!!!!!');
         $window.location.hash = '#/login';
       });
     }
-    this.setUserToken = function (data) {
-      var token = Session.get(LOCAL_TOKEN_KEY);
-      return co(function* () {
-        if (token)
-          _BackendService.serverApi.setAuthToken(token);
+    this.setUserToken = function () {
+      var token = Session.get(LOCAL_BASE_TOKEN_KEY);
+      return co(function*() {
+        if (token) {
+          _BackendService.serverApi.setBaseAuthToken(token);
+        }
         return {}
       })
     }
@@ -300,7 +280,7 @@ var utils = new Utils();
       var path = data.fileList[0];
       var syncId = new Date().getTime().toString();
       co(function*() {
-        let r = yield _BackendService.fileUpload.uploadFiles(project,data.fileList, syncId, { afterDelete: false });
+        let r = yield _BackendService.fileUpload.uploadFiles(project, data.fileList, syncId, { afterDelete: false });
       }).catch((err) => {
         console.error(err, err.stack);
       });
@@ -319,12 +299,12 @@ var utils = new Utils();
 
     this.resumeUploadFile = function (syncId) {
       co(function*() {
-        let r = yield _BackendService.fileUpload.uploadFiles(null,[], syncId, { afterDelete: false });
+        let r = yield _BackendService.fileUpload.uploadFiles(null, [], syncId, { afterDelete: false });
       })
       .catch((err) => {
         logger.error(err, err.stack);
       });
-      return co(function* () {
+      return co(function*() {
         return {}
       })
     }
@@ -336,9 +316,13 @@ var utils = new Utils();
       .catch((err) => {
         logger.error(err, err.stack);
       });
-      return co(function* () {
+      return co(function*() {
         return {}
       })
+    }
+    
+    this.getProjects = function () {
+      return _BackendService.serverApi.getGenoProjects()
     }
 
     /**
@@ -384,7 +368,7 @@ var utils = new Utils();
   .service('AuthService', ['$rootScope', '$state', '$window', 'api', 'Session', authService]);
 
   function authService($rootScope, $state, $window, api, Session) {
-    var LOCAL_TOKEN_KEY = 'token';
+    var LOCAL_BASE_TOKEN_KEY = 'baseToken';
     var LOCAL_CURRENT_USER = 'currentUser';
 
     var authService = this;
@@ -400,21 +384,21 @@ var utils = new Utils();
     }
 
     this.loadCredentials = function () {
-      var token = Session.get(LOCAL_TOKEN_KEY);
+      var token = Session.get(LOCAL_BASE_TOKEN_KEY);
       var currentUser = Session.get(LOCAL_CURRENT_USER);
       this.useCredentials(token, currentUser);
-      return token;
+      return  token;
     }
 
-    this.useCredentials = function (token, currentUser) {
-      this.token = token;
+    this.useCredentials = function (baseToken, currentUser) {
+      this.baseToken = baseToken;
       this.currentUser = currentUser;
-      $rootScope.$isAuthenticated = !!token;
-      api.setAuthToken(token);
+      $rootScope.$isAuthenticated = !!(baseToken && baseToken);
+      //api.setAuthToken(token);
     }
 
     this.isAuthenticated = function () {
-      return !!this.token;
+      return !!(this.baseToken);
     };
 
     this.getCurrentUser = function () {
@@ -519,6 +503,7 @@ var utils = new Utils();
   angular.module('Uploader.views').controller('AuthController', ['$scope', '$http', '$window', 'Session', 'api', 'serverUrl', authController]);
   function authController($scope, $http, $window, Session, api, serverUrl) {
 
+    $scope.errorMessage = '';
     $scope.doLogin = function () {
       var data = {
         username: $scope.username,
@@ -695,8 +680,10 @@ var utils = new Utils();
     }, 0);
     $scope.totalSize = utils.getFormatSizeString(totalSize);
     $scope.fileList = fileList;
-    $scope.projectList = ['project1', 'project2', 'project3'];
-    $scope.selectedProject = $scope.projectList[0];
+    api.getProjects().then(function (list) {
+      $scope.projectList = list;
+      $scope.selectedProject = $scope.projectList[0];
+    })
 
     $scope.ok = function () {
       $uibModalInstance.close($scope.selectedProject);

@@ -123,8 +123,8 @@ export function setFileInfoAborted(syncId) {
   }, {
     where: {
       syncId: syncId,
-      status: { $notIn: [FileInfoStatuses.finished, FileInfoStatuses.failed] },
-      progress: { $notIn: ['0', '1'] },
+      status: { $notIn: [FileInfoStatuses.finished,] },
+      progress: { $notIn: [ '1'] },
     }
   })
   .then(result => {

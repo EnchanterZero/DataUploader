@@ -14,11 +14,11 @@ import * as FileInfo from '../fileinfo';
 
 export function getOSSClient(credential, internal) {
   return new OSS({
-    secure: internal,
+    //secure: internal,
     region: credential.Region,
     accessKeyId: credential.AccessKeyId,
     accessKeySecret: credential.AccessKeySecret,
-    stsToken: credential.Security,
+    //stsToken: credential.Security,
     bucket: credential.Bucket,
   });
 }
@@ -137,7 +137,7 @@ export function putOSSFile(credential, internal, fileInfo, options) {
   const ossClient = getOSSClient(credential, internal);
   logger.info(`Start putOSSObject ${credential.Region} ${credential.Bucket} ${fileInfo.fileId} `);
   const filePath = fileInfo.filePath;
-  const objectKey = fileInfo.fileId;
+  const objectKey = path.join('projects',fileInfo.projectId,fileInfo.fileId);
   let retry = 2;
   // start upload
   return co(function *() {
@@ -240,13 +240,15 @@ export function putOSSFile(credential, internal, fileInfo, options) {
 
 export function abortMitiUpload(credential, internal, fileInfo) {
   const ossClient = getOSSClient(credential, internal);
-  var ckp = JSON.parse(fileInfo.checkPoint);
-  return co(function* () {
-    var result = yield ossClient.abortMultipartUpload(ckp.name, ckp.uploadId);
-    logger.info(`Abort putOSSObject name -->${ckp.name}, uploadId--> ${ckp.uploadId}, result-->${result}`);
-    return result;
-  })
-  .catch((err) => {
-    logger.error(err);
-  });
+    return co(function*() {
+      if(fileInfo.checkPoint) {
+        var ckp = JSON.parse(fileInfo.checkPoint);
+        var result = yield ossClient.abortMultipartUpload(ckp.name, ckp.uploadId);
+        logger.info(`Abort putOSSObject name -->${ckp.name}, uploadId--> ${ckp.uploadId}, result-->${result}`);
+        return result;
+      }
+    })
+    .catch((err) => {
+      logger.error(err);
+    });
 }

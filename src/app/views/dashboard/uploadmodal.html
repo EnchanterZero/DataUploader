@@ -5,7 +5,7 @@
   <div class="modal-body">
     <div>
       <label>Project: </label>
-      <select class="form-control" ng-model="selectedProject" ng-options="f for f in projectList">
+      <select ng-disabled="!projectList" class="form-control" ng-model="selectedProject" ng-options="f.name for f in projectList">
         <option></option>
       </select>
     </div>
@@ -14,7 +14,7 @@
     </div>
   </div>
   <div class="modal-footer">
-    <button class="btn btn-primary" type="button" ng-click="ok()">OK</button>
+    <button class="btn btn-primary" type="button" ng-disabled="!selectedProject" ng-click="ok()">OK</button>
     <button class="btn btn-warning" type="button" ng-click="cancel()">Cancel</button>
   </div>
 </div>

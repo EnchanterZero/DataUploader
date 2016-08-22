@@ -11,8 +11,9 @@ import * as Config from '../modules/config';
 co(function* () {
   yield FileInfo.checkAndRepair();
 })
-//serverApi.setBaseUrl('https://api-staging01.curacloudplatform.com:3001');
-serverApi.setBaseUrl('http://127.0.0.1:3000/');
+//const apiServerUrl = 'https://api-staging01.curacloudplatform.com:3001';
+const serverUrl = 'https://api-geno-s02.curacloudplatform.com:443';
+serverApi.setServerUrl(serverUrl);
 
 var $settings = null;
 function loadConfig() {

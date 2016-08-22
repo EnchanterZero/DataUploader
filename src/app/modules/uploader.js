@@ -29,18 +29,10 @@
         /**
          * auth check
          */
-        // var token = AuthService.loadCredentials();
-        // if (!AuthService.isAuthenticated()) {
         $window.alert('请先登录!');
         $timeout(function () {
           AuthService.gotoLogin();
         }, 0);
-        // } else {
-        //   api.setUserToken({ token: token })
-        //   .then(function () {
-        //
-        //   });
-        // }
 
       }catch (err){
         console.log(err,err.stack);
