@@ -585,7 +585,7 @@ var utils = new Utils();
       //check for recover only once
       co(function*() {
         let r = yield _FileInfo.listUploadingFiles();
-        if(r){
+        if(r.length > 0){
           alert('recovering the updating...');
           _BackendService.uploadRecovery.recover(r);
         }

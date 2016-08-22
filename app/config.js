@@ -1,5 +1,8 @@
 import winston from 'winston';
+import fs from 'fs';
+import { util } from './util';
 import path from 'path';
+import os from 'os';
 
 /**
  * project config
@@ -12,10 +15,13 @@ console.log('Using : ', __dirname);
 /**
  * db config
  */
+
+const dbDir = path.join(os.homedir(),'Library/Application Support/DicomUploader/db');
+util.ensureFolderExist(dbDir);
 const dbConfig = {
   host: 'localhost',
   port: 3306,
-  storage: projectConfig.projectRoot + '/modules/db/database.sqlite',
+  storage: path.join(dbDir,'database.sqlite'),
   username: null,
   password: null,
   database: 'main',

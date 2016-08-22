@@ -1,29 +1,11 @@
 var path = require('path');
 var fs = require('fs');
 
-function ensureFolderExist(dir) {
-  const parent = path.dirname(dir);
-  if (!fs.existsSync(parent)) {
-    ensureFolderExist(parent);
-  }
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir);
-  }
-}
-
-
-function initConfig(electronApp) {
-  const userData = electronApp.getPath('userData');
-  const config = require('./dist/config');
-  config.dbConfig.storage = path.join(userData, 'db', 'database.sqlite');
-  ensureFolderExist(path.dirname(config.dbConfig.storage));
-}
-
 const electron = require('electron')
 // Module to control application life.
 const app = electron.app
 
-initConfig(app);
+//initConfig(app);
 
 // Module to create native browser window.
 const BrowserWindow = electron.BrowserWindow
@@ -39,7 +21,7 @@ function createWindow () {
 
   // and load the index.html of the app.
   //mainWindow.loadURL(`file://${__dirname}/src/app/index.html`)
-  mainWindow.loadURL(`file://${__dirname}/src/app/index.html#`)
+  mainWindow.loadURL(`file://${__dirname}/src/app/index.html`)
 
   // Open the DevTools.
   mainWindow.webContents.openDevTools()

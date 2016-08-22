@@ -3,6 +3,7 @@
  */
 import { logger } from './logger'
 import fs from 'fs';
+import path from 'path';
 import Promise from 'bluebird';
 import q from 'q';
 import _ from 'lodash';
@@ -41,6 +42,15 @@ function walkDir(DirPath) {
   walk(DirPath, 0, handleFile);
   process.stdout.write('\n');
   return filePaths;
+}
+function ensureFolderExist(dir) {
+  const parent = path.dirname(dir);
+  if (!fs.existsSync(parent)) {
+    ensureFolderExist(parent);
+  }
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir);
+  }
 }
 function isDirectory(filepath) {
   return Promise.promisify(fs.stat, fs)(filepath)
@@ -92,5 +102,6 @@ var util = {
   remove,
   size,
   walkDir,
+  ensureFolderExist,
 };
 export { util };
