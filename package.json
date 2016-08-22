@@ -1,6 +1,6 @@
 {
-  "name": "DicomUploader",
-  "productName": "DicomUploader",
+  "name": "GenoDataUploader",
+  "productName": "GenoDataUploader",
   "version": "0.0.0",
   "private": true,
   "main": "main.js",

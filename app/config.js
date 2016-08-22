@@ -16,7 +16,7 @@ console.log('Using : ', __dirname);
  * db config
  */
 
-const dbDir = path.join(os.homedir(),'Library/Application Support/DicomUploader/db');
+const dbDir = path.join(os.homedir(),'Library/Application Support/GenoDataUploader/db');
 util.ensureFolderExist(dbDir);
 const dbConfig = {
   host: 'localhost',
