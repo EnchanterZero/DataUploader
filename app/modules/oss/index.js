@@ -172,7 +172,7 @@ export function putOSSFile(credential, internal, fileInfo, options) {
                   logger.info('remove temp DcmInfo : ', fileInfo.filePath, fileInfo.syncId);
                 }
                 yield FileInfo.updateFileInfo(fileInfo, setField);
-                return true;
+                //return true;
               }
               //if upload unfinished, status is not 'uploading' means upload need to stop
               else if (lastRecord.status != FileInfo.FileInfoStatuses.uploading) {
@@ -180,12 +180,13 @@ export function putOSSFile(credential, internal, fileInfo, options) {
                 if(lastRecord.status == FileInfo.FileInfoStatuses.pausing)
                   setField.status = FileInfo.FileInfoStatuses.paused;
                 yield FileInfo.updateFileInfo(fileInfo, setField);
-                return false;
+                //return false;
+                throw new Error('upload stop');
               }
               //when upload unfinished and status is 'uploading', do nothing but update info continue
               else {
                 yield FileInfo.updateFileInfo(fileInfo, setField);
-                return true;
+                //return true;
               }
 
             };
@@ -221,6 +222,9 @@ export function putOSSFile(credential, internal, fileInfo, options) {
         }
         catch
           (err) {
+          if(err.message == 'upload stop'){
+            return fileInfo;
+          }
           logger.error(`error when uploading ${filePath} to ${objectKey}`, err);
         }
       }
