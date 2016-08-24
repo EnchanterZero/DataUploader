@@ -13,10 +13,6 @@
       $urlRouterProvider.otherwise("/login");
 
       $stateProvider
-      // .state('status', {
-      //   url: "/status",
-      //   templateUrl: 'views/dashboard/status.html',
-      // })
       .state('upload', {
         url: "/upload",
         templateUrl: './views/dashboard/upload.html',
@@ -25,18 +21,6 @@
         url: "/login",
         templateUrl: './views/dashboard/auth.html',
       })
-      // .state('autoscan', {
-      //   url: "/autoscan",
-      //   templateUrl: 'views/dashboard/autoscan.html',
-      // })
-      // .state('autopush', {
-      //   url: "/autopush",
-      //   templateUrl: 'views/dashboard/autopush.html',
-      // })
-      // .state('history', {
-      //   url: "/history",
-      //   templateUrl: 'views/dashboard/history.html',
-      // })
       .state('settings', {
         url: "/settings",
         templateUrl: './views/dashboard/settings.html',

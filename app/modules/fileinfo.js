@@ -16,6 +16,7 @@ import Promise from  'bluebird';
  * status   finished | uploading | paused | pausing
  * fileId
  * syncId
+ * userId
  * uploadType
  */
 
@@ -33,6 +34,7 @@ export function createFileInfo(fileInfo) {
     where: {
       filePath: fileInfo.filePath,
       syncId: fileInfo.syncId,
+      userId: fileInfo.userId,
     },
     defaults: fileInfo
   }).then((result) => {
@@ -51,32 +53,33 @@ export function deleteAllFileInfos() {
   });
 }
 
-export function updateFileInfo(fileInfo, options) {
-  let setField = {};
-  if (options && options.progress) {
-    setField.progress = options.progress;
-  }
-  if (options && options.status) {
-    setField.status = options.status;
-  }
-  if (options && options.checkPoint) {
-    setField.checkPoint = options.checkPoint;
-  }
-  return models.FileInfo.update(setField, {
-    where: {
-      filePath: fileInfo.filePath,
-      syncId: fileInfo.syncId,
-    }
-  })
-  .then(result => {
-    if (!result[0]) {
-      logger.debug('err: ' + 'update failed', fileInfo)
-    }
-  })
-  .catch((err) => {
-    logger.error(err, err.stack)
-  });
-}
+// export function updateFileInfo(fileInfo, options) {
+//   let setField = {};
+//   if (options && options.progress) {
+//     setField.progress = options.progress;
+//   }
+//   if (options && options.status) {
+//     setField.status = options.status;
+//   }
+//   if (options && options.checkPoint) {
+//     setField.checkPoint = options.checkPoint;
+//   }
+//   return models.FileInfo.update(setField, {
+//     where: {
+//       filePath: fileInfo.filePath,
+//       syncId: fileInfo.syncId,
+//       userId: fileInfo.userId,
+//     }
+//   })
+//   .then(result => {
+//     if (!result[0]) {
+//       logger.debug('err: ' + 'update failed', fileInfo)
+//     }
+//   })
+//   .catch((err) => {
+//     logger.error(err, err.stack)
+//   });
+// }
 
 export function updateFileInfo(fileInfo, options) {
   let setField = options;
@@ -84,6 +87,7 @@ export function updateFileInfo(fileInfo, options) {
     where: {
       filePath: fileInfo.filePath,
       syncId: fileInfo.syncId,
+      userId: fileInfo.userId,
     }
   })
   .then(result => {
@@ -103,7 +107,7 @@ export function setFileInfoPausing(syncId) {
   }, {
     where: {
       syncId: syncId,
-      status: FileInfoStatuses.uploading
+      status: FileInfoStatuses.uploading,
     }
   })
   .then(result => {
@@ -151,8 +155,9 @@ export function getFileInfoBySyncId(SyncId) {
   });
 }
 
-export function listFiles() {
+export function listFiles(userId) {
   let where = {status:{$ne:FileInfoStatuses.aborted}};
+  if(userId) where.userId = userId;
   return models.FileInfo.findAll({
     where: where,
     order: [['createdAt', 'DESC']]
@@ -170,8 +175,9 @@ export function listFiles() {
   });
 }
 
-export function listUploadingFiles() {
+export function listUploadingFiles(userId) {
   let where = { status: [FileInfoStatuses.pausing, FileInfoStatuses.uploading] };
+  if(userId) where.userId = userId;
   return models.FileInfo.findAll({
     where: where,
   })

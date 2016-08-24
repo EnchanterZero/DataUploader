@@ -11,6 +11,7 @@
  * status   finished | uploading | paused | pausing | aborted
  * fileId
  * syncId
+ * userId
  * uploadType
  *
  * @param sequelize
@@ -84,6 +85,11 @@ export function create(sequelize, DataTypes) {
       allowNull: false,
     },
     syncId: {
+      type: DataTypes.STRING,
+      defaultValue: '',
+      allowNull: false,
+    },
+    userId:{
       type: DataTypes.STRING,
       defaultValue: '',
       allowNull: false,

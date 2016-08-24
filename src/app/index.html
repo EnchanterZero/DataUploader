@@ -36,11 +36,11 @@
       </button>
       <a class="navbar-brand" href="#">文件上传工具</a>
     </div>
-    <div id="navbar" class="navbar-collapse collapse">
+    <div ng-controller="UserController" id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav navbar-right">
-        <li><a href="#">帮助</a></li>
-        <li><a ui-sref="settings">设置</a></li>
-        <li ng-controller="UserController"><a ng-click="doLogout()">退出</a></li>
+        <li><a >帮助</a></li>
+        <li ng-show="false"><a>设置</a></li>
+        <li ng-show="showLogout"><a ng-click="doLogout()">退出</a></li>
       </ul><!--
           <form class="navbar-form navbar-right">
             <input type="text" class="form-control" placeholder="Search...">

@@ -9,24 +9,30 @@
     var getFileUplodStatuses = function ($scope) {
       $scope.intervalId = $interval(function () {
         getFileList($scope);
-      }, 1500);
+      }, 1000);
     };
+    
     var getFileList = function ($scope) {
       return api.getFileInfoList().then(
         function (result) {
           if (result.fileInfoList) {
-            if (!$scope.oldfileInfoList) {
-              utils.formatList(result.fileInfoList, result.fileInfoList);
-
-              $scope.oldfileInfoList = result.fileInfoList;
-              $scope.fileInfoList = result.fileInfoList;
-            } else {
-              utils.formatList(result.fileInfoList, $scope.oldfileInfoList);
-
-              $scope.oldfileInfoList = $scope.fileInfoList;
-              $scope.fileInfoList = result.fileInfoList;
+             if (!$scope.fileInfoList) {
+               utils.formatList(result.fileInfoList, result.fileInfoList);
+               $scope.fileInfoList = result.fileInfoList;
+             } else {
+              utils.formatList(result.fileInfoList, $scope.fileInfoList);
+              //$scope.oldfileInfoList = angular.copy($scope.fileInfoList);
+              utils.minAssignList($scope.fileInfoList, result.fileInfoList)
             }
             //console.log('one data load');
+            // var progressBarEles = document.getElementsByClassName('progress');
+            // for(var index in progressBarEles) {
+            //   var totalWidth = progressBarEles[index].offsetWidth;
+            //   var paddingEle = progressBarEles[index].children[0].children[0];
+            //   var paddingEleWidth = paddingEle.offsetWidth;
+            //   var style = "color: black;float:left;padding-left:" + (totalWidth-paddingEleWidth)/2 + "px";
+            //   paddingEle.setAttribute("style",style);
+            // }
           }
         }
       );
@@ -34,13 +40,7 @@
 
     if (!$rootScope.uploadControllerScope) {
       //check for recover only once
-      co(function*() {
-        let r = yield _FileInfo.listUploadingFiles();
-        if(r.length > 0){
-          alert('recovering the updating...');
-          _BackendService.uploadRecovery.recover(r);
-        }
-      });
+      
       $rootScope.uploadControllerScope = {};
       var $scope = $rootScope.uploadControllerScope;
       if (!$rootScope.$settings) {
@@ -58,7 +58,7 @@
 
       $scope.browseAndUpload = function () {
         const { dialog } = require('electron').remote;
-        var path = dialog.showOpenDialog({ properties: ['openFile', 'openDirectory', 'multiSelections',] });
+        var path = dialog.showOpenDialog({ properties: ['openFile', /*'openDirectory', 'multiSelections',*/] });
         if (path) {
           $scope.dcmDir = path[0];
           var stat = require('fs').statSync(path[0]);
@@ -104,14 +104,32 @@
         $scope.dcmDir = dialog.showOpenDialog({ properties: ['openFile', 'openDirectory', 'multiSelections'] });
       };
       $scope.pauseUpload = function (sId) {
+        $scope.fileInfoList.map(function (o) {
+          if (o.syncId == sId) {
+            o.working = true;
+            o.workingStatus = 'pausing...';
+          }
+        });
         api.stopUploadFile(sId).then(function () {
         });
       };
       $scope.resumeUpload = function (sId) {
+        $scope.fileInfoList.map(function (o) {
+          if (o.syncId == sId) {
+            o.working = true;
+            o.workingStatus = 'resuming...';
+          }
+        });
         api.resumeUploadFile(sId).then(function () {
         });
       };
       $scope.abortUpload = function (sId) {
+        $scope.fileInfoList.map(function (o) {
+          if (o.syncId == sId) {
+            o.working = true;
+            o.workingStatus = 'aborting...';
+          }
+        });
         api.abortUploadFile(sId).then(function () {
         });
       };

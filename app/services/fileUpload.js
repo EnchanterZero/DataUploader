@@ -56,7 +56,12 @@ function uploadOneFile(fileInfo, options) {
 function uploadFiles(project,filePaths, sId, options) {
   //filePaths.length > 0 means this upload is a new upload
   if (filePaths.length > 0) {
+    let currentUser = serverApi.getBaseUser();
+    if(!currentUser){
+      throw new Error('no currentUser');
+    }
     var syncId = sId ? sId : new Date().getTime().toString();
+    //set upload record base data
     var fileInfos = filePaths.map(item=> {
       let stat = fs.statSync(item.filePath);
       return {
@@ -72,6 +77,7 @@ function uploadFiles(project,filePaths, sId, options) {
         status: FileInfo.FileInfoStatuses.uploading,
         fileId: '',
         syncId: syncId,
+        userId:currentUser.id,
         uploadType: 'test',
       }
     });

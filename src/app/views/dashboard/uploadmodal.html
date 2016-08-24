@@ -5,12 +5,14 @@
   <div class="modal-body">
     <div>
       <label>Project: </label>
-      <select ng-disabled="!projectList" class="form-control" ng-model="selectedProject" ng-options="f.name for f in projectList">
-        <option></option>
+      <select ng-disabled="!projectList || projectList.length==0" class="form-control" ng-model="selectedProject" ng-options="f.name for f in projectList">
       </select>
     </div>
     <div>
-      Uploading {{fileList.length}} file, total upload size is:{{totalSize}}
+      <span>Uploading {{fileList.length}} file, total upload size is:{{totalSize}}</span>
+    </div>
+    <div>
+      <strong ng-show="projectList.length==0">Warning:you can not upload because you have no projects!</strong>
     </div>
   </div>
   <div class="modal-footer">

@@ -13,26 +13,29 @@
     /**
      * auth api
      */
-    this.login = function (query, $scope) {
+    this.login = function (query, $scope, $rScope) {
       return _BackendService.serverApi.authenticate(query.username, query.password)
       .then(function (result) {
         Session.set(LOCAL_BASE_TOKEN_KEY, result.data.token);
         Session.set(LOCAL_CURRENT_USER, result.data.currentUser);
         console.log('login success!!!!!!');
+        $rScope.showLogout = true;
         $window.location.hash = '#/upload';
       })
       .catch(function (err) {
         console.log(err);
         $scope.errorMessage = err.message;
+        $scope.$apply();
       });
     };
 
-    this.logout = function () {
+    this.logout = function ($rScope) {
       return _BackendService.serverApi.deauthenticate()
       .then(() => {
         Session.set(LOCAL_BASE_TOKEN_KEY, null);
         Session.set(LOCAL_CURRENT_USER, null);
         console.log('logout success!!!!!!');
+        $rScope.showLogout = false;
         $window.location.hash = '#/login';
       });
     }
@@ -45,12 +48,32 @@
         return {}
       })
     }
+    
+    this.recoverIfUnfinished = function(){
+      var currentUser = Session.get(LOCAL_CURRENT_USER);
+      if (!currentUser) {
+        $window.location.hash = '#/login';
+        return;
+      }
+      co(function*() {
+        let r = yield _FileInfo.listUploadingFiles(currentUser.id);
+        if(r.length > 0){
+          alert('recovering the updating...');
+          _BackendService.uploadRecovery.recover(r);
+        }
+      });
+    }
 
     /**
      * manual upload api
      */
     this.getFileInfoList = function () {
-      return _FileInfo.listFiles()
+      var currentUser = Session.get(LOCAL_CURRENT_USER);
+      if (!currentUser) {
+        $window.location.hash = '#/login';
+        return new Promise.reject();
+      }
+      return _FileInfo.listFiles(currentUser.id)
       .then(function (r) {
         return { fileInfoList: r }
       })
@@ -58,10 +81,10 @@
 
     this.uploadFile = function (data) {
       var project = data.project;
-      var path = data.fileList[0];
+      var fileList = data.fileList;
       var syncId = new Date().getTime().toString();
       co(function*() {
-        let r = yield _BackendService.fileUpload.uploadFiles(project, data.fileList, syncId, { afterDelete: false });
+        let r = yield _BackendService.fileUpload.uploadFiles(project, fileList, syncId, { afterDelete: false });
       }).catch((err) => {
         console.error(err, err.stack);
       });
@@ -101,7 +124,7 @@
         return {}
       })
     }
-    
+
     this.getProjects = function () {
       return _BackendService.serverApi.getGenoProjects()
     }

@@ -4,6 +4,7 @@ import Promise from 'bluebird';
 import request from 'request';
 
 let baseUserToken;
+let baseUser;
 let baseUrl;
 
 function GET(serverUrl, uri, query, option) {
@@ -79,6 +80,14 @@ function setBaseAuthToken(token) {
 function getBaseAuthToken() {
   return baseUserToken;
 }
+function setBaseUser(user) {
+  logger.debug('set Base User', user);
+  baseUser = user;
+}
+//function getAuthToken(token) -> function getBaseAuthToken(token)
+function getBaseUser() {
+  return baseUser;
+}
 
 function authorize(options) {
   var token = getBaseAuthToken();
@@ -111,9 +120,11 @@ function authenticate(username, password) {
   });
   return Promise.all([baseAuth])
   .then(results => {
-    console.log(results);
-    if (results[0].data.token)
+    //console.log('123123123',results);
+    if (results[0].data.token) {
       setBaseAuthToken(results[0].data.token);
+      setBaseUser(results[0].data.currentUser);
+    }
     return results[0]
   })
 }
@@ -169,6 +180,8 @@ function getGenoProjects() {
 export {
   setBaseAuthToken,
   getBaseAuthToken,
+  setBaseUser,
+  getBaseUser,
   setServerUrl,
   authenticate,
   deauthenticate,

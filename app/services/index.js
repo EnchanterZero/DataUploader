@@ -12,7 +12,7 @@ co(function* () {
   yield FileInfo.checkAndRepair();
 })
 //const apiServerUrl = 'https://api-staging01.curacloudplatform.com:3001';
-const serverUrl = 'https://api-geno-s02.curacloudplatform.com:443';
+const serverUrl = 'https://api-geno-s01.curacloudplatform.com:443';
 serverApi.setServerUrl(serverUrl);
 
 var $settings = null;

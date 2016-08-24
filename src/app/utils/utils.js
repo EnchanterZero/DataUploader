@@ -31,18 +31,18 @@ var Utils = function () {
     arr.map(function (item) {
       var date;
       var syncId = item.syncId;
-      if (item['createdAt']) {
+      if (typeof item['createdAt'] != 'undefined') {
         date = new Date(Date.parse(item['createdAt']));
         item['createdAt'] = getFormatDateString(date);
       }
-      if (item['updatedAt']) {
+      if (typeof item['updatedAt'] != 'undefined') {
         date = new Date(Date.parse(item['updatedAt']));
         item['updatedAt'] = getFormatDateString(date);
       }
-      if(item['size']){
+      if (typeof item['size'] != 'undefined') {
         item['size'] = getFormatSizeString(item['size']);
       }
-      if (item['speed']) {
+      if (typeof item['speed'] != 'undefined') {
         //the item is a finished or a pausing item
         if (item['status'] != 'uploading') {
           //console.log("original item['speed']-->" + item['speed']);
@@ -54,9 +54,9 @@ var Utils = function () {
             return o.syncId == syncId
           });
           //no checkPoint means speed should be 0
-          if(!lastItem || !lastItem['checkPoint'] || !item['checkPoint']){
+          if (!lastItem || !lastItem['checkPoint'] || !item['checkPoint']) {
             item['speed'] = getFormatSpeedString(0);
-          }else {
+          } else {
             var cpt = JSON.parse(item['checkPoint']);
             var lastCpt = JSON.parse(lastItem['checkPoint']);
             var v = (cpt.nextPart - lastCpt.nextPart) * cpt.partSize;
@@ -67,11 +67,71 @@ var Utils = function () {
           }
         }
       }
-      if (item['progress']) {
+      if (typeof item['progress'] != 'undefined') {
         item['progress'] = (item['progress'] * 100).toFixed(2);
       }
     });
+    //handle working
+    oldArr.map(function (item) {
+      if (item['working'] === true) {
+        var newItem = _.find(arr, function (o) {
+          return o.syncId == item.syncId
+        });
+        if (newItem) {
+          if (newItem.status == 'pausing' || newItem.status == item.status) {
+            newItem['working'] = true;
+            newItem['workingStatus'] = item['workingStatus']
+          } else {
+            newItem['working'] = false;
+          }
+
+        }
+      }
+    });
     return arr;
+  };
+  this.minAssignList = function (changingArr, newArr) {
+
+    //cut down changingArr length
+    while (changingArr.length > newArr.length) {
+      changingArr.pop();
+    }
+    //now assign new values one by one till not match
+    for (var it in newArr) {
+      if (changingArr[it]) {
+        if (changingArr[it].id == newArr[it].id) {
+          //assign necessary values
+          if (changingArr[it].progress != newArr[it].progress)
+            changingArr[it].progress = newArr[it].progress;
+
+          if (changingArr[it].speed != newArr[it].speed)
+            changingArr[it].speed = newArr[it].speed;
+
+          if (changingArr[it].status != newArr[it].status)
+            changingArr[it].status = newArr[it].status;
+
+          if (changingArr[it].checkPointTime != newArr[it].checkPointTime)
+            changingArr[it].checkPointTime = newArr[it].checkPointTime;
+
+          if (changingArr[it].checkPoint != newArr[it].checkPoint)
+            changingArr[it].checkPoint = newArr[it].checkPoint;
+
+          if (changingArr[it].updatedAt != newArr[it].updatedAt)
+            changingArr[it].updatedAt = newArr[it].updatedAt;
+
+          if (typeof newArr[it].working != 'undefined' && !(typeof changingArr[it].working != 'undefined' && changingArr[it].working == newArr[it].working))
+            changingArr[it].working = newArr[it].working;
+          if(newArr[it].workingStatus)
+            changingArr[it].workingStatus = newArr[it].workingStatus;
+
+        } else {
+          changingArr[it] = newArr[it];
+        }
+      }
+      else {
+        changingArr.push(newArr[it])
+      }
+    }
   };
   return this;
 }
