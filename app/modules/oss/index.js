@@ -152,8 +152,10 @@ export function putOSSFile(credential, internal, fileInfo, options) {
           if (fileSize > BLOCK_SIZE) {
             let progress = function*(p, cpt) {
               logger.debug(`uploading ${filePath} to ${objectKey}, progress: ${p}`);
+              console.log(FileInfo.unfinishedFileList);
               const time = new Date().getTime();
-              let lastRecord = yield FileInfo.getFileInfoBySyncId(fileInfo.syncId);
+              //let lastRecord = yield FileInfo.getFileInfoBySyncId(fileInfo.syncId);
+              let lastStatus = FileInfo.getOneFromUnfinishedFileList(fileInfo.syncId).status;
               //store file upload info
               cpt.doneParts = [];
               let setField = {};
@@ -164,6 +166,7 @@ export function putOSSFile(credential, internal, fileInfo, options) {
               //if upload finished, ignore pausing and continue
               if (p === 1) {
                 setField.status = FileInfo.FileInfoStatuses.finished;
+                let lastRecord = yield FileInfo.getFileInfoBySyncId(fileInfo.syncId);
                 const start = new Date(Date.parse(lastRecord.createdAt)).getTime();
                 setField.speed = fileSize / ((time - start) / 1000);
                 logger.info('update FileInfo Finished : ', fileInfo.filePath, fileInfo.syncId);
@@ -175,11 +178,12 @@ export function putOSSFile(credential, internal, fileInfo, options) {
                 //return true;
               }
               //if upload unfinished, status is not 'uploading' means upload need to stop
-              else if (lastRecord.status != FileInfo.FileInfoStatuses.uploading) {
-                logger.debug(`[Pausing] uploading ${filePath} to ${objectKey}`);
-                if(lastRecord.status == FileInfo.FileInfoStatuses.pausing)
+              else if (lastStatus != FileInfo.FileInfoStatuses.uploading) {
+                logger.debug(`[${lastStatus}] uploading ${filePath} to ${objectKey}`);
+                if(lastStatus == FileInfo.FileInfoStatuses.pausing)
                   setField.status = FileInfo.FileInfoStatuses.paused;
                 yield FileInfo.updateFileInfo(fileInfo, setField);
+                FileInfo.removeFromUnfinishedFileList(fileInfo.syncId);
                 //return false;
                 throw new Error('upload stop');
               }
@@ -248,6 +252,7 @@ export function abortMitiUpload(credential, internal, fileInfo) {
       if(fileInfo.checkPoint) {
         var ckp = JSON.parse(fileInfo.checkPoint);
         var result = yield ossClient.abortMultipartUpload(ckp.name, ckp.uploadId);
+        yield FileInfo.updateFileInfo(fileInfo, {status:FileInfo.FileInfoStatuses.aborted});
         logger.info(`Abort putOSSObject name -->${ckp.name}, uploadId--> ${ckp.uploadId}, result-->${result}`);
         return result;
       }

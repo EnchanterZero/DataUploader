@@ -39,12 +39,9 @@
     <div ng-controller="UserController" id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav navbar-right">
         <li><a >帮助</a></li>
-        <li ng-show="false"><a>设置</a></li>
-        <li ng-show="showLogout"><a ng-click="doLogout()">退出</a></li>
-      </ul><!--
-          <form class="navbar-form navbar-right">
-            <input type="text" class="form-control" placeholder="Search...">
-          </form> -->
+        <!--<li ><a>设置</a></li>-->
+        <li id="logoutLink" style="display: none"><a ng-click="doLogout()">退出</a></li>
+      </ul>
     </div>
   </div>
 </nav>
@@ -72,18 +69,12 @@
     ================================================== -->
 <!-- Placed at the end of the document so the pages load faster -->
 
-<!--<script>window.jQuery || document.write('<script src="assets/js/vendor/jquery.min.js"><\/script>')</script>-->
 <script src="../lib/jquery/dist/jquery.js"></script>
 <script src="../lib/bootstrap/dist/js/bootstrap.js"></script>
 <script src="../lib/lodash/dist/lodash.js"></script>
 <script src="../lib/angular/angular.js"></script>
 <script src="../lib/angular-bootstrap/ui-bootstrap-tpls.js"></script>
 <script src="../lib/angular-ui-router/release/angular-ui-router.js"></script>
-<!--<script src="./lib.js"></script>-->
 <script src="./build.js"></script>
-<!--<script src="./utils.js"></script>-->
-<!--<script src="./app.js"></script>-->
-<!--<script src="./controller.js"></script>-->
-<!--<script src="./services.js"></script>-->
 </body>
 </html>

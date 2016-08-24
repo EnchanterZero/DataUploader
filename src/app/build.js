@@ -283,6 +283,8 @@ var utils = new Utils();
         Session.set(LOCAL_CURRENT_USER, result.data.currentUser);
         console.log('login success!!!!!!');
         $rScope.showLogout = true;
+        var logoutLink = document.getElementById('logoutLink');
+        angular.element(logoutLink).attr('style','display:block');
         $window.location.hash = '#/upload';
       })
       .catch(function (err) {
@@ -299,6 +301,8 @@ var utils = new Utils();
         Session.set(LOCAL_CURRENT_USER, null);
         console.log('logout success!!!!!!');
         $rScope.showLogout = false;
+        var logoutLink = document.getElementById('logoutLink');
+        angular.element(logoutLink).attr('style','display:none');
         $window.location.hash = '#/login';
       });
     }
@@ -321,10 +325,14 @@ var utils = new Utils();
       co(function*() {
         let r = yield _FileInfo.listUploadingFiles(currentUser.id);
         if(r.length > 0){
-          alert('recovering the updating...');
+          const { dialog } = require('electron').remote;
+          var buttonIndex = dialog.showMessageBox({type:'info',buttons:['确认'],title:'恢复上传',message:'已经恢复上次未完成的上传'},function(){})
           _BackendService.uploadRecovery.recover(r);
         }
       });
+    }
+    this.stopAll = function () {
+      return _BackendService.fileUpload.stopAllUploading()
     }
 
     /**
@@ -573,6 +581,8 @@ var utils = new Utils();
     //clear upload page state
     $rootScope.uploadControllerScope = null;
     $rootScope.showLogout=false;
+    //var logoutLink = document.getElementById('logoutLink');
+    //angular.element(logoutLink).attr('style','display:none');
     $scope.errorMessage = '';
     $scope.doLogin = function () {
       var data = {
@@ -658,8 +668,10 @@ var utils = new Utils();
     }
 
     if (!$rootScope.uploadControllerScope) {
+      const { dialog } = require('electron').remote;
       //check for recover only once
-      
+      console.log('check for recover only once')
+      api.recoverIfUnfinished();
       $rootScope.uploadControllerScope = {};
       var $scope = $rootScope.uploadControllerScope;
       if (!$rootScope.$settings) {
@@ -673,10 +685,10 @@ var utils = new Utils();
       }
       $scope.fileInfoList;
       $scope.chosenFileList = [];
+      getFileList($scope);
       getFileUplodStatuses($scope);
 
       $scope.browseAndUpload = function () {
-        const { dialog } = require('electron').remote;
         var path = dialog.showOpenDialog({ properties: ['openFile', /*'openDirectory', 'multiSelections',*/] });
         if (path) {
           $scope.dcmDir = path[0];
@@ -719,8 +731,7 @@ var utils = new Utils();
         });
       }
       $scope.browseFolder = function (path) {
-        const { dialog } = require('electron').remote;
-        $scope.dcmDir = dialog.showOpenDialog({ properties: ['openFile', 'openDirectory', 'multiSelections'] });
+        $scope.dcmDir = dialog.showOpenDialog({ properties: ['openFile'] });
       };
       $scope.pauseUpload = function (sId) {
         $scope.fileInfoList.map(function (o) {
@@ -743,14 +754,18 @@ var utils = new Utils();
         });
       };
       $scope.abortUpload = function (sId) {
-        $scope.fileInfoList.map(function (o) {
-          if (o.syncId == sId) {
-            o.working = true;
-            o.workingStatus = 'aborting...';
-          }
-        });
-        api.abortUploadFile(sId).then(function () {
-        });
+        var buttonIndex = dialog.showMessageBox({type:'question',buttons:['确认','取消'],title:'取消上传',message:'确认取消该文件的上传吗?'})
+        if(buttonIndex == 0){
+          $scope.fileInfoList.map(function (o) {
+            if (o.syncId == sId) {
+              o.working = true;
+              o.workingStatus = 'aborting...';
+            }
+          });
+          api.abortUploadFile(sId).then(function () {
+          });
+        }
+
       };
 
     } else if ($rootScope.uploadControllerScope.intervalId) {
@@ -794,9 +809,14 @@ var utils = new Utils();
   function userController($scope,$rootScope, api, serverUrl) {
 
     $rootScope.showLogout=true;
+    //var logoutLink = document.getElementById('logoutLink');
+    //angular.element(logoutLink).attr('style','display:block');
     $scope.doLogout = function () {
       //alert('123123123');
-      api.logout($rootScope);
+      //if($rootScope.uploadControllerScope)
+      api.stopAll().then(function () {
+        api.logout($rootScope);
+      })
     };
   }
 

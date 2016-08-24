@@ -39,8 +39,10 @@
     }
 
     if (!$rootScope.uploadControllerScope) {
+      const { dialog } = require('electron').remote;
       //check for recover only once
-      
+      console.log('check for recover only once')
+      api.recoverIfUnfinished();
       $rootScope.uploadControllerScope = {};
       var $scope = $rootScope.uploadControllerScope;
       if (!$rootScope.$settings) {
@@ -54,10 +56,10 @@
       }
       $scope.fileInfoList;
       $scope.chosenFileList = [];
+      getFileList($scope);
       getFileUplodStatuses($scope);
 
       $scope.browseAndUpload = function () {
-        const { dialog } = require('electron').remote;
         var path = dialog.showOpenDialog({ properties: ['openFile', /*'openDirectory', 'multiSelections',*/] });
         if (path) {
           $scope.dcmDir = path[0];
@@ -100,8 +102,7 @@
         });
       }
       $scope.browseFolder = function (path) {
-        const { dialog } = require('electron').remote;
-        $scope.dcmDir = dialog.showOpenDialog({ properties: ['openFile', 'openDirectory', 'multiSelections'] });
+        $scope.dcmDir = dialog.showOpenDialog({ properties: ['openFile'] });
       };
       $scope.pauseUpload = function (sId) {
         $scope.fileInfoList.map(function (o) {
@@ -124,14 +125,18 @@
         });
       };
       $scope.abortUpload = function (sId) {
-        $scope.fileInfoList.map(function (o) {
-          if (o.syncId == sId) {
-            o.working = true;
-            o.workingStatus = 'aborting...';
-          }
-        });
-        api.abortUploadFile(sId).then(function () {
-        });
+        var buttonIndex = dialog.showMessageBox({type:'question',buttons:['确认','取消'],title:'取消上传',message:'确认取消该文件的上传吗?'})
+        if(buttonIndex == 0){
+          $scope.fileInfoList.map(function (o) {
+            if (o.syncId == sId) {
+              o.working = true;
+              o.workingStatus = 'aborting...';
+            }
+          });
+          api.abortUploadFile(sId).then(function () {
+          });
+        }
+
       };
 
     } else if ($rootScope.uploadControllerScope.intervalId) {

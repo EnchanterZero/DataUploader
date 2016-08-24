@@ -26,8 +26,49 @@ export const FileInfoStatuses = {
   paused: 'paused',
   pausing: 'pausing',
   failed: 'failed',
+  aborting:'aborting',
   aborted: 'aborted',
 };
+
+export const unfinishedFileList = [];
+
+export function addToUnfinishedFileList(fileInfo) {
+  console.log('add To UnfinishedFileList',unfinishedFileList,fileInfo);
+  for(var i in unfinishedFileList){
+    if(unfinishedFileList[i].syncId == fileInfo.syncId ){
+      logger.debug('duplicate to add to UnfinishedFileList',fileInfo);
+      return false;
+    }
+  }
+  unfinishedFileList.push(util._.cloneDeep(fileInfo));
+  return true;
+}
+export function getOneFromUnfinishedFileList(syncId) {
+  console.log('get One From UnfinishedFileList',unfinishedFileList,syncId);
+  for(var i in unfinishedFileList){
+    if(unfinishedFileList[i].syncId == syncId ){
+      return unfinishedFileList[i];
+    }
+  }
+}
+export function setStatusToUnfinishedFileList(syncId,status) {
+  console.log('set Status To UnfinishedFileList',unfinishedFileList,syncId);
+  for(var i in unfinishedFileList){
+    if(unfinishedFileList[i].syncId == syncId ){
+      unfinishedFileList[i].status = status;
+      return;
+    }
+  }
+}
+export function removeFromUnfinishedFileList(syncId) {
+  console.log('remove From UnfinishedFileList',unfinishedFileList,syncId);
+  for(var i in unfinishedFileList){
+    if(unfinishedFileList[i].syncId == syncId ){
+      unfinishedFileList.splice(i,1);
+      return;
+    }
+  }
+}
 
 export function createFileInfo(fileInfo) {
   return models.FileInfo.findOrCreate({

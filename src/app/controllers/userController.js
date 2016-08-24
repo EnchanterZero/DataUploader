@@ -7,9 +7,14 @@
   function userController($scope,$rootScope, api, serverUrl) {
 
     $rootScope.showLogout=true;
+    //var logoutLink = document.getElementById('logoutLink');
+    //angular.element(logoutLink).attr('style','display:block');
     $scope.doLogout = function () {
       //alert('123123123');
-      api.logout($rootScope);
+      //if($rootScope.uploadControllerScope)
+      api.stopAll().then(function () {
+        api.logout($rootScope);
+      })
     };
   }
 

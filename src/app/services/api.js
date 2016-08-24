@@ -20,6 +20,8 @@
         Session.set(LOCAL_CURRENT_USER, result.data.currentUser);
         console.log('login success!!!!!!');
         $rScope.showLogout = true;
+        var logoutLink = document.getElementById('logoutLink');
+        angular.element(logoutLink).attr('style','display:block');
         $window.location.hash = '#/upload';
       })
       .catch(function (err) {
@@ -36,6 +38,8 @@
         Session.set(LOCAL_CURRENT_USER, null);
         console.log('logout success!!!!!!');
         $rScope.showLogout = false;
+        var logoutLink = document.getElementById('logoutLink');
+        angular.element(logoutLink).attr('style','display:none');
         $window.location.hash = '#/login';
       });
     }
@@ -58,10 +62,14 @@
       co(function*() {
         let r = yield _FileInfo.listUploadingFiles(currentUser.id);
         if(r.length > 0){
-          alert('recovering the updating...');
+          const { dialog } = require('electron').remote;
+          var buttonIndex = dialog.showMessageBox({type:'info',buttons:['确认'],title:'恢复上传',message:'已经恢复上次未完成的上传'},function(){})
           _BackendService.uploadRecovery.recover(r);
         }
       });
+    }
+    this.stopAll = function () {
+      return _BackendService.fileUpload.stopAllUploading()
     }
 
     /**

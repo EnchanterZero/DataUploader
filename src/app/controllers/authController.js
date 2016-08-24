@@ -9,6 +9,8 @@
     //clear upload page state
     $rootScope.uploadControllerScope = null;
     $rootScope.showLogout=false;
+    //var logoutLink = document.getElementById('logoutLink');
+    //angular.element(logoutLink).attr('style','display:none');
     $scope.errorMessage = '';
     $scope.doLogin = function () {
       var data = {
