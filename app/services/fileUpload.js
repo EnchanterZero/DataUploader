@@ -30,7 +30,7 @@ function uploadOneFile(fileInfo, options) {
   return co(function*() {
     //create file and ask for token if it it a new upload
     if (!fileInfo.fileId) {
-      let file = yield serverApi.createFile(data);
+      let file = yield serverApi.createFile(fileInfo.projectId, data);
       fileInfo.fileId = file.id;
     }
     let ossCredential = yield serverApi.getOSSToken(fileInfo.fileId);
@@ -45,7 +45,9 @@ function uploadOneFile(fileInfo, options) {
     if (fileInfo.progress == 1) {
       yield serverApi.updateUploadPercentage(fileInfo.projectId, fileInfo.fileId, { percent: 1 })
     }
-  });
+  }).catch(err => {
+    logger.debug(err.message, err.stack);
+  })
 }
 
 /**
@@ -93,7 +95,7 @@ function uploadFiles(project, filePaths, sId, options) {
         syncId: syncId,
       };
     }).catch(err => {
-      logger.error(err);
+      logger.error(err.message, err.stack);
     });
   }
   //filePaths.length == 0 means this upload is a resume upload

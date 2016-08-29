@@ -13,12 +13,12 @@ function GET(serverUrl, uri, query, option) {
     uri: serverUrl + util._.trim(uri),
     method: 'GET',
     qs: query,
-    headers:{},
+    headers: {},
   }
   if (option && option.headers) {
     Object.assign(req.headers, option.headers)
   }
-  logger.debug('GET', uri ,req);
+  logger.debug('GET', uri, req);
   return new Promise(function (resolve, reject) {
     request(req, function (err, res, body) {
       if (err) {
@@ -50,7 +50,7 @@ function POST(serverUrl, uri, body, option) {
   if (option && option.headers) {
     Object.assign(req.headers, option.headers)
   }
-  logger.debug('POST', uri,req);
+  logger.debug('POST', uri, req);
   return new Promise(function (resolve, reject) {
     request(req, function (err, res, body) {
       if (err) {
@@ -82,7 +82,7 @@ function PATCH(serverUrl, uri, body, option) {
   if (option && option.headers) {
     Object.assign(req.headers, option.headers)
   }
-  logger.debug('GET', uri ,req);
+  logger.debug('GET', uri, req);
   return new Promise(function (resolve, reject) {
     request(req, function (err, res, body) {
       if (err) {
@@ -129,16 +129,16 @@ function authorize(options) {
   if (!token) {
     throw new Error('NO TOKEN!');
   } else {
-    if (options.header)
-      options.header['x-GENO-Auth-Token'] = token;
+    if (options.headers)
+      options.headers['x-GENO-Auth-Token'] = token;
     else {
-      options.header = { 'x-GENO-Auth-Token': token }
+      options.headers = { 'x-GENO-Auth-Token': token }
     }
   }
 }
 
 function checkStatusCode(result) {
-  //console.log(result);
+  console.log(result);
   if (!result) {
     throw new Error('empty response');
   }
@@ -180,7 +180,7 @@ function deauthenticate() {
 function getGenoProjects() {
   let options = {}
   authorize(options);
-  return GET(baseUrl, '/projects',null, options)
+  return GET(baseUrl, '/projects', null, options)
   .then(checkStatusCode)
   .then(result => {
     return result.projects;
@@ -196,7 +196,7 @@ function createFile(projectId, data) {
   //here create file record on geno server
   let options = {};
   authorize(options);
-  return POST(baseUrl, `/projects/${projectId}/files`,data, options)
+  return POST(baseUrl, `/projects/${projectId}/files`, data, options)
   .then(checkStatusCode)
   .then(result => {
     logger.debug('created file!', result.fileObj);
@@ -208,7 +208,7 @@ function getOSSToken(fileId) {
   //here get oss token from geno server
   let options = {}
   authorize(options);
-  return GET(baseUrl, `/projects/files/${fileId}/osstoken`,null, options)
+  return GET(baseUrl, `/projects/files/${fileId}/osstoken`, null, options)
   .then(checkStatusCode)
   .then(result => {
     logger.debug('got osstoken!', result.credential);
@@ -226,7 +226,7 @@ function getOSSToken(fileId) {
 function updateUploadPercentage(projectId, fileId, data) {
   let options = {};
   authorize(options);
-  return PATCH(baseUrl, `/projects/${projectId}/files/${fileId}/uploadpercent`,data, options)
+  return PATCH(baseUrl, `/projects/${projectId}/files/${fileId}/uploadpercent`, data, options)
   .then(checkStatusCode)
   .then(result => {
     logger.debug('updated Upload Percentage!', result.fileObj);
