@@ -8,7 +8,7 @@ var Utils = function () {
   var MB = 1024 * KB;
   var GB = 1024 * MB;
   var getFormatDateString = function (date) {
-    return date.getFullYear() + '年' + date.getMonth() + '月' + date.getDay() + '日 ' +
+    return date.getFullYear() + '年' + (date.getMonth()+1) + '月' + date.getDate() + '日 ' +
       date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
   };
   var getFormatSpeedString = function (speed) {
@@ -77,22 +77,24 @@ var Utils = function () {
       }
     });
     //handle working
-    oldArr.map(function (item) {
-      if (item['working'] === true) {
-        var newItem = _.find(arr, function (o) {
-          return o.syncId == item.syncId
-        });
-        if (newItem) {
-          if (newItem.status == 'pausing' || newItem.status == item.status) {
-            newItem['working'] = true;
-            newItem['workingStatus'] = item['workingStatus']
-          } else {
-            newItem['working'] = false;
-          }
+    if(oldArr) {
+      oldArr.map(function (item) {
+        if (item['working'] === true) {
+          var newItem = _.find(arr, function (o) {
+            return o.syncId == item.syncId
+          });
+          if (newItem) {
+            if (newItem.status == 'pausing' || newItem.status == item.status) {
+              newItem['working'] = true;
+              newItem['workingStatus'] = item['workingStatus']
+            } else {
+              newItem['working'] = false;
+            }
 
+          }
         }
-      }
-    });
+      });
+    }
     return arr;
   };
   this.minAssignList = function (changingArr, newArr) {

@@ -24,11 +24,8 @@ function uploadOneFile(fileInfo, options) {
 
   //console.log(dcmInfos);
   let data = {
-    type: 'UploadFile',
-    size: '0',
-    hash: 'NONE',
-    name: fileInfo.name,
-    isZip: false
+    size: fileInfo.size,
+    fileName: fileInfo.name,
   };
   return co(function*() {
     //create file and ask for token if it it a new upload
@@ -43,6 +40,11 @@ function uploadOneFile(fileInfo, options) {
     console.log('start upload!!!!!!!!!');
     //upload
     yield OSS.putOSSFile(ossCredential, false, fileInfo, options);
+
+    //check if finished
+    if (fileInfo.progress == 1) {
+      yield serverApi.updateUploadPercentage(fileInfo.projectId, fileInfo.fileId, { percent: 1 })
+    }
   });
 }
 
@@ -160,8 +162,8 @@ function abortAllUploading() {
       })
     })
   });
-  return Promise.all(stoppings).catch(err =>{
-    logger.error(err,err.stack);
+  return Promise.all(stoppings).catch(err => {
+    logger.error(err, err.stack);
   });
 }
 

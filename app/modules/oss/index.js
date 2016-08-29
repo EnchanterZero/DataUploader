@@ -14,11 +14,11 @@ import * as FileInfo from '../fileinfo';
 
 export function getOSSClient(credential, internal) {
   return new OSS({
-    //secure: internal,
+    secure: internal,
     region: credential.Region,
     accessKeyId: credential.AccessKeyId,
     accessKeySecret: credential.AccessKeySecret,
-    //stsToken: credential.Security,
+    stsToken: credential.Security,
     bucket: credential.Bucket,
   });
 }
@@ -174,6 +174,8 @@ export function putOSSFile(credential, internal, fileInfo, options) {
                   yield util.remove(fileInfo.filePath);
                   logger.info('remove temp DcmInfo : ', fileInfo.filePath, fileInfo.syncId);
                 }
+                //update
+                Object.assign(fileInfo,setField);
                 yield FileInfo.updateFileInfo(fileInfo, setField);
                 //return true;
               }
@@ -182,6 +184,7 @@ export function putOSSFile(credential, internal, fileInfo, options) {
                 logger.debug(`[${lastStatus}] uploading ${filePath} to ${objectKey}`);
                 if(lastStatus == FileInfo.FileInfoStatuses.pausing)
                   setField.status = FileInfo.FileInfoStatuses.paused;
+                Object.assign(fileInfo,setField);
                 yield FileInfo.updateFileInfo(fileInfo, setField);
                 FileInfo.removeFromUnfinishedFileList(fileInfo.syncId);
                 //return false;
@@ -189,6 +192,7 @@ export function putOSSFile(credential, internal, fileInfo, options) {
               }
               //when upload unfinished and status is 'uploading', do nothing but update info continue
               else {
+                Object.assign(fileInfo,setField);
                 yield FileInfo.updateFileInfo(fileInfo, setField);
                 //return true;
               }
@@ -214,11 +218,13 @@ export function putOSSFile(credential, internal, fileInfo, options) {
             const start = new Date().getTime();
             const result = yield ossClient.put(objectKey, filePath);
             const end = new Date().getTime();
-            yield FileInfo.updateFileInfo(fileInfo, {
+            let fields = {
               progress: 1,
               speed: BLOCK_SIZE / ((end - start) / 1000),
               checkPointTime: end,
-            });
+            }
+            Object.assign(fileInfo,fields);
+            yield FileInfo.updateFileInfo(fileInfo, fields);
             logger.debug(`uploading ${filePath} to ${objectKey}`);
           }
 
@@ -237,8 +243,9 @@ export function putOSSFile(credential, internal, fileInfo, options) {
       throw new Error(`uploading ${filePath} to ${objectKey} failed`);
     }
   )
-  .then(() => {
+  .then((fileInfo) => {
     logger.info(`End putOSSObject ${credential.Region} ${credential.Bucket} ${fileInfo.fileId} ${fileInfo.syncId}`);
+    return fileInfo;
   })
   .catch((err) => {
     logger.error(err);
