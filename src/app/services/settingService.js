@@ -8,12 +8,7 @@
 
   function settingService($rootScope, $state, $window, api, Session) {
 
-    var LOCAL_PACSProvider = 'PACSProvider';
-    var LOCAL_PACSServerIP = 'PACSServerIP';
-    var LOCAL_PACSServerPort = 'PACSServerPort';
-    var LOCAL_ScanInterval = 'ScanInterval';
-    var LOCAL_UserValidateURL = 'UserValidateURL';
-    var LOCAL_AnonymousMode = 'AnonymousMode';
+    var LOCAL_GenoServerUrl = 'GenoServerUrl';
 
     var settingService = this;
 
@@ -26,16 +21,11 @@
 
     this.setSettings = function (settings) {
       var settingsJSON = {
-        PACSProvider: settings.PACSProvider,
-        PACSServerIP: settings.PACSServerIP,
-        PACSServerPort: settings.PACSServerPort,
-        ScanInterval: settings.ScanInterval,
-        UserValidateURL: settings.UserValidateURL,
-        AnonymousMode: settings.AnonymousMode,
+        GenoServerUrl: settings.GenoServerUrl,
       };
       return api.setSettings({ settings: settingsJSON })
       .then(function (result) {
-        $rootScope.$settings = settingsJSON;
+        $rootScope.$settings = result;
         return result;
       })
     }

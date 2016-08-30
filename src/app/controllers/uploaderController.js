@@ -24,15 +24,6 @@
               //$scope.oldfileInfoList = angular.copy($scope.fileInfoList);
               utils.minAssignList($scope.fileInfoList, result.fileInfoList)
             }
-            //console.log('one data load');
-            // var progressBarEles = document.getElementsByClassName('progress');
-            // for(var index in progressBarEles) {
-            //   var totalWidth = progressBarEles[index].offsetWidth;
-            //   var paddingEle = progressBarEles[index].children[0].children[0];
-            //   var paddingEleWidth = paddingEle.offsetWidth;
-            //   var style = "color: black;float:left;padding-left:" + (totalWidth-paddingEleWidth)/2 + "px";
-            //   paddingEle.setAttribute("style",style);
-            // }
           }
         }
       );
@@ -139,7 +130,7 @@
 
       };
 
-    } else if ($rootScope.uploadControllerScope.intervalId) {
+    } else if ($rootScope.uploadControllerScope && $rootScope.uploadControllerScope.intervalId) {
       var $scope = $rootScope.uploadControllerScope;
       getFileUplodStatuses($scope);
       console.log('$interval continue : ', $rootScope.uploadControllerScope.intervalId);

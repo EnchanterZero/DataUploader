@@ -32,8 +32,9 @@ function uploadOneFile(fileInfo, options) {
     if (!fileInfo.fileId) {
       let file = yield serverApi.createFile(fileInfo.projectId, data);
       fileInfo.fileId = file.id;
+      fileInfo.ossPath = file.filePath;
     }
-    let ossCredential = yield serverApi.getOSSToken(fileInfo.fileId);
+    let ossCredential = yield serverApi.getOSSToken(fileInfo.projectId, fileInfo.fileId);
     // record into sqlite
     yield FileInfo.createFileInfo(fileInfo);
     FileInfo.addToUnfinishedFileList(fileInfo);
@@ -46,7 +47,7 @@ function uploadOneFile(fileInfo, options) {
       yield serverApi.updateUploadPercentage(fileInfo.projectId, fileInfo.fileId, { percent: 1 })
     }
   }).catch(err => {
-    logger.debug(err.message, err.stack);
+    logger.debug(err.message, err.stack,err);
   })
 }
 
@@ -80,6 +81,7 @@ function uploadFiles(project, filePaths, sId, options) {
         checkPoint: '',
         status: FileInfo.FileInfoStatuses.uploading,
         fileId: '',
+        ossPath:'',
         syncId: syncId,
         userId: currentUser.id,
         uploadType: 'test',
@@ -142,7 +144,7 @@ function abortUploadFiles(syncId) {
     //if (result) {
     logger.debug('abort upload---------->' + syncId);
     var fileInfo = yield FileInfo.getFileInfoBySyncId(syncId);
-    let ossCredential = yield serverApi.getOSSToken(fileInfo.fileId);
+    let ossCredential = yield serverApi.getOSSToken(fileInfo.projectId,fileInfo.fileId);
     //abort the upload
     yield OSS.abortMitiUpload(ossCredential, false, fileInfo);
     //}

@@ -47,80 +47,12 @@ export function create(sequelize, DataTypes) {
   .then(()=> {
     return Config.findOrCreate({
       where: {
-        key: 'PACSProvider',
+        key: 'GenoServerUrl',
       },
       defaults: {
-        key: 'PACSProvider',
-        value: ''
+        key: 'GenoServerUrl',
+        value: 'https://api-geno-s01.curacloudplatform.com:443'
       }});
   })
-  .then(()=> {
-    return Config.findOrCreate({
-      where: {
-        key: 'PACSServerIP',
-      },
-      defaults: {
-        key: 'PACSServerIP',
-        value: '127.0.0.1'
-      }});
-  })
-  .then(()=> {
-    return Config.findOrCreate({
-      where: {
-        key: 'PACSServerPort',
-      },
-      defaults: {
-        key: 'PACSServerPort',
-        value: '11112'
-      }});
-  })
-  .then(()=> {
-    return Config.findOrCreate({
-      where: {
-        key: 'ScanInterval',
-      },
-      defaults: {
-        key: 'ScanInterval',
-        value: '5'
-      }});
-  })
-  .then(()=> {
-    return Config.findOrCreate({
-      where: {
-        key: 'UserValidateURL',
-      },
-      defaults: {
-        key: 'UserValidateURL',
-        value: '127.0.0.1'
-      }});
-  })
-  .then(()=> {
-    return Config.findOrCreate({
-      where: {
-        key: 'AnonymousMode',
-      },
-      defaults: {
-        key: 'AnonymousMode',
-        value: '0'
-      }});
-  }).then(()=> {
-    return Config.findOrCreate({
-      where: {
-        key: 'UploadDir',
-      },
-      defaults: {
-        key: 'UploadDir',
-        value: ''
-      }});
-  }).then(()=> {
-    return Config.findOrCreate({
-      where: {
-        key: 'ScanDir',
-      },
-      defaults: {
-        key: 'ScanDir',
-        value: ''
-      }});
-  });
   return Config;
 };

@@ -48,12 +48,5 @@ export function setConfig(settings) {
 }
 
 export const CONFIG_FIELD = {
-  PACSProvider: 'PACSProvider',
-  PACSServerIP: 'PACSServerIP',
-  PACSServerPort: 'PACSServerPort',
-  ScanInterval: 'ScanInterval',
-  UserValidateURL: 'UserValidateURL',
-  AnonymousMode: 'AnonymousMode',
-  UploadDir: 'UploadDir',
-  ScanDir: 'ScanDir',
+  GenoServerUrl: 'GenoServerUrl',
 }

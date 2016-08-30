@@ -22,6 +22,27 @@
 
       try{
         /**
+         * page change check
+         */
+        $rootScope.$on('$stateChangeStart',
+          function (event, toState, toParams, fromState, fromParams) {
+
+            //state control
+            console.log('stateChange -------', fromState.name +' ---> '+ toState.name);
+            if(!AuthService.isAuthenticated() && toState.name != 'settings' && toState.name != 'login' && toState.name != ''){
+              $window.location.hash = '#/login';
+            }
+
+
+            if ($rootScope.uploadControllerScope && $rootScope.uploadControllerScope.intervalId) {
+              console.log('$interval pause : ',$rootScope.uploadControllerScope.intervalId);
+              $interval.cancel($rootScope.uploadControllerScope.intervalId);
+            }
+
+          }
+        );
+        
+        /**
          * get settings
          */
         SettingService.loadSettings();
@@ -37,18 +58,7 @@
       }catch (err){
         console.log(err,err.stack);
       }
-
-      /**
-       * page change check
-       */
-      $rootScope.$on('$stateChangeStart',
-        function (event, toState, toParams, fromState, fromParams) {
-          if ($rootScope.uploadControllerScope && $rootScope.uploadControllerScope.intervalId) {
-            console.log('$interval pause : ',$rootScope.uploadControllerScope.intervalId);
-            $interval.cancel($rootScope.uploadControllerScope.intervalId);
-          }
-        }
-      );
+      
     }]);
 
 })();

@@ -169,11 +169,15 @@ function authenticate(username, password) {
 }
 
 function deauthenticate() {
-  const baseDeauth = GET(baseUrl, '/user/deauthenticate', {});
+  let options = {};
+  authorize(options);
+  const baseDeauth = GET(baseUrl, '/user/deauthenticate', {},{});
   return Promise.all([baseDeauth])
   .then(results => {
+    logger.debug('result',results[0]);
     setBaseAuthToken(null);
-    return results
+    setBaseUser(null);
+    return results[0]
   })
 }
 
@@ -204,24 +208,16 @@ function createFile(projectId, data) {
   })
 }
 
-function getOSSToken(fileId) {
+function getOSSToken(projectId,fileId) {
   //here get oss token from geno server
   let options = {}
   authorize(options);
-  return GET(baseUrl, `/projects/files/${fileId}/osstoken`, null, options)
+  return GET(baseUrl, `/projects/${projectId}/files/${fileId}/osstoken`, null, options)
   .then(checkStatusCode)
   .then(result => {
     logger.debug('got osstoken!', result.credential);
     return result.credential;
   })
-  // return Promise.resolve({
-  //   AccessKeyId: "wzDyN0BDsEl2JmgW",
-  //   AccessKeySecret: "CUjn2POzoVD0cqhnYDfYqutEcYupLJ",
-  //   Bucket: "curacloud-geno-test",
-  //   Expiration: "",
-  //   Region: "oss-cn-qingdao",
-  //   Security: "",
-  // });
 }
 function updateUploadPercentage(projectId, fileId, data) {
   let options = {};

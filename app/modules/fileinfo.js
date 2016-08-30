@@ -15,6 +15,7 @@ import Promise from  'bluebird';
  * checkPoint
  * status   finished | uploading | paused | pausing
  * fileId
+ * ossPath
  * syncId
  * userId
  * uploadType
@@ -68,6 +69,9 @@ export function removeFromUnfinishedFileList(syncId) {
       return;
     }
   }
+}
+export function resetUnfinishedFileList() {
+  console.log('reset UnfinishedFileList',unfinishedFileList);
 }
 
 export function createFileInfo(fileInfo) {

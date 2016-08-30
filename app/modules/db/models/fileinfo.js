@@ -10,6 +10,7 @@
  * checkPoint
  * status   finished | uploading | paused | pausing | aborted
  * fileId
+ * ossPath
  * syncId
  * userId
  * uploadType
@@ -80,6 +81,11 @@ export function create(sequelize, DataTypes) {
       allowNull: false,
     },
     fileId: {
+      type: DataTypes.STRING,
+      defaultValue: '',
+      allowNull: false,
+    },
+    ossPath:{
       type: DataTypes.STRING,
       defaultValue: '',
       allowNull: false,

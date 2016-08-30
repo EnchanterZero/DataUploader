@@ -23,94 +23,6 @@ export function getOSSClient(credential, internal) {
   });
 }
 
-
-/**
- * for dicom files
- */
-
-function putOSSDcmFile(ossClient, dcmInfo, retry = 2) {
-  const filePath = dcmInfo.dcmPath;
-  const objectKey = path.join(dcmInfo.fileId, dcmInfo.SOPInstanceUID);
-  logger.info('putting OSS DcmFile : ', objectKey, filePath);
-  return co(function *() {
-    do {
-      try {
-        const fileSize = yield util.size(filePath);
-        if (fileSize > 1024 * 1024) {
-          const progress = function*(p, cpt) {
-            logger.debug(`uploading ${filePath} to ${objectKey}, progress: ${p}`);
-          }
-          const result = yield ossClient.multipartUpload(objectKey, filePath, {
-            partSize: 1024 * 1024,
-            progress,
-          });
-        } else {
-          const result = yield ossClient.put(objectKey, filePath);
-          logger.debug(`uploading ${filePath} to ${objectKey}`);
-        }
-        if (filePath.endsWith('.stl')) {
-          const copyresult = yield ossClient.copy(objectKey, objectKey, {
-            headers: {
-              'Content-Type': 'application/json',
-            }
-          });
-        }
-        dcmInfo.isSynchronized = true;
-        return dcmInfo;
-      } catch (err) {
-        logger.error(`error when uploading ${filePath} to ${objectKey}`, err);
-      }
-    } while (retry-- > 0);
-
-    throw new Error(`uploading ${filePath} to ${objectKey} failed`);
-  });
-}
-/**
- *
- * @param credential {object} from API Server
- * @param internal {boolean}
- * @param dcmInfos {array} Array of DcmInfo
- * @param options {object} options.afterDelete: default false
- * @returns none
- */
-export function putOSSDcms(credential, internal, dcmInfos, options) {
-  logger.info('getOSSObject internal =', internal);
-  let afterDelete = false;
-  if (options && options.afterDelete === true) {
-    afterDelete = true;
-  }
-  logger.info('getOSSObject options.afterDelete =', afterDelete);
-  const client = getOSSClient(credential, internal);
-  let fileIds = _.uniq(dcmInfos.map((item) => {
-    return item.fileId
-  }));
-  if (fileIds.length > 1) {
-    throw new Error('file id duplicated');
-  }
-  logger.info(`Start putOSSObject ${credential.Region} ${credential.Bucket} ${fileIds[0]} `);
-
-  return util.parallelReduce(dcmInfos, 4, (dcmInfo) => {
-
-    return putOSSDcmFile(client, dcmInfo)
-    .then((dcmInfo) => {
-      return co(function*() {
-        yield DcmInfo.updateDcmInfoSync(dcmInfo);
-        logger.info('update DcmInfo Synchronized : ', dcmInfo.SOPInstanceUID, dcmInfo.syncId);
-        if (afterDelete) {
-          yield util.remove(dcmInfo.dcmPath);
-          logger.info('remove temp DcmInfo : ', dcmInfo.dcmPath, dcmInfo.syncId);
-        }
-
-      });
-    })
-    .catch((err) => {
-      logger.error(err);
-    });
-  }).then(() => {
-    logger.info(`End putOSSObject ${credential.Region} ${credential.Bucket} ${fileIds[0]} ${dcmInfos[0].syncId}`);
-  });
-}
-
 /**
  * for (big) files
  */
@@ -137,7 +49,7 @@ export function putOSSFile(credential, internal, fileInfo, options) {
   const ossClient = getOSSClient(credential, internal);
   logger.info(`Start putOSSObject ${credential.Region} ${credential.Bucket} ${fileInfo.fileId} `);
   const filePath = fileInfo.filePath;
-  const objectKey = path.join('projects',fileInfo.projectId,fileInfo.fileId);
+  const objectKey = fileInfo.ossPath;
   let retry = 2;
   // start upload
   return co(function *() {
@@ -265,6 +177,7 @@ export function abortMitiUpload(credential, internal, fileInfo) {
       }
     })
     .catch((err) => {
-      logger.error(err);
+      logger.error(err.message,err.stack);
+      FileInfo.setStatusToUnfinishedFileList(fileInfo.syncId, FileInfo.FileInfoStatuses.pausing);
     });
 }

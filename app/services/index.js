@@ -8,32 +8,43 @@ import * as Config from '../modules/config';
 /**
  * initializing of service
  */
-co(function* () {
+co(function*() {
   yield FileInfo.checkAndRepair();
 })
 //const apiServerUrl = 'https://api-staging01.curacloudplatform.com:3001';
 //const serverUrl = 'https://api-geno-s01.curacloudplatform.com:443';
-serverApi.setServerUrl('http://10.249.151.70:4000');
+//serverApi.setServerUrl(serverUrl);
 
 var $settings = null;
 function loadConfig() {
   return co(function*() {
     console.log('load Upload Configs from database...');
     $settings = yield Config.getConfig();
+    serverApi.setServerUrl($settings[Config.CONFIG_FIELD.GenoServerUrl]);
     return $settings;
   })
 }
 function getConfig() {
-  return $settings;
+  return co(function*() {
+    if (!$settings) {
+      yield loadConfig();
+    }
+    return $settings;
+  })
 }
 function setConfig(settings) {
   console.log('set Upload Configs from database...');
   $settings = settings;
+  return co(function* () {
+    yield Config.setConfig($settings);
+    serverApi.setServerUrl($settings[Config.CONFIG_FIELD.GenoServerUrl]);
+    return $settings;
+  })
 }
 var uploadSetting = {
   loadConfig: loadConfig,
   getConfig: getConfig,
   setConfig: setConfig,
-  CONFIG_FIELD:Config.CONFIG_FIELD,
+  CONFIG_FIELD: Config.CONFIG_FIELD,
 };
 export { serverApi, uploadSetting, fileUpload, uploadRecovery }

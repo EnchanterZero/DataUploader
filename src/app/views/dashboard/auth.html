@@ -17,7 +17,7 @@
 
   <main class="auth-main" ng-controller="AuthController">
     <div class="auth-block row col-sm-8 col-center-block">
-      <div ng-show="errorMessage" class="alert bg-danger"><strong>{{errorMessage}}</strong></div>
+      <div uib-alert ng-repeat="alert in alerts" ng-class="'alert-' + (alert.type || 'warning')" close="closeAlert($index)" dismiss-on-timeout=5000>{{alert.msg}}</div>
       <form class="form-horizontal">
         <div class="form-group">
           <label for="inputUsername" class="col-sm-2 control-label">用户名</label>

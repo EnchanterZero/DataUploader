@@ -23,10 +23,12 @@
     }
 
     this.loadCredentials = function () {
-      var token = Session.get(LOCAL_BASE_TOKEN_KEY);
-      var currentUser = Session.get(LOCAL_CURRENT_USER);
+      // var token = Session.get(LOCAL_BASE_TOKEN_KEY);
+      // var currentUser = Session.get(LOCAL_CURRENT_USER);
+      var token = _BackendService.serverApi.getBaseAuthToken();
+      var currentUser = _BackendService.serverApigetBaseUser();
       this.useCredentials(token, currentUser);
-      return  token;
+      return token;
     }
 
     this.useCredentials = function (baseToken, currentUser) {

@@ -196,6 +196,27 @@ var utils = new Utils();
 
       try{
         /**
+         * page change check
+         */
+        $rootScope.$on('$stateChangeStart',
+          function (event, toState, toParams, fromState, fromParams) {
+
+            //state control
+            console.log('stateChange -------', fromState.name +' ---> '+ toState.name);
+            if(!AuthService.isAuthenticated() && toState.name != 'settings' && toState.name != 'login' && toState.name != ''){
+              $window.location.hash = '#/login';
+            }
+
+
+            if ($rootScope.uploadControllerScope && $rootScope.uploadControllerScope.intervalId) {
+              console.log('$interval pause : ',$rootScope.uploadControllerScope.intervalId);
+              $interval.cancel($rootScope.uploadControllerScope.intervalId);
+            }
+
+          }
+        );
+        
+        /**
          * get settings
          */
         SettingService.loadSettings();
@@ -211,18 +232,7 @@ var utils = new Utils();
       }catch (err){
         console.log(err,err.stack);
       }
-
-      /**
-       * page change check
-       */
-      $rootScope.$on('$stateChangeStart',
-        function (event, toState, toParams, fromState, fromParams) {
-          if ($rootScope.uploadControllerScope && $rootScope.uploadControllerScope.intervalId) {
-            console.log('$interval pause : ',$rootScope.uploadControllerScope.intervalId);
-            $interval.cancel($rootScope.uploadControllerScope.intervalId);
-          }
-        }
-      );
+      
     }]);
 
 })();
@@ -258,7 +268,7 @@ var utils = new Utils();
         templateUrl: './views/dashboard/auth.html',
       })
       .state('settings', {
-        url: "/settings",
+        url: "/settings/:preState",
         templateUrl: './views/dashboard/settings.html',
       })
     }]);
@@ -270,169 +280,208 @@ var utils = new Utils();
   var logger = require('../../dist/util').util.logger.getLogger('serviceApi');
 
   angular.module('Uploader.services')
-  .service('api', ['$http', '$rootScope', 'serverUrl', 'Session', '$window', function ($http, $rootScope, serverUrl, Session, $window) {
-    var LOCAL_BASE_TOKEN_KEY = 'baseToken';
-    var LOCAL_CURRENT_USER = 'currentUser';
-    var api = this;
+  .service('api', ['$http', '$rootScope', 'serverUrl', 'Session', '$timeout', 'DomChangeService','$state',
+    function ($http, $rootScope, serverUrl, Session, $timeout, DomChangeService,$state) {
+      var LOCAL_BASE_TOKEN_KEY = 'baseToken';
+      var LOCAL_CURRENT_USER = 'currentUser';
+      var api = this;
 
-    /**
-     * auth api
-     */
-    this.login = function (query, $scope, $rScope) {
-      return _BackendService.serverApi.authenticate(query.username, query.password)
-      .then(function (result) {
-        Session.set(LOCAL_BASE_TOKEN_KEY, result.data.token);
-        Session.set(LOCAL_CURRENT_USER, result.data.currentUser);
-        console.log('login success!!!!!!');
-        $rScope.showLogout = true;
-        var logoutLink = document.getElementById('logoutLink');
-        angular.element(logoutLink).attr('style','display:block');
-        $window.location.hash = '#/upload';
-      })
-      .catch(function (err) {
-        console.log(err);
-        $scope.errorMessage = err.message;
-        $scope.$apply();
-      });
-    };
-
-    this.logout = function ($rScope) {
-      return _BackendService.serverApi.deauthenticate()
-      .then(() => {
-        Session.set(LOCAL_BASE_TOKEN_KEY, null);
-        Session.set(LOCAL_CURRENT_USER, null);
-        console.log('logout success!!!!!!');
-        $rScope.showLogout = false;
-        var logoutLink = document.getElementById('logoutLink');
-        angular.element(logoutLink).attr('style','display:none');
-        $window.location.hash = '#/login';
-      });
-    }
-    this.setUserToken = function () {
-      var token = Session.get(LOCAL_BASE_TOKEN_KEY);
-      return co(function*() {
-        if (token) {
-          _BackendService.serverApi.setBaseAuthToken(token);
-        }
-        return {}
-      })
-    }
-    
-    this.recoverIfUnfinished = function(){
-      var currentUser = Session.get(LOCAL_CURRENT_USER);
-      if (!currentUser) {
-        $window.location.hash = '#/login';
-        return;
-      }
-      co(function*() {
-        let r = yield _FileInfo.listUploadingFiles(currentUser.id);
-        if(r.length > 0){
-          const { dialog } = require('electron').remote;
-          var buttonIndex = dialog.showMessageBox({type:'info',buttons:['确认'],title:'恢复上传',message:'已经恢复上次未完成的上传'},function(){})
-          _BackendService.uploadRecovery.recover(r);
-        }
-      });
-    }
-    this.stopAll = function () {
-      return _BackendService.fileUpload.stopAllUploading()
-    }
-
-    /**
-     * manual upload api
-     */
-    this.getFileInfoList = function () {
-      var currentUser = Session.get(LOCAL_CURRENT_USER);
-      if (!currentUser) {
-        $window.location.hash = '#/login';
-        return new Promise.reject();
-      }
-      return _FileInfo.listFiles(currentUser.id)
-      .then(function (r) {
-        return { fileInfoList: r }
-      })
-    }
-
-    this.uploadFile = function (data) {
-      var project = data.project;
-      var fileList = data.fileList;
-      var syncId = new Date().getTime().toString();
-      co(function*() {
-        let r = yield _BackendService.fileUpload.uploadFiles(project, fileList, syncId, { afterDelete: false });
-      }).catch((err) => {
-        console.error(err, err.stack);
-      });
-      return co(function*() {
-        return { syncId: syncId }
-      });
-
-    }
-
-    this.stopUploadFile = function (syncId) {
-      return _BackendService.fileUpload.stopUploadFiles(syncId)
-      .then((r)=> {
-        return { result: r }
-      });
-    }
-
-    this.resumeUploadFile = function (syncId) {
-      co(function*() {
-        let r = yield _BackendService.fileUpload.uploadFiles(null, [], syncId, { afterDelete: false });
-      })
-      .catch((err) => {
-        logger.error(err, err.stack);
-      });
-      return co(function*() {
-        return {}
-      })
-    }
-
-    this.abortUploadFile = function (syncId) {
-      co(function*() {
-        yield _BackendService.fileUpload.abortUploadFiles(syncId);
-      })
-      .catch((err) => {
-        logger.error(err, err.stack);
-      });
-      return co(function*() {
-        return {}
-      })
-    }
-
-    this.getProjects = function () {
-      return _BackendService.serverApi.getGenoProjects()
-    }
-
-    /**
-     * settings api
-     */
-
-    this.setSettings = function (data) {
-      var settings = data.settings;
-      var settingsJSON = {
-        PACSProvider: settings.PACSProvider,
-        PACSServerIP: settings.PACSServerIP,
-        PACSServerPort: settings.PACSServerPort,
-        ScanInterval: settings.ScanInterval,
-        UserValidateURL: settings.UserValidateURL,
-        AnonymousMode: settings.AnonymousMode,
+      /**
+       * auth api
+       */
+      this.login = function (query, $scope, $rScope) {
+        return _BackendService.serverApi.authenticate(query.username, query.password)
+        .then(function (result) {
+          Session.set(LOCAL_BASE_TOKEN_KEY, result.data.token);
+          Session.set(LOCAL_CURRENT_USER, result.data.currentUser);
+          console.log('login success!!!!!!');
+          $scope.alerts.push({ type: 'success', msg: 'Login success.Jumping into main page...' });
+          $scope.$apply();
+          $timeout(function () {
+            //set ui
+            $rScope.showLogout = true;
+            DomChangeService.changeToUsingStyle();
+            //jump to main page
+            $state.go('upload');
+          }, 1500);
+        })
+        .catch(function (err) {
+          console.log(err);
+          $scope.alerts.push({ type: 'warning', msg: 'Login failed for ' + err.message });
+          $scope.loginButton = '登录';
+          $scope.$apply();
+        });
       };
-      return co(function*() {
-        yield _Config.setConfig(settingsJSON);
-        _BackendService.uploadSetting.setConfig(settingsJSON);
-        return settingsJSON
-      }).catch(err => {
-        logger.error(err, err.stack);
-      });
-    }
 
-    this.getSettings = function () {
-      return _Config.getConfig()
-      .then(function (r) {
-        return { settings: r }
-      })
-    }
+      this.logout = function ($rScope) {
+        return _BackendService.serverApi.deauthenticate()
+        .then(() => {
+          Session.set(LOCAL_BASE_TOKEN_KEY, null);
+          Session.set(LOCAL_CURRENT_USER, null);
+          console.log('logout success!!!!!!');
+          $rScope.showLogout = false;
+          DomChangeService.changeToLoginStyle();
+          //$window.location.hash = '#/login';
+          $state.go('login');
+          //$rScope.$apply();
+        }).catch(function (err) {
+          console.log(err.message, err.stack);
+        });
+      }
 
-  }]);
+
+      // this.login = function (query, $scope, $rScope) {
+      //   return _BackendService.serverApi.authenticate(query.username, query.password)
+      //   .then(function (result) {
+      //     Session.set(LOCAL_BASE_TOKEN_KEY, result.data.token);
+      //     Session.set(LOCAL_CURRENT_USER, result.data.currentUser);
+      //     console.log('login success!!!!!!');
+      //     $rScope.showLogout = true;
+      //     var logoutLink = document.getElementById('logoutLink');
+      //     angular.element(logoutLink).attr('style','display:block');
+      //     $window.location.hash = '#/upload';
+      //   })
+      //   .catch(function (err) {
+      //     console.log(err);
+      //     $scope.errorMessage = err.message;
+      //     $scope.$apply();
+      //   });
+      // };
+      //
+      // this.logout = function ($rScope) {
+      //   return _BackendService.serverApi.deauthenticate()
+      //   .then(() => {
+      //     Session.set(LOCAL_BASE_TOKEN_KEY, null);
+      //     Session.set(LOCAL_CURRENT_USER, null);
+      //     console.log('logout success!!!!!!');
+      //     $rScope.showLogout = false;
+      //     var logoutLink = document.getElementById('logoutLink');
+      //     angular.element(logoutLink).attr('style','display:none');
+      //     $window.location.hash = '#/login';
+      //   });
+      // }
+      this.setUserToken = function () {
+        var token = Session.get(LOCAL_BASE_TOKEN_KEY);
+        return co(function*() {
+          if (token) {
+            _BackendService.serverApi.setBaseAuthToken(token);
+          }
+          return {}
+        })
+      }
+
+      this.recoverIfUnfinished = function () {
+        var currentUser = _BackendService.serverApi.getBaseUser();
+        if (!currentUser) {
+          $window.location.hash = '#/login';
+          return;
+        }
+        co(function*() {
+          let r = yield _FileInfo.listUploadingFiles(currentUser.id);
+          if (r.length > 0) {
+            const { dialog } = require('electron').remote;
+            var buttonIndex = dialog.showMessageBox({
+              type: 'info',
+              buttons: ['确认'],
+              title: '恢复上传',
+              message: '已经恢复上次未完成的上传'
+            }, function () {
+            })
+            _BackendService.uploadRecovery.recover(r);
+          }
+        });
+      }
+      this.stopAll = function () {
+        return _BackendService.fileUpload.stopAllUploading()
+      }
+
+      /**
+       * manual upload api
+       */
+      this.getFileInfoList = function () {
+        var currentUser = Session.get(LOCAL_CURRENT_USER);
+        if (!currentUser) {
+          $window.location.hash = '#/login';
+          return Promise.reject();
+        }
+        return _FileInfo.listFiles(currentUser.id)
+        .then(function (r) {
+          return { fileInfoList: r }
+        })
+      }
+
+      this.uploadFile = function (data) {
+        var project = data.project;
+        var fileList = data.fileList;
+        var syncId = new Date().getTime().toString();
+        co(function*() {
+          let r = yield _BackendService.fileUpload.uploadFiles(project, fileList, syncId, { afterDelete: false });
+        }).catch((err) => {
+          console.error(err, err.stack);
+        });
+        return co(function*() {
+          return { syncId: syncId }
+        });
+
+      }
+
+      this.stopUploadFile = function (syncId) {
+        return _BackendService.fileUpload.stopUploadFiles(syncId)
+        .then((r)=> {
+          return { result: r }
+        });
+      }
+
+      this.resumeUploadFile = function (syncId) {
+        co(function*() {
+          let r = yield _BackendService.fileUpload.uploadFiles(null, [], syncId, { afterDelete: false });
+        })
+        .catch((err) => {
+          logger.error(err, err.stack);
+        });
+        return co(function*() {
+          return {}
+        })
+      }
+
+      this.abortUploadFile = function (syncId) {
+        co(function*() {
+          yield _BackendService.fileUpload.abortUploadFiles(syncId);
+        })
+        .catch((err) => {
+          logger.error(err, err.stack);
+        });
+        return co(function*() {
+          return {}
+        })
+      }
+
+      this.getProjects = function () {
+        return _BackendService.serverApi.getGenoProjects()
+      }
+
+      /**
+       * settings api
+       */
+
+      this.setSettings = function (data) {
+        var settings = data.settings;
+        return co(function*() {
+          yield result = _BackendService.uploadSetting.setConfig(settings);
+          return result;
+        }).catch(err => {
+          logger.error(err, err.stack);
+        });
+      }
+
+      this.getSettings = function () {
+        return _BackendService.uploadSetting.getConfig()
+        .then(function (r) {
+          return { settings: r }
+        })
+      }
+
+    }]);
 
 })();
 
@@ -461,10 +510,12 @@ var utils = new Utils();
     }
 
     this.loadCredentials = function () {
-      var token = Session.get(LOCAL_BASE_TOKEN_KEY);
-      var currentUser = Session.get(LOCAL_CURRENT_USER);
+      // var token = Session.get(LOCAL_BASE_TOKEN_KEY);
+      // var currentUser = Session.get(LOCAL_CURRENT_USER);
+      var token = _BackendService.serverApi.getBaseAuthToken();
+      var currentUser = _BackendService.serverApigetBaseUser();
       this.useCredentials(token, currentUser);
-      return  token;
+      return token;
     }
 
     this.useCredentials = function (baseToken, currentUser) {
@@ -488,6 +539,30 @@ var utils = new Utils();
 
     return authService;
   }
+})();
+/**
+ * service DomChangeService
+ */
+(function () {
+
+  angular.module('Uploader.services')
+  .service('DomChangeService', [function () {
+
+    var displayNoneStyle = 'display:none';
+    var displayBlockStyle = 'display:block';
+
+    var unfullContentClass = 'col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main';
+    this.changeToUsingStyle = function () {
+      angular.element(document.getElementById('logoutLink')).attr('style', displayBlockStyle);
+      angular.element(document.getElementById('sideNavBar')).attr('style', displayBlockStyle);
+    }
+    this.changeToLoginStyle = function () {
+
+      angular.element(document.getElementById('logoutLink')).attr('style', displayNoneStyle);
+      angular.element(document.getElementById('sideNavBar')).attr('style', displayNoneStyle);
+    }
+  }])
+
 })();
 /**
  * service Session
@@ -537,12 +612,7 @@ var utils = new Utils();
 
   function settingService($rootScope, $state, $window, api, Session) {
 
-    var LOCAL_PACSProvider = 'PACSProvider';
-    var LOCAL_PACSServerIP = 'PACSServerIP';
-    var LOCAL_PACSServerPort = 'PACSServerPort';
-    var LOCAL_ScanInterval = 'ScanInterval';
-    var LOCAL_UserValidateURL = 'UserValidateURL';
-    var LOCAL_AnonymousMode = 'AnonymousMode';
+    var LOCAL_GenoServerUrl = 'GenoServerUrl';
 
     var settingService = this;
 
@@ -555,16 +625,11 @@ var utils = new Utils();
 
     this.setSettings = function (settings) {
       var settingsJSON = {
-        PACSProvider: settings.PACSProvider,
-        PACSServerIP: settings.PACSServerIP,
-        PACSServerPort: settings.PACSServerPort,
-        ScanInterval: settings.ScanInterval,
-        UserValidateURL: settings.UserValidateURL,
-        AnonymousMode: settings.AnonymousMode,
+        GenoServerUrl: settings.GenoServerUrl,
       };
       return api.setSettings({ settings: settingsJSON })
       .then(function (result) {
-        $rootScope.$settings = settingsJSON;
+        $rootScope.$settings = result;
         return result;
       })
     }
@@ -582,16 +647,29 @@ var utils = new Utils();
 
     //clear upload page state
     $rootScope.uploadControllerScope = null;
-    $rootScope.showLogout=false;
+    $rootScope.showLogout = false;
+    $scope.alerts = [
+      /*{ type: 'warning', msg: 'Oh snap! Change a few things up and try submitting again.' }}*/
+    ];
     //var logoutLink = document.getElementById('logoutLink');
     //angular.element(logoutLink).attr('style','display:none');
-    $scope.errorMessage = '';
+    //$scope.errorMessage = '';
+    $scope.loginButton = '登录';
+    $scope.closeAlert = function (index) {
+      $scope.alerts.splice(index, 1);
+    };
     $scope.doLogin = function () {
-      var data = {
-        username: $scope.username,
-        password: $scope.password,
-      };
-      api.login(data, $scope,$rootScope);
+      if ($scope.username && $scope.username) {
+        var data = {
+          username: $scope.username,
+          password: $scope.password,
+        };
+        $scope.loginButton = '登录中...';
+        api.login(data, $scope, $rootScope);
+      } else {
+        $scope.alerts.push({ type: 'warning', msg: 'username and password must be provided.' });
+        $scope.loginButton = '登录';
+      }
     };
   }
 
@@ -601,30 +679,26 @@ var utils = new Utils();
  */
 (function () {
 
-  angular.module('Uploader.views').controller('SettingsController', ['$scope', '$rootScope', 'SettingService', 'api', settingController]);
-  function settingController($scope, $rootScope, SettingService, api) {
+  angular.module('Uploader.views').controller('SettingsController', ['$state','$stateParams','$scope', '$rootScope', 'SettingService', 'api', settingController]);
+  function settingController($state,$stateParams,$scope, $rootScope, SettingService, api) {
     console.log('setting!!!!!!');
-    $scope.PACSProvider = $rootScope.$settings.PACSProvider;
-    $scope.PACSServerIP = $rootScope.$settings.PACSServerIP;
-    $scope.PACSServerPort = $rootScope.$settings.PACSServerPort;
-    $scope.ScanInterval = $rootScope.$settings.ScanInterval;
-    $scope.UserValidateURL = $rootScope.$settings.UserValidateURL;
-    $scope.AnonymousMode = $rootScope.$settings.AnonymousMode;
-
-    $scope.AnonymousModeCheck = $scope.AnonymousMode == 1 ? true : false;
-    $scope.message = '';
+    $scope.GenoServerUrl = $rootScope.$settings.GenoServerUrl;
+    $scope.alerts = [
+      /*{ type: 'warning', msg: 'Oh snap! Change a few things up and try submitting again.' }}*/
+    ];
     $scope.saveSettings = function () {
 
       SettingService.setSettings({
-        PACSProvider: $scope.PACSProvider,
-        PACSServerIP: $scope.PACSServerIP,
-        PACSServerPort: $scope.PACSServerPort,
-        ScanInterval: $scope.ScanInterval,
-        UserValidateURL: $scope.UserValidateURL,
-        AnonymousMode: $scope.AnonymousModeCheck ? 1 : 0,
+        GenoServerUrl: $scope.GenoServerUrl,
       }).then(function (result) {
-        $scope.message = '已保存设置';
+        console.log(result);
+        $scope.alerts.push({type: 'success', msg: '保存设置成功!'});
+        $scope.$apply();
       })
+    }
+    $scope.backToPreState = function () {
+      console.log('in setting page ---',$stateParams);
+      $state.go($stateParams.preState)
     }
   };
 
@@ -655,15 +729,6 @@ var utils = new Utils();
               //$scope.oldfileInfoList = angular.copy($scope.fileInfoList);
               utils.minAssignList($scope.fileInfoList, result.fileInfoList)
             }
-            //console.log('one data load');
-            // var progressBarEles = document.getElementsByClassName('progress');
-            // for(var index in progressBarEles) {
-            //   var totalWidth = progressBarEles[index].offsetWidth;
-            //   var paddingEle = progressBarEles[index].children[0].children[0];
-            //   var paddingEleWidth = paddingEle.offsetWidth;
-            //   var style = "color: black;float:left;padding-left:" + (totalWidth-paddingEleWidth)/2 + "px";
-            //   paddingEle.setAttribute("style",style);
-            // }
           }
         }
       );
@@ -770,7 +835,7 @@ var utils = new Utils();
 
       };
 
-    } else if ($rootScope.uploadControllerScope.intervalId) {
+    } else if ($rootScope.uploadControllerScope && $rootScope.uploadControllerScope.intervalId) {
       var $scope = $rootScope.uploadControllerScope;
       getFileUplodStatuses($scope);
       console.log('$interval continue : ', $rootScope.uploadControllerScope.intervalId);
@@ -807,10 +872,10 @@ var utils = new Utils();
  */
 (function () {
 
-  angular.module('Uploader.views').controller('UserController', ['$scope','$rootScope', 'api', 'serverUrl', userController]);
-  function userController($scope,$rootScope, api, serverUrl) {
+  angular.module('Uploader.views').controller('UserController', ['$state', '$scope', '$rootScope', 'api', 'serverUrl', userController]);
+  function userController($state, $scope, $rootScope, api, serverUrl) {
 
-    $rootScope.showLogout=true;
+    $rootScope.showLogout = true;
     //var logoutLink = document.getElementById('logoutLink');
     //angular.element(logoutLink).attr('style','display:block');
     $scope.doLogout = function () {
@@ -820,6 +885,19 @@ var utils = new Utils();
         api.logout($rootScope);
       })
     };
+    console.log('wwwwwwwwwwwwwwwwwwww----------',$state.current);
+    // $scope.goSettings = function () {
+    //   $state.reload().then(function (currentState) {
+    //     console.log(currentState);
+    //     $state.go('settings', { preState: currentState.name })
+    //   }).catch(function (err) {
+    //     console.log(err.message,err.stack);
+    //   });
+    // }
+    $scope.goSettings = function () {
+      console.log('nnnnnnnnnnnnnnnnnnn----------',$state.current);
+      $state.go('settings', { preState: $state.current.name })
+    }
   }
 
 })();

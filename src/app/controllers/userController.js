@@ -3,10 +3,10 @@
  */
 (function () {
 
-  angular.module('Uploader.views').controller('UserController', ['$scope','$rootScope', 'api', 'serverUrl', userController]);
-  function userController($scope,$rootScope, api, serverUrl) {
+  angular.module('Uploader.views').controller('UserController', ['$state', '$scope', '$rootScope', 'api', 'serverUrl', userController]);
+  function userController($state, $scope, $rootScope, api, serverUrl) {
 
-    $rootScope.showLogout=true;
+    $rootScope.showLogout = true;
     //var logoutLink = document.getElementById('logoutLink');
     //angular.element(logoutLink).attr('style','display:block');
     $scope.doLogout = function () {
@@ -16,6 +16,19 @@
         api.logout($rootScope);
       })
     };
+    console.log('wwwwwwwwwwwwwwwwwwww----------',$state.current);
+    // $scope.goSettings = function () {
+    //   $state.reload().then(function (currentState) {
+    //     console.log(currentState);
+    //     $state.go('settings', { preState: currentState.name })
+    //   }).catch(function (err) {
+    //     console.log(err.message,err.stack);
+    //   });
+    // }
+    $scope.goSettings = function () {
+      console.log('nnnnnnnnnnnnnnnnnnn----------',$state.current);
+      $state.go('settings', { preState: $state.current.name })
+    }
   }
 
 })();
