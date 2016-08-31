@@ -5,7 +5,7 @@
 
   angular.module('Uploader.views').controller('UploadController', ['$rootScope', 'api', '$interval', '$uibModal', uploadController]);
   function uploadController($rootScope, api, $interval, $uibModal) {
-    console.log('$rootScope.uploadControllerScope --> $scope');
+    logger.debug('$rootScope.uploadControllerScope --> $scope');
     var getFileUplodStatuses = function ($scope) {
       $scope.intervalId = $interval(function () {
         getFileList($scope);
@@ -28,7 +28,7 @@
         }
       );
     }
-
+    
     if (!$rootScope.uploadControllerScope) {
       const { dialog } = require('electron').remote;
       //check for recover only once
@@ -49,7 +49,7 @@
       $scope.chosenFileList = [];
       getFileList($scope);
       getFileUplodStatuses($scope);
-
+    
       $scope.browseAndUpload = function () {
         var path = dialog.showOpenDialog({ properties: ['openFile', /*'openDirectory', 'multiSelections',*/] });
         if (path) {
@@ -63,7 +63,7 @@
             });
             $scope.message = '';
             openUploadModal();
-
+    
           } else {
             $scope.message = '文件选择错误!请重新选择';
             $scope.dcmDir = '';
@@ -82,7 +82,7 @@
             }
           }
         });
-
+    
         modalInstance.result.then(function (selectedProject) {
           return api.uploadFile({
             project: selectedProject,
@@ -127,9 +127,9 @@
           api.abortUploadFile(sId).then(function () {
           });
         }
-
+    
       };
-
+    
     } else if ($rootScope.uploadControllerScope && $rootScope.uploadControllerScope.intervalId) {
       var $scope = $rootScope.uploadControllerScope;
       getFileUplodStatuses($scope);

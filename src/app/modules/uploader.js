@@ -13,12 +13,12 @@
   ]);
 
   app.config(['$stateProvider', function ($stateProvider) {
-    console.log('app.config');
+    logger.debug('app.config');
   }])
-  .run(['Session', 'AuthService', 'SettingService', '$state', '$timeout', '$interval', '$window', '$rootScope', 'api',
-    function (Session, AuthService, SettingService, $state, $timeout, $interval, $window, $rootScope, api) {
+  .run(['Session', 'AuthService', 'SettingService', '$state', '$timeout', '$interval', '$state', '$rootScope', 'api',
+    function (Session, AuthService, SettingService, $state, $timeout, $interval, $state, $rootScope, api) {
 
-      console.log('app.run');
+      logger.debug('app.run');
 
       try{
         /**
@@ -28,19 +28,27 @@
           function (event, toState, toParams, fromState, fromParams) {
 
             //state control
-            console.log('stateChange -------', fromState.name +' ---> '+ toState.name);
+            logger.debug('stateChange -------', fromState.name +' ---> '+ toState.name);
             if(!AuthService.isAuthenticated() && toState.name != 'settings' && toState.name != 'login' && toState.name != ''){
-              $window.location.hash = '#/login';
+              logger.debug('catched illegal state change!',!AuthService.isAuthenticated());
+              $state.go('login');
             }
 
 
             if ($rootScope.uploadControllerScope && $rootScope.uploadControllerScope.intervalId) {
-              console.log('$interval pause : ',$rootScope.uploadControllerScope.intervalId);
+              logger.debug('$interval pause : ',$rootScope.uploadControllerScope.intervalId);
               $interval.cancel($rootScope.uploadControllerScope.intervalId);
             }
 
           }
         );
+        $rootScope.$on('$stateNotFound',
+          function(event, unfoundState, fromState, fromParams){
+            logger.debug('$stateNotFound -------', fromState.name +' ---> '+ unfoundState.name);
+            console.log(unfoundState.to); // "lazy.state"
+            console.log(unfoundState.toParams); // {a:1, b:2}
+            console.log(unfoundState.options); // {inherit:false} + default options
+          })
         
         /**
          * get settings
@@ -56,7 +64,7 @@
         }, 0);
 
       }catch (err){
-        console.log(err,err.stack);
+        logger.debug(err,err.stack);
       }
       
     }]);

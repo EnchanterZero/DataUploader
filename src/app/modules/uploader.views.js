@@ -22,8 +22,9 @@
         templateUrl: './views/dashboard/auth.html',
       })
       .state('settings', {
-        url: "/settings/:preState",
+        url: "/settings",
         templateUrl: './views/dashboard/settings.html',
+        params:{'preState':{}}
       })
     }]);
 })();

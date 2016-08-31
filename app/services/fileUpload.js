@@ -15,14 +15,9 @@ function setInternal(val) {
   internal = val;
 }
 
-function createFile(filepath, name, type, meta) {
-  console.log('createFile');
-  console.log(JSON.stringify(meta))
-}
-
 function uploadOneFile(fileInfo, options) {
 
-  //console.log(dcmInfos);
+  //logger.debug(dcmInfos);
   let data = {
     size: fileInfo.size,
     fileName: fileInfo.name,
@@ -38,7 +33,7 @@ function uploadOneFile(fileInfo, options) {
     // record into sqlite
     yield FileInfo.createFileInfo(fileInfo);
     FileInfo.addToUnfinishedFileList(fileInfo);
-    console.log('start upload!!!!!!!!!');
+    logger.debug('start upload!!!!!!!!!');
     //upload
     yield OSS.putOSSFile(ossCredential, false, fileInfo, options);
 
@@ -128,7 +123,7 @@ function uploadFiles(project, filePaths, sId, options) {
 
 function stopUploadFiles(syncId) {
   FileInfo.setStatusToUnfinishedFileList(syncId, FileInfo.FileInfoStatuses.pausing);
-  console.log('ready to pause');
+  logger.debug('ready to pause');
   return Promise.resolve();
   /*return co(function*() {
    yield FileInfo.setFileInfoPausing(syncId);
@@ -138,7 +133,7 @@ function stopUploadFiles(syncId) {
 
 function abortUploadFiles(syncId) {
   FileInfo.setStatusToUnfinishedFileList(syncId, FileInfo.FileInfoStatuses.aborting);
-  console.log('ready to abort');
+  logger.debug('ready to abort');
   return co(function*() {
     //let result = yield FileInfo.setFileInfoAborted(syncId);
     //if (result) {
@@ -175,7 +170,7 @@ function stopAllUploading() {
   FileInfo.unfinishedFileList.map(item => {
     FileInfo.setStatusToUnfinishedFileList(item.syncId, 'suspending');
   });
-  console.log('ready to pause');
+  logger.debug('ready to pause');
   return Promise.resolve();
 }
 

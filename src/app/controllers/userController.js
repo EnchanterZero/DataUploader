@@ -16,7 +16,6 @@
         api.logout($rootScope);
       })
     };
-    console.log('wwwwwwwwwwwwwwwwwwww----------',$state.current);
     // $scope.goSettings = function () {
     //   $state.reload().then(function (currentState) {
     //     console.log(currentState);
@@ -26,7 +25,6 @@
     //   });
     // }
     $scope.goSettings = function () {
-      console.log('nnnnnnnnnnnnnnnnnnn----------',$state.current);
       $state.go('settings', { preState: $state.current.name })
     }
   }

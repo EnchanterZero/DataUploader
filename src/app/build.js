@@ -2,6 +2,9 @@
 var _BackendService = require('../../dist/services');
 var _FileInfo = require('../../dist/modules/fileinfo');
 var _Config = require('../../dist/modules/config');
+var _util = require('../../dist/util');
+var logger = _util.util.logger.getLogger('frontEnd');
+logger.debug('123123');
 var co = require('co');
 var Utils = function () {
   var KB = 1024;
@@ -187,12 +190,12 @@ var utils = new Utils();
   ]);
 
   app.config(['$stateProvider', function ($stateProvider) {
-    console.log('app.config');
+    logger.debug('app.config');
   }])
-  .run(['Session', 'AuthService', 'SettingService', '$state', '$timeout', '$interval', '$window', '$rootScope', 'api',
-    function (Session, AuthService, SettingService, $state, $timeout, $interval, $window, $rootScope, api) {
+  .run(['Session', 'AuthService', 'SettingService', '$state', '$timeout', '$interval', '$state', '$rootScope', 'api',
+    function (Session, AuthService, SettingService, $state, $timeout, $interval, $state, $rootScope, api) {
 
-      console.log('app.run');
+      logger.debug('app.run');
 
       try{
         /**
@@ -202,19 +205,27 @@ var utils = new Utils();
           function (event, toState, toParams, fromState, fromParams) {
 
             //state control
-            console.log('stateChange -------', fromState.name +' ---> '+ toState.name);
+            logger.debug('stateChange -------', fromState.name +' ---> '+ toState.name);
             if(!AuthService.isAuthenticated() && toState.name != 'settings' && toState.name != 'login' && toState.name != ''){
-              $window.location.hash = '#/login';
+              logger.debug('catched illegal state change!',!AuthService.isAuthenticated());
+              $state.go('login');
             }
 
 
             if ($rootScope.uploadControllerScope && $rootScope.uploadControllerScope.intervalId) {
-              console.log('$interval pause : ',$rootScope.uploadControllerScope.intervalId);
+              logger.debug('$interval pause : ',$rootScope.uploadControllerScope.intervalId);
               $interval.cancel($rootScope.uploadControllerScope.intervalId);
             }
 
           }
         );
+        $rootScope.$on('$stateNotFound',
+          function(event, unfoundState, fromState, fromParams){
+            logger.debug('$stateNotFound -------', fromState.name +' ---> '+ unfoundState.name);
+            console.log(unfoundState.to); // "lazy.state"
+            console.log(unfoundState.toParams); // {a:1, b:2}
+            console.log(unfoundState.options); // {inherit:false} + default options
+          })
         
         /**
          * get settings
@@ -230,7 +241,7 @@ var utils = new Utils();
         }, 0);
 
       }catch (err){
-        console.log(err,err.stack);
+        logger.debug(err,err.stack);
       }
       
     }]);
@@ -268,8 +279,9 @@ var utils = new Utils();
         templateUrl: './views/dashboard/auth.html',
       })
       .state('settings', {
-        url: "/settings/:preState",
+        url: "/settings",
         templateUrl: './views/dashboard/settings.html',
+        params:{'preState':{}}
       })
     }]);
 })();
@@ -280,8 +292,8 @@ var utils = new Utils();
   var logger = require('../../dist/util').util.logger.getLogger('serviceApi');
 
   angular.module('Uploader.services')
-  .service('api', ['$http', '$rootScope', 'serverUrl', 'Session', '$timeout', 'DomChangeService','$state',
-    function ($http, $rootScope, serverUrl, Session, $timeout, DomChangeService,$state) {
+  .service('api', ['$http', '$rootScope', 'serverUrl', 'Session', '$timeout', 'DomChangeService', '$state', 'AuthService',
+    function ($http, $rootScope, serverUrl, Session, $timeout, DomChangeService, $state, AuthService) {
       var LOCAL_BASE_TOKEN_KEY = 'baseToken';
       var LOCAL_CURRENT_USER = 'currentUser';
       var api = this;
@@ -294,7 +306,8 @@ var utils = new Utils();
         .then(function (result) {
           Session.set(LOCAL_BASE_TOKEN_KEY, result.data.token);
           Session.set(LOCAL_CURRENT_USER, result.data.currentUser);
-          console.log('login success!!!!!!');
+          AuthService.loadCredentials();
+          logger.debug('login success!!!!!!');
           $scope.alerts.push({ type: 'success', msg: 'Login success.Jumping into main page...' });
           $scope.$apply();
           $timeout(function () {
@@ -306,7 +319,7 @@ var utils = new Utils();
           }, 1500);
         })
         .catch(function (err) {
-          console.log(err);
+          logger.debug(err);
           $scope.alerts.push({ type: 'warning', msg: 'Login failed for ' + err.message });
           $scope.loginButton = '登录';
           $scope.$apply();
@@ -318,14 +331,14 @@ var utils = new Utils();
         .then(() => {
           Session.set(LOCAL_BASE_TOKEN_KEY, null);
           Session.set(LOCAL_CURRENT_USER, null);
-          console.log('logout success!!!!!!');
+          logger.debug('logout success!!!!!!');
           $rScope.showLogout = false;
           DomChangeService.changeToLoginStyle();
           //$window.location.hash = '#/login';
           $state.go('login');
           //$rScope.$apply();
         }).catch(function (err) {
-          console.log(err.message, err.stack);
+          logger.debug(err.message, err.stack);
         });
       }
 
@@ -373,7 +386,7 @@ var utils = new Utils();
       this.recoverIfUnfinished = function () {
         var currentUser = _BackendService.serverApi.getBaseUser();
         if (!currentUser) {
-          $window.location.hash = '#/login';
+          $state.go('login');
           return;
         }
         co(function*() {
@@ -399,10 +412,10 @@ var utils = new Utils();
        * manual upload api
        */
       this.getFileInfoList = function () {
-        var currentUser = Session.get(LOCAL_CURRENT_USER);
+        var currentUser = _BackendService.serverApi.getBaseUser();
         if (!currentUser) {
-          $window.location.hash = '#/login';
-          return Promise.reject();
+          $state.go('login');
+          return Promise.reject('no currentUser');
         }
         return _FileInfo.listFiles(currentUser.id)
         .then(function (r) {
@@ -491,9 +504,9 @@ var utils = new Utils();
 (function () {
 
   angular.module('Uploader.services')
-  .service('AuthService', ['$rootScope', '$state', '$window', 'api', 'Session', authService]);
+  .service('AuthService', ['$rootScope', '$state', '$window', 'Session', authService]);
 
-  function authService($rootScope, $state, $window, api, Session) {
+  function authService($rootScope, $state, $window, Session) {
     var LOCAL_BASE_TOKEN_KEY = 'baseToken';
     var LOCAL_CURRENT_USER = 'currentUser';
 
@@ -506,15 +519,14 @@ var utils = new Utils();
     this.gotoLogin = function () {
       this.useCredentials(null, null);
       var currentState = $state.current.name;
-      $window.location.hash = '#/login';
+      $state.go('login');
     }
 
     this.loadCredentials = function () {
-      // var token = Session.get(LOCAL_BASE_TOKEN_KEY);
-      // var currentUser = Session.get(LOCAL_CURRENT_USER);
-      var token = _BackendService.serverApi.getBaseAuthToken();
-      var currentUser = _BackendService.serverApigetBaseUser();
+      var token = Session.get(LOCAL_BASE_TOKEN_KEY);
+      var currentUser = Session.get(LOCAL_CURRENT_USER);
       this.useCredentials(token, currentUser);
+      logger.debug('authservice---',token,currentUser)
       return token;
     }
 
@@ -681,7 +693,6 @@ var utils = new Utils();
 
   angular.module('Uploader.views').controller('SettingsController', ['$state','$stateParams','$scope', '$rootScope', 'SettingService', 'api', settingController]);
   function settingController($state,$stateParams,$scope, $rootScope, SettingService, api) {
-    console.log('setting!!!!!!');
     $scope.GenoServerUrl = $rootScope.$settings.GenoServerUrl;
     $scope.alerts = [
       /*{ type: 'warning', msg: 'Oh snap! Change a few things up and try submitting again.' }}*/
@@ -691,14 +702,13 @@ var utils = new Utils();
       SettingService.setSettings({
         GenoServerUrl: $scope.GenoServerUrl,
       }).then(function (result) {
-        console.log(result);
         $scope.alerts.push({type: 'success', msg: '保存设置成功!'});
         $scope.$apply();
       })
     }
     $scope.backToPreState = function () {
-      console.log('in setting page ---',$stateParams);
       $state.go($stateParams.preState)
+      //window.history.back();
     }
   };
 
@@ -710,7 +720,7 @@ var utils = new Utils();
 
   angular.module('Uploader.views').controller('UploadController', ['$rootScope', 'api', '$interval', '$uibModal', uploadController]);
   function uploadController($rootScope, api, $interval, $uibModal) {
-    console.log('$rootScope.uploadControllerScope --> $scope');
+    logger.debug('$rootScope.uploadControllerScope --> $scope');
     var getFileUplodStatuses = function ($scope) {
       $scope.intervalId = $interval(function () {
         getFileList($scope);
@@ -733,7 +743,7 @@ var utils = new Utils();
         }
       );
     }
-
+    
     if (!$rootScope.uploadControllerScope) {
       const { dialog } = require('electron').remote;
       //check for recover only once
@@ -754,7 +764,7 @@ var utils = new Utils();
       $scope.chosenFileList = [];
       getFileList($scope);
       getFileUplodStatuses($scope);
-
+    
       $scope.browseAndUpload = function () {
         var path = dialog.showOpenDialog({ properties: ['openFile', /*'openDirectory', 'multiSelections',*/] });
         if (path) {
@@ -768,7 +778,7 @@ var utils = new Utils();
             });
             $scope.message = '';
             openUploadModal();
-
+    
           } else {
             $scope.message = '文件选择错误!请重新选择';
             $scope.dcmDir = '';
@@ -787,7 +797,7 @@ var utils = new Utils();
             }
           }
         });
-
+    
         modalInstance.result.then(function (selectedProject) {
           return api.uploadFile({
             project: selectedProject,
@@ -832,9 +842,9 @@ var utils = new Utils();
           api.abortUploadFile(sId).then(function () {
           });
         }
-
+    
       };
-
+    
     } else if ($rootScope.uploadControllerScope && $rootScope.uploadControllerScope.intervalId) {
       var $scope = $rootScope.uploadControllerScope;
       getFileUplodStatuses($scope);
@@ -885,7 +895,6 @@ var utils = new Utils();
         api.logout($rootScope);
       })
     };
-    console.log('wwwwwwwwwwwwwwwwwwww----------',$state.current);
     // $scope.goSettings = function () {
     //   $state.reload().then(function (currentState) {
     //     console.log(currentState);
@@ -895,7 +904,6 @@ var utils = new Utils();
     //   });
     // }
     $scope.goSettings = function () {
-      console.log('nnnnnnnnnnnnnnnnnnn----------',$state.current);
       $state.go('settings', { preState: $state.current.name })
     }
   }

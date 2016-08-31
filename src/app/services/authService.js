@@ -4,9 +4,9 @@
 (function () {
 
   angular.module('Uploader.services')
-  .service('AuthService', ['$rootScope', '$state', '$window', 'api', 'Session', authService]);
+  .service('AuthService', ['$rootScope', '$state', '$window', 'Session', authService]);
 
-  function authService($rootScope, $state, $window, api, Session) {
+  function authService($rootScope, $state, $window, Session) {
     var LOCAL_BASE_TOKEN_KEY = 'baseToken';
     var LOCAL_CURRENT_USER = 'currentUser';
 
@@ -19,15 +19,14 @@
     this.gotoLogin = function () {
       this.useCredentials(null, null);
       var currentState = $state.current.name;
-      $window.location.hash = '#/login';
+      $state.go('login');
     }
 
     this.loadCredentials = function () {
-      // var token = Session.get(LOCAL_BASE_TOKEN_KEY);
-      // var currentUser = Session.get(LOCAL_CURRENT_USER);
-      var token = _BackendService.serverApi.getBaseAuthToken();
-      var currentUser = _BackendService.serverApigetBaseUser();
+      var token = Session.get(LOCAL_BASE_TOKEN_KEY);
+      var currentUser = Session.get(LOCAL_CURRENT_USER);
       this.useCredentials(token, currentUser);
+      logger.debug('authservice---',token,currentUser)
       return token;
     }
 

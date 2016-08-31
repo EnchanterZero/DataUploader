@@ -64,7 +64,7 @@ export function putOSSFile(credential, internal, fileInfo, options) {
           if (fileSize > BLOCK_SIZE) {
             let progress = function*(p, cpt) {
               logger.debug(`uploading ${filePath} to ${objectKey}, progress: ${p}`);
-              console.log(FileInfo.unfinishedFileList);
+              logger.debug(FileInfo.unfinishedFileList);
               const time = new Date().getTime();
               //let lastRecord = yield FileInfo.getFileInfoBySyncId(fileInfo.syncId);
               let lastStatus = FileInfo.getOneFromUnfinishedFileList(fileInfo.syncId).status;

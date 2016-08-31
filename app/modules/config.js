@@ -25,7 +25,7 @@ export function setConfig(settings) {
       value: settings[key],
     })
   }
-  console.log(KVPairs);
+  logger.debug(KVPairs);
 
   return Promise.each(KVPairs, (item)=> {
     return models.Config.update(

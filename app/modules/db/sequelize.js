@@ -22,11 +22,11 @@ const sequelize = new Sequelize(dbConfig.database, dbConfig.username, dbConfig.p
 sequelize
 .authenticate()
 .then(function(err) {
-  console.log(err);
-  console.log('Connection has been established successfully.',dbpath);
+  logger.debug(err);
+  logger.debug('Connection has been established successfully.',dbpath);
 })
 .catch(function (err) {
-  console.log('Unable to connect to the database:', err);
+  logger.debug('Unable to connect to the database:', err);
 });
 
 

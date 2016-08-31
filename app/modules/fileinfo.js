@@ -34,7 +34,7 @@ export const FileInfoStatuses = {
 export const unfinishedFileList = [];
 
 export function addToUnfinishedFileList(fileInfo) {
-  console.log('add To UnfinishedFileList',unfinishedFileList,fileInfo);
+  logger.debug('add To UnfinishedFileList',unfinishedFileList,fileInfo);
   for(var i in unfinishedFileList){
     if(unfinishedFileList[i].syncId == fileInfo.syncId ){
       logger.debug('duplicate to add to UnfinishedFileList',fileInfo);
@@ -45,7 +45,7 @@ export function addToUnfinishedFileList(fileInfo) {
   return true;
 }
 export function getOneFromUnfinishedFileList(syncId) {
-  console.log('get One From UnfinishedFileList',unfinishedFileList,syncId);
+  logger.debug('get One From UnfinishedFileList',unfinishedFileList,syncId);
   for(var i in unfinishedFileList){
     if(unfinishedFileList[i].syncId == syncId ){
       return unfinishedFileList[i];
@@ -53,7 +53,7 @@ export function getOneFromUnfinishedFileList(syncId) {
   }
 }
 export function setStatusToUnfinishedFileList(syncId,status) {
-  console.log('set Status To UnfinishedFileList',unfinishedFileList,syncId);
+  logger.debug('set Status To UnfinishedFileList',unfinishedFileList,syncId);
   for(var i in unfinishedFileList){
     if(unfinishedFileList[i].syncId == syncId ){
       unfinishedFileList[i].status = status;
@@ -62,7 +62,7 @@ export function setStatusToUnfinishedFileList(syncId,status) {
   }
 }
 export function removeFromUnfinishedFileList(syncId) {
-  console.log('remove From UnfinishedFileList',unfinishedFileList,syncId);
+  logger.debug('remove From UnfinishedFileList',unfinishedFileList,syncId);
   for(var i in unfinishedFileList){
     if(unfinishedFileList[i].syncId == syncId ){
       unfinishedFileList.splice(i,1);
@@ -71,7 +71,7 @@ export function removeFromUnfinishedFileList(syncId) {
   }
 }
 export function resetUnfinishedFileList() {
-  console.log('reset UnfinishedFileList',unfinishedFileList);
+  logger.debug('reset UnfinishedFileList',unfinishedFileList);
 }
 
 export function createFileInfo(fileInfo) {

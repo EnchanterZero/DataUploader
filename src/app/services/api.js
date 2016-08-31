@@ -5,8 +5,8 @@
   var logger = require('../../dist/util').util.logger.getLogger('serviceApi');
 
   angular.module('Uploader.services')
-  .service('api', ['$http', '$rootScope', 'serverUrl', 'Session', '$timeout', 'DomChangeService','$state',
-    function ($http, $rootScope, serverUrl, Session, $timeout, DomChangeService,$state) {
+  .service('api', ['$http', '$rootScope', 'serverUrl', 'Session', '$timeout', 'DomChangeService', '$state', 'AuthService',
+    function ($http, $rootScope, serverUrl, Session, $timeout, DomChangeService, $state, AuthService) {
       var LOCAL_BASE_TOKEN_KEY = 'baseToken';
       var LOCAL_CURRENT_USER = 'currentUser';
       var api = this;
@@ -19,7 +19,8 @@
         .then(function (result) {
           Session.set(LOCAL_BASE_TOKEN_KEY, result.data.token);
           Session.set(LOCAL_CURRENT_USER, result.data.currentUser);
-          console.log('login success!!!!!!');
+          AuthService.loadCredentials();
+          logger.debug('login success!!!!!!');
           $scope.alerts.push({ type: 'success', msg: 'Login success.Jumping into main page...' });
           $scope.$apply();
           $timeout(function () {
@@ -31,7 +32,7 @@
           }, 1500);
         })
         .catch(function (err) {
-          console.log(err);
+          logger.debug(err);
           $scope.alerts.push({ type: 'warning', msg: 'Login failed for ' + err.message });
           $scope.loginButton = '登录';
           $scope.$apply();
@@ -43,14 +44,14 @@
         .then(() => {
           Session.set(LOCAL_BASE_TOKEN_KEY, null);
           Session.set(LOCAL_CURRENT_USER, null);
-          console.log('logout success!!!!!!');
+          logger.debug('logout success!!!!!!');
           $rScope.showLogout = false;
           DomChangeService.changeToLoginStyle();
           //$window.location.hash = '#/login';
           $state.go('login');
           //$rScope.$apply();
         }).catch(function (err) {
-          console.log(err.message, err.stack);
+          logger.debug(err.message, err.stack);
         });
       }
 
@@ -98,7 +99,7 @@
       this.recoverIfUnfinished = function () {
         var currentUser = _BackendService.serverApi.getBaseUser();
         if (!currentUser) {
-          $window.location.hash = '#/login';
+          $state.go('login');
           return;
         }
         co(function*() {
@@ -124,10 +125,10 @@
        * manual upload api
        */
       this.getFileInfoList = function () {
-        var currentUser = Session.get(LOCAL_CURRENT_USER);
+        var currentUser = _BackendService.serverApi.getBaseUser();
         if (!currentUser) {
-          $window.location.hash = '#/login';
-          return Promise.reject();
+          $state.go('login');
+          return Promise.reject('no currentUser');
         }
         return _FileInfo.listFiles(currentUser.id)
         .then(function (r) {

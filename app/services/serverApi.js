@@ -31,7 +31,7 @@ function GET(serverUrl, uri, query, option) {
         }
         resolve(body);
       } catch (err) {
-        console.log(err, res, body);
+        logger.debug(err, res, body);
         reject(err);
       }
     });
@@ -63,7 +63,7 @@ function POST(serverUrl, uri, body, option) {
         }
         resolve(body);
       } catch (err) {
-        console.log(err, res, body);
+        logger.debug(err, res, body);
         reject(err);
       }
     });
@@ -95,7 +95,7 @@ function PATCH(serverUrl, uri, body, option) {
         }
         resolve(body);
       } catch (err) {
-        console.log(err, res, body);
+        logger.debug(err, res, body);
         reject(err);
       }
     });
@@ -138,7 +138,7 @@ function authorize(options) {
 }
 
 function checkStatusCode(result) {
-  console.log(result);
+  logger.debug(result);
   if (!result) {
     throw new Error('empty response');
   }
@@ -159,7 +159,7 @@ function authenticate(username, password) {
   });
   return Promise.all([baseAuth])
   .then(results => {
-    //console.log('123123123',results);
+    //logger.debug('123123123',results);
     if (results[0].data.token) {
       setBaseAuthToken(results[0].data.token);
       setBaseUser(results[0].data.currentUser);
