@@ -9,6 +9,10 @@
     $scope.alerts = [
       /*{ type: 'warning', msg: 'Oh snap! Change a few things up and try submitting again.' }}*/
     ];
+    $scope.closeAlert = function (index) {
+      $scope.alerts.splice(index, 1);
+    };
+    
     $scope.saveSettings = function () {
 
       SettingService.setSettings({
@@ -18,6 +22,7 @@
         $scope.$apply();
       })
     }
+    
     $scope.backToPreState = function () {
       $state.go($stateParams.preState)
       //window.history.back();
