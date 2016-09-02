@@ -11,8 +11,13 @@ var Utils = function () {
   var MB = 1024 * KB;
   var GB = 1024 * MB;
   var getFormatDateString = function (date) {
-    return date.getFullYear() + '年' + (date.getMonth()+1) + '月' + date.getDate() + '日 ' +
-      date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
+    var y = date.getFullYear();
+    var mo = _.padStart(date.getMonth() + 1, 2, '0');
+    var d = _.padStart(date.getDate() + 1, 2, '0');
+    var h = _.padStart(date.getHours(), 2, '0');
+    var mi = _.padStart(date.getMinutes(), 2, '0');
+    var s = _.padStart(date.getSeconds(), 2, '0');
+    return y + '年' + mo + '月' + d + '日 ' + h + ':' + mi + ':' + s;
   };
   var getFormatSpeedString = function (speed) {
     if (speed < KB)
@@ -80,7 +85,7 @@ var Utils = function () {
       }
     });
     //handle working
-    if(oldArr) {
+    if (oldArr) {
       oldArr.map(function (item) {
         if (item['working'] === true) {
           var newItem = _.find(arr, function (o) {
@@ -131,7 +136,7 @@ var Utils = function () {
 
           if (typeof newArr[it].working != 'undefined' && !(typeof changingArr[it].working != 'undefined' && changingArr[it].working == newArr[it].working))
             changingArr[it].working = newArr[it].working;
-          if(newArr[it].workingStatus)
+          if (newArr[it].workingStatus)
             changingArr[it].workingStatus = newArr[it].workingStatus;
 
         } else {
