@@ -1,0 +1,2 @@
+electron-packager . DataUploader --out=release --prune --asar --version=1.3.2 --platform=win32 --arch=x64 --asar.unpack='*.node' ^
+	--icon='AppIcon.ico' --ignore=node_modules\.bin --ignore=.git --ignore='node_modules\electron-*' --overwrite force

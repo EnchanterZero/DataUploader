@@ -69,7 +69,7 @@ export function putOSSFile(credential, internal, fileInfo, options) {
               //let lastRecord = yield FileInfo.getFileInfoBySyncId(fileInfo.syncId);
               let lastStatus = FileInfo.getOneFromUnfinishedFileList(fileInfo.syncId).status;
               //store file upload info
-              cpt.doneParts = [];
+              // cpt.doneParts = [];
               let setField = {};
               setField.progress = p;
               setField.checkPoint = JSON.stringify(cpt);

@@ -207,7 +207,7 @@ function createFile(projectId, data) {
   let fileObj = {
     name: `${data.fileName}-${data.syncId}`,
     id: `${data.fileName}-${data.syncId}`,
-    filePath: path.join(projectId,`${data.fileName}-${data.syncId}`)
+    filePath: path.posix.join(projectId,`${data.fileName}-${data.syncId}`)
   }
   return Promise.resolve(fileObj);
 
