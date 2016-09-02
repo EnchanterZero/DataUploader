@@ -11,15 +11,15 @@
         getFileList($scope);
       }, 1000);
     };
-    
+
     var getFileList = function ($scope) {
       return api.getFileInfoList().then(
         function (result) {
           if (result.fileInfoList) {
-             if (!$scope.fileInfoList) {
-               utils.formatList(result.fileInfoList, result.fileInfoList);
-               $scope.fileInfoList = result.fileInfoList;
-             } else {
+            if (!$scope.fileInfoList) {
+              utils.formatList(result.fileInfoList, result.fileInfoList);
+              $scope.fileInfoList = result.fileInfoList;
+            } else {
               utils.formatList(result.fileInfoList, $scope.fileInfoList);
               //$scope.oldfileInfoList = angular.copy($scope.fileInfoList);
               utils.minAssignList($scope.fileInfoList, result.fileInfoList)
@@ -28,7 +28,7 @@
         }
       );
     }
-    
+
     if (!$rootScope.uploadControllerScope) {
       const { dialog } = require('electron').remote;
       //check for recover only once
@@ -49,7 +49,7 @@
       $scope.chosenFileList = [];
       getFileList($scope);
       getFileUplodStatuses($scope);
-    
+
       $scope.browseAndUpload = function () {
         var path = dialog.showOpenDialog({ properties: ['openFile', /*'openDirectory', 'multiSelections',*/] });
         if (path) {
@@ -63,21 +63,38 @@
             });
             $scope.message = '';
             //openUploadModal();
-            
+
             //hide the project chooser and use the first project,then upload
             api.getProjects().then(function (list) {
-              return api.uploadFile({
-                project: list[0],
-                fileList: $scope.chosenFileList,
-              })
+              logger.debug('got project:', list);
+              if (list[0]) {
+                return api.uploadFile({
+                  project: list[0],
+                  fileList: $scope.chosenFileList,
+                })
+              } else {
+                dialog.showMessageBox({
+                  type: 'error',
+                  buttons: ['确认'],
+                  title: 'error',
+                  message: '您没有上传的权限'
+                }, function () {
+                })
+              }
             })
             .catch(function (err) {
-              if(err.message.indexOf('ENOTFOUND') > 0 ||  err.message.indexOf('ENOENT') > 0){
+              if (err.message.indexOf('ENOTFOUND') > 0 || err.message.indexOf('ENOENT') > 0) {
                 err.message = '无法连接至网络,请检查网络连接后重试';
               }
-              dialog.showMessageBox({type:'error',buttons:['确认'],title:'error',message:err.message},function () {})
+              dialog.showMessageBox({
+                type: 'error',
+                buttons: ['确认'],
+                title: 'error',
+                message: err.message
+              }, function () {
+              })
             })
-            
+
           } else {
             $scope.message = '文件选择错误!请重新选择';
             $scope.dcmDir = '';
@@ -96,7 +113,7 @@
             }
           }
         });
-    
+
         modalInstance.result.then(function (selectedProject) {
           return api.uploadFile({
             project: selectedProject,
@@ -124,7 +141,7 @@
           if (o.syncId == sId) {
             o.working = true;
             o.workingStatus = 'resuming...';
-            if(o.status == 'failed'){
+            if (o.status == 'failed') {
               o.failedCount = 0;
             }
           }
@@ -132,12 +149,18 @@
         api.resumeUploadFile(sId).then(function () {
         })
         .catch(function (err) {
-          dialog.showMessageBox({type:'error',buttons:['确认'],title:'error',message:'上传失败,请稍后重试'},function () {})
+          dialog.showMessageBox({ type: 'error', buttons: ['确认'], title: 'error', message: '上传失败,请稍后重试' }, function () {
+          })
         })
       };
       $scope.abortUpload = function (sId) {
-        var buttonIndex = dialog.showMessageBox({type:'question',buttons:['确认','取消'],title:'取消上传',message:'确认取消该文件的上传吗?'})
-        if(buttonIndex == 0){
+        var buttonIndex = dialog.showMessageBox({
+          type: 'question',
+          buttons: ['确认', '取消'],
+          title: '取消上传',
+          message: '确认取消该文件的上传吗?'
+        })
+        if (buttonIndex == 0) {
           $scope.fileInfoList.map(function (o) {
             if (o.syncId == sId) {
               o.working = true;
@@ -146,14 +169,20 @@
           });
           api.abortUploadFile(sId).then(function (result) {
             logger.debug(result);
-            if(!result.success){
-              dialog.showMessageBox({type:'error',buttons:['确认'],title:'error',message:'取消上传失败,请检查网络连接'},function () {})
+            if (!result.success) {
+              dialog.showMessageBox({
+                type: 'error',
+                buttons: ['确认'],
+                title: 'error',
+                message: '取消上传失败,请检查网络连接'
+              }, function () {
+              })
             }
           });
         }
-    
+
       };
-    
+
     } else if ($rootScope.uploadControllerScope && $rootScope.uploadControllerScope.intervalId) {
       var $scope = $rootScope.uploadControllerScope;
       getFileUplodStatuses($scope);

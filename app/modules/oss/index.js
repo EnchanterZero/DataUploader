@@ -74,7 +74,7 @@ export function putOSSFile(credential, internal, fileInfo, options) {
               setField.progress = p;
               setField.checkPoint = JSON.stringify(cpt);
               setField.checkPointTime = time;
-              
+
               //if upload finished, ignore pausing and continue
               if (p === 1) {
                 setField.status = FileInfo.FileInfoStatuses.finished;
@@ -87,16 +87,16 @@ export function putOSSFile(credential, internal, fileInfo, options) {
                   logger.info('remove temp DcmInfo : ', fileInfo.filePath, fileInfo.syncId);
                 }
                 //update
-                Object.assign(fileInfo,setField);
+                Object.assign(fileInfo, setField);
                 yield FileInfo.updateFileInfo(fileInfo, setField);
                 //return true;
               }
               //if upload unfinished, status is not 'uploading' means upload need to stop
               else if (lastStatus != FileInfo.FileInfoStatuses.uploading) {
                 logger.debug(`[${lastStatus}] uploading ${filePath} to ${objectKey}`);
-                if(lastStatus == FileInfo.FileInfoStatuses.pausing)
+                if (lastStatus == FileInfo.FileInfoStatuses.pausing)
                   setField.status = FileInfo.FileInfoStatuses.paused;
-                Object.assign(fileInfo,setField);
+                Object.assign(fileInfo, setField);
                 yield FileInfo.updateFileInfo(fileInfo, setField);
                 FileInfo.removeFromUnfinishedFileList(fileInfo.syncId);
                 //return false;
@@ -104,7 +104,7 @@ export function putOSSFile(credential, internal, fileInfo, options) {
               }
               //when upload unfinished and status is 'uploading', do nothing but update info continue
               else {
-                Object.assign(fileInfo,setField);
+                Object.assign(fileInfo, setField);
                 yield FileInfo.updateFileInfo(fileInfo, setField);
                 //return true;
               }
@@ -136,7 +136,7 @@ export function putOSSFile(credential, internal, fileInfo, options) {
               checkPointTime: end,
               status: FileInfo.FileInfoStatuses.finished,
             }
-            Object.assign(fileInfo,fields);
+            Object.assign(fileInfo, fields);
             yield FileInfo.updateFileInfo(fileInfo, fields);
             logger.debug(`uploading ${filePath} to ${objectKey}`);
           }
@@ -145,7 +145,7 @@ export function putOSSFile(credential, internal, fileInfo, options) {
         }
         catch
           (err) {
-          if(err.message == 'upload stop'){
+          if (err.message == 'upload stop') {
             return fileInfo;
           }
           logger.error(`error when uploading ${filePath} to ${objectKey}`, err);
@@ -169,26 +169,26 @@ export function putOSSFile(credential, internal, fileInfo, options) {
 
 export function abortMitiUpload(credential, internal, fileInfo) {
   const ossClient = getOSSClient(credential, internal);
-    return co(function*() {
-      if(fileInfo.checkPoint) {
-        var ckp = JSON.parse(fileInfo.checkPoint);
-        var result = yield ossClient.abortMultipartUpload(ckp.name, ckp.uploadId);
-        yield FileInfo.updateFileInfo(fileInfo, {status:FileInfo.FileInfoStatuses.aborted});
-        logger.info(`Abort putOSSObject name -->${ckp.name}, uploadId--> ${ckp.uploadId}, result-->${result}`);
-        return {success:true};
-      }else{
-        yield FileInfo.updateFileInfo(fileInfo, {status:FileInfo.FileInfoStatuses.aborted});
-        return {success:true}
-      }
-    })
-    .catch((err) => {
-      if(err.message.indexOf('ENOTFOUND') < 0 && err.message.indexOf('ENOENT') < 0){
-        logger.info(`Abort success with err:${err.message}`);
-        FileInfo.updateFileInfo(fileInfo, {status:FileInfo.FileInfoStatuses.aborted});
-        return {success:true}
-      }
-      logger.error(err.message,err.stack);
-      return {success:false}
-      //FileInfo.setStatusToUnfinishedFileList(fileInfo.syncId, FileInfo.FileInfoStatuses.pausing);
-    })
+  return co(function*() {
+    if (fileInfo.checkPoint) {
+      var ckp = JSON.parse(fileInfo.checkPoint);
+      var result = yield ossClient.abortMultipartUpload(ckp.name, ckp.uploadId);
+      yield FileInfo.updateFileInfo(fileInfo, { status: FileInfo.FileInfoStatuses.aborted });
+      logger.info(`Abort putOSSObject name -->${ckp.name}, uploadId--> ${ckp.uploadId}, result-->${result}`);
+      return { success: true };
+    } else {
+      yield FileInfo.updateFileInfo(fileInfo, { status: FileInfo.FileInfoStatuses.aborted });
+      return { success: true }
+    }
+  })
+  .catch((err) => {
+    if (err.message.indexOf('ENOTFOUND') < 0 && err.message.indexOf('ENOENT') < 0) {
+      logger.info(`Abort success with err:${err.message}`);
+      FileInfo.updateFileInfo(fileInfo, { status: FileInfo.FileInfoStatuses.aborted });
+      return { success: true }
+    }
+    logger.error(err.message, err.stack);
+    return { success: false }
+    //FileInfo.setStatusToUnfinishedFileList(fileInfo.syncId, FileInfo.FileInfoStatuses.pausing);
+  })
 }
