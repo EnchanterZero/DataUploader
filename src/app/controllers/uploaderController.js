@@ -85,8 +85,9 @@
             .catch(function (err) {
               logger.debug(err);
               if(typeof err == 'string'){
-                err = {}
-                err.message = '无法上传:' + err;
+                var msg = err;
+                err = {};
+                err.message = '无法上传:' + msg;
               }
               else if (err.message.indexOf('ENOTFOUND') > 0 || err.message.indexOf('ENOENT') > 0) {
                 err.message = '无法连接至网络,请检查网络连接后重试';
