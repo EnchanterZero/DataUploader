@@ -54,38 +54,7 @@
           logger.debug(err.message, err.stack);
         });
       }
-
-
-      // this.login = function (query, $scope, $rScope) {
-      //   return _BackendService.serverApi.authenticate(query.username, query.password)
-      //   .then(function (result) {
-      //     Session.set(LOCAL_BASE_TOKEN_KEY, result.data.token);
-      //     Session.set(LOCAL_CURRENT_USER, result.data.currentUser);
-      //     console.log('login success!!!!!!');
-      //     $rScope.showLogout = true;
-      //     var logoutLink = document.getElementById('logoutLink');
-      //     angular.element(logoutLink).attr('style','display:block');
-      //     $window.location.hash = '#/upload';
-      //   })
-      //   .catch(function (err) {
-      //     console.log(err);
-      //     $scope.errorMessage = err.message;
-      //     $scope.$apply();
-      //   });
-      // };
-      //
-      // this.logout = function ($rScope) {
-      //   return _BackendService.serverApi.deauthenticate()
-      //   .then(() => {
-      //     Session.set(LOCAL_BASE_TOKEN_KEY, null);
-      //     Session.set(LOCAL_CURRENT_USER, null);
-      //     console.log('logout success!!!!!!');
-      //     $rScope.showLogout = false;
-      //     var logoutLink = document.getElementById('logoutLink');
-      //     angular.element(logoutLink).attr('style','display:none');
-      //     $window.location.hash = '#/login';
-      //   });
-      // }
+      
       this.setUserToken = function () {
         var token = Session.get(LOCAL_BASE_TOKEN_KEY);
         return co(function*() {
@@ -159,27 +128,24 @@
       }
 
       this.resumeUploadFile = function (syncId) {
-        co(function*() {
+        return co(function*() {
           let r = yield _BackendService.fileUpload.uploadFiles(null, [], syncId, { afterDelete: false });
+          return r;
         })
         .catch((err) => {
           logger.error(err, err.stack);
+          throw err;
         });
-        return co(function*() {
-          return {}
-        })
       }
 
       this.abortUploadFile = function (syncId) {
-        co(function*() {
-          yield _BackendService.fileUpload.abortUploadFiles(syncId);
+        return co(function*() {
+          let result = yield _BackendService.fileUpload.abortUploadFiles(syncId);
+          return result;
         })
         .catch((err) => {
           logger.error(err, err.stack);
         });
-        return co(function*() {
-          return {}
-        })
       }
 
       this.getProjects = function () {

@@ -161,8 +161,9 @@ export function putOSSFile(credential, internal, fileInfo, options) {
     return fileInfo;
   })
   .catch((err) => {
-    logger.error(err);
+    FileInfo.removeFromUnfinishedFileList(fileInfo.syncId);
     FileInfo.updateFileInfo(fileInfo, { status: FileInfo.FileInfoStatuses.failed });
+    throw err;
   });
 }
 
@@ -174,11 +175,17 @@ export function abortMitiUpload(credential, internal, fileInfo) {
         var result = yield ossClient.abortMultipartUpload(ckp.name, ckp.uploadId);
         yield FileInfo.updateFileInfo(fileInfo, {status:FileInfo.FileInfoStatuses.aborted});
         logger.info(`Abort putOSSObject name -->${ckp.name}, uploadId--> ${ckp.uploadId}, result-->${result}`);
-        return result;
+        return {success:true};
       }
     })
     .catch((err) => {
+      if(err.message.indexOf('ENOTFOUND') < 0){
+        logger.info(`Abort success with err:${err.message}`);
+        FileInfo.updateFileInfo(fileInfo, {status:FileInfo.FileInfoStatuses.aborted});
+        return {success:true}
+      }
       logger.error(err.message,err.stack);
-      FileInfo.setStatusToUnfinishedFileList(fileInfo.syncId, FileInfo.FileInfoStatuses.pausing);
-    });
+      return {success:false}
+      //FileInfo.setStatusToUnfinishedFileList(fileInfo.syncId, FileInfo.FileInfoStatuses.pausing);
+    })
 }

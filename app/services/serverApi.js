@@ -22,6 +22,7 @@ function GET(serverUrl, uri, query, option) {
   return new Promise(function (resolve, reject) {
     request(req, function (err, res, body) {
       if (err) {
+        logger.debug('err when getting',err, res, body);
         return reject(err);
       }
       try {
@@ -54,6 +55,7 @@ function POST(serverUrl, uri, body, option) {
   return new Promise(function (resolve, reject) {
     request(req, function (err, res, body) {
       if (err) {
+        logger.debug('err when postting',err, res, body);
         return reject(err);
       }
       try {
@@ -188,7 +190,11 @@ function getGenoProjects() {
   .then(checkStatusCode)
   .then(result => {
     return result.projects;
-  });
+  })
+  /*.catch(err=>{
+    logger.debug('123123123123123',err);
+    throw err;
+  })*/
 }
 /**
  *

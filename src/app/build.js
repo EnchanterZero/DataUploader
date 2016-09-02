@@ -20,7 +20,7 @@ var Utils = function () {
     return y + '年' + mo + '月' + d + '日 ' + h + ':' + mi + ':' + s;
   };
   var getFormatSpeedString = function (speed) {
-    speed = speed*1;
+    speed = speed * 1;
     if (speed < KB)
       return (speed).toFixed(2) + 'B/s';
     else if (speed <= MB)
@@ -29,7 +29,7 @@ var Utils = function () {
       return (speed / MB).toFixed(2) + 'MB/s';
   }
   var getFormatSizeString = function (size) {
-    size = size*1;
+    size = size * 1;
     if (size < KB)
       return (size).toFixed(2) + 'B';
     else if (size <= MB)
@@ -94,9 +94,16 @@ var Utils = function () {
             return o.syncId == item.syncId
           });
           if (newItem) {
-            if (newItem.status == 'pausing' || newItem.status == item.status) {
-              newItem['working'] = true;
-              newItem['workingStatus'] = item['workingStatus']
+            if (newItem.status == 'pausing' || (newItem.status == item.status)) {
+              if (newItem.status == 'failed' && newItem['workingStatus'] == 'resuming...') {
+                newItem.failedCount = item.failedCount + 1;
+              }
+              if (newItem.failedCount < 5) {
+                newItem['working'] = true;
+                newItem['workingStatus'] = item['workingStatus'];
+              }else {
+                newItem['working'] = false;
+              }
             } else {
               newItem['working'] = false;
             }
@@ -140,6 +147,8 @@ var Utils = function () {
             changingArr[it].working = newArr[it].working;
           if (newArr[it].workingStatus)
             changingArr[it].workingStatus = newArr[it].workingStatus;
+          if (newArr[it].failedCount)
+            changingArr[it].failedCount = newArr[it].failedCount;
 
         } else {
           changingArr[it] = newArr[it];
@@ -348,38 +357,7 @@ var utils = new Utils();
           logger.debug(err.message, err.stack);
         });
       }
-
-
-      // this.login = function (query, $scope, $rScope) {
-      //   return _BackendService.serverApi.authenticate(query.username, query.password)
-      //   .then(function (result) {
-      //     Session.set(LOCAL_BASE_TOKEN_KEY, result.data.token);
-      //     Session.set(LOCAL_CURRENT_USER, result.data.currentUser);
-      //     console.log('login success!!!!!!');
-      //     $rScope.showLogout = true;
-      //     var logoutLink = document.getElementById('logoutLink');
-      //     angular.element(logoutLink).attr('style','display:block');
-      //     $window.location.hash = '#/upload';
-      //   })
-      //   .catch(function (err) {
-      //     console.log(err);
-      //     $scope.errorMessage = err.message;
-      //     $scope.$apply();
-      //   });
-      // };
-      //
-      // this.logout = function ($rScope) {
-      //   return _BackendService.serverApi.deauthenticate()
-      //   .then(() => {
-      //     Session.set(LOCAL_BASE_TOKEN_KEY, null);
-      //     Session.set(LOCAL_CURRENT_USER, null);
-      //     console.log('logout success!!!!!!');
-      //     $rScope.showLogout = false;
-      //     var logoutLink = document.getElementById('logoutLink');
-      //     angular.element(logoutLink).attr('style','display:none');
-      //     $window.location.hash = '#/login';
-      //   });
-      // }
+      
       this.setUserToken = function () {
         var token = Session.get(LOCAL_BASE_TOKEN_KEY);
         return co(function*() {
@@ -453,27 +431,24 @@ var utils = new Utils();
       }
 
       this.resumeUploadFile = function (syncId) {
-        co(function*() {
+        return co(function*() {
           let r = yield _BackendService.fileUpload.uploadFiles(null, [], syncId, { afterDelete: false });
+          return r;
         })
         .catch((err) => {
           logger.error(err, err.stack);
+          throw err;
         });
-        return co(function*() {
-          return {}
-        })
       }
 
       this.abortUploadFile = function (syncId) {
-        co(function*() {
-          yield _BackendService.fileUpload.abortUploadFiles(syncId);
+        return co(function*() {
+          let result = yield _BackendService.fileUpload.abortUploadFiles(syncId);
+          return result;
         })
         .catch((err) => {
           logger.error(err, err.stack);
         });
-        return co(function*() {
-          return {}
-        })
       }
 
       this.getProjects = function () {
@@ -798,6 +773,12 @@ var utils = new Utils();
                 fileList: $scope.chosenFileList,
               })
             })
+            .catch(function (err) {
+              if(err.message.indexOf('ENOTFOUND') > 0){
+                err.message = '无法连接至网络,请检查网络连接后重试';
+              }
+              dialog.showMessageBox({type:'error',buttons:['确认'],title:'error',message:err.message},function () {})
+            })
             
           } else {
             $scope.message = '文件选择错误!请重新选择';
@@ -845,10 +826,16 @@ var utils = new Utils();
           if (o.syncId == sId) {
             o.working = true;
             o.workingStatus = 'resuming...';
+            if(o.status == 'failed'){
+              o.failedCount = 0;
+            }
           }
         });
         api.resumeUploadFile(sId).then(function () {
-        });
+        })
+        .catch(function (err) {
+          dialog.showMessageBox({type:'error',buttons:['确认'],title:'error',message:'上传失败,请稍后重试'},function () {})
+        })
       };
       $scope.abortUpload = function (sId) {
         var buttonIndex = dialog.showMessageBox({type:'question',buttons:['确认','取消'],title:'取消上传',message:'确认取消该文件的上传吗?'})
@@ -859,7 +846,11 @@ var utils = new Utils();
               o.workingStatus = 'aborting...';
             }
           });
-          api.abortUploadFile(sId).then(function () {
+          api.abortUploadFile(sId).then(function (result) {
+            logger.debug(result);
+            if(!result.success){
+              dialog.showMessageBox({type:'error',buttons:['确认'],title:'error',message:'取消上传失败,请检查网络连接'},function () {})
+            }
           });
         }
     

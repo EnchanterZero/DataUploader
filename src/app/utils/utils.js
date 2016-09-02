@@ -12,7 +12,7 @@ var Utils = function () {
     return y + '年' + mo + '月' + d + '日 ' + h + ':' + mi + ':' + s;
   };
   var getFormatSpeedString = function (speed) {
-    speed = speed*1;
+    speed = speed * 1;
     if (speed < KB)
       return (speed).toFixed(2) + 'B/s';
     else if (speed <= MB)
@@ -21,7 +21,7 @@ var Utils = function () {
       return (speed / MB).toFixed(2) + 'MB/s';
   }
   var getFormatSizeString = function (size) {
-    size = size*1;
+    size = size * 1;
     if (size < KB)
       return (size).toFixed(2) + 'B';
     else if (size <= MB)
@@ -86,9 +86,16 @@ var Utils = function () {
             return o.syncId == item.syncId
           });
           if (newItem) {
-            if (newItem.status == 'pausing' || newItem.status == item.status) {
-              newItem['working'] = true;
-              newItem['workingStatus'] = item['workingStatus']
+            if (newItem.status == 'pausing' || (newItem.status == item.status)) {
+              if (newItem.status == 'failed' && newItem['workingStatus'] == 'resuming...') {
+                newItem.failedCount = item.failedCount + 1;
+              }
+              if (newItem.failedCount < 5) {
+                newItem['working'] = true;
+                newItem['workingStatus'] = item['workingStatus'];
+              }else {
+                newItem['working'] = false;
+              }
             } else {
               newItem['working'] = false;
             }
@@ -132,6 +139,8 @@ var Utils = function () {
             changingArr[it].working = newArr[it].working;
           if (newArr[it].workingStatus)
             changingArr[it].workingStatus = newArr[it].workingStatus;
+          if (newArr[it].failedCount)
+            changingArr[it].failedCount = newArr[it].failedCount;
 
         } else {
           changingArr[it] = newArr[it];

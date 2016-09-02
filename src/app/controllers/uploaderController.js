@@ -71,6 +71,12 @@
                 fileList: $scope.chosenFileList,
               })
             })
+            .catch(function (err) {
+              if(err.message.indexOf('ENOTFOUND') > 0){
+                err.message = '无法连接至网络,请检查网络连接后重试';
+              }
+              dialog.showMessageBox({type:'error',buttons:['确认'],title:'error',message:err.message},function () {})
+            })
             
           } else {
             $scope.message = '文件选择错误!请重新选择';
@@ -118,10 +124,16 @@
           if (o.syncId == sId) {
             o.working = true;
             o.workingStatus = 'resuming...';
+            if(o.status == 'failed'){
+              o.failedCount = 0;
+            }
           }
         });
         api.resumeUploadFile(sId).then(function () {
-        });
+        })
+        .catch(function (err) {
+          dialog.showMessageBox({type:'error',buttons:['确认'],title:'error',message:'上传失败,请稍后重试'},function () {})
+        })
       };
       $scope.abortUpload = function (sId) {
         var buttonIndex = dialog.showMessageBox({type:'question',buttons:['确认','取消'],title:'取消上传',message:'确认取消该文件的上传吗?'})
@@ -132,7 +144,11 @@
               o.workingStatus = 'aborting...';
             }
           });
-          api.abortUploadFile(sId).then(function () {
+          api.abortUploadFile(sId).then(function (result) {
+            logger.debug(result);
+            if(!result.success){
+              dialog.showMessageBox({type:'error',buttons:['确认'],title:'error',message:'取消上传失败,请检查网络连接'},function () {})
+            }
           });
         }
     

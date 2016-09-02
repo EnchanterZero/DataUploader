@@ -46,7 +46,7 @@
             </button>
           </td>
           <td>
-            <button class="btn btn-sm btn-primary" ng-disabled="item.status != 'paused' || item.status == 'failed' || item.working"
+            <button class="btn btn-sm btn-primary" ng-disabled="item.status != 'paused' && item.status != 'failed' || item.working"
                     ng-click="uploadControllerScope.resumeUpload(item.syncId)">继续
             </button>
           </td>

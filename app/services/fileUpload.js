@@ -21,7 +21,7 @@ function uploadOneFile(fileInfo, options) {
   let data = {
     size: fileInfo.size,
     fileName: fileInfo.name,
-    syncId:fileInfo.syncId,
+    syncId: fileInfo.syncId,
   };
   return co(function*() {
     //create file and ask for token if it it a new upload
@@ -42,9 +42,10 @@ function uploadOneFile(fileInfo, options) {
     if (fileInfo.progress == 1) {
       //yield serverApi.updateUploadPercentage(fileInfo.projectId, fileInfo.fileId, { percent: 1 })
     }
-  }).catch(err => {
-    logger.debug(err.message, err.stack,err);
   })
+  /*.catch(err => {
+    logger.debug(err.message, err.stack, err);
+  })*/
 }
 
 /**
@@ -77,7 +78,7 @@ function uploadFiles(project, filePaths, sId, options) {
         checkPoint: '',
         status: FileInfo.FileInfoStatuses.uploading,
         fileId: '',
-        ossPath:'',
+        ossPath: '',
         syncId: syncId,
         userId: currentUser.id,
         uploadType: 'test',
@@ -118,6 +119,7 @@ function uploadFiles(project, filePaths, sId, options) {
       }
     }).catch(err => {
       logger.error(err, err.stack);
+      throw err;
     });
   }
 }
@@ -140,10 +142,10 @@ function abortUploadFiles(syncId) {
     //if (result) {
     logger.debug('abort upload---------->' + syncId);
     var fileInfo = yield FileInfo.getFileInfoBySyncId(syncId);
-    let ossCredential = yield serverApi.getOSSToken(fileInfo.projectId,fileInfo.fileId);
+    let ossCredential = yield serverApi.getOSSToken(fileInfo.projectId, fileInfo.fileId);
     //abort the upload
-    yield OSS.abortMitiUpload(ossCredential, false, fileInfo);
-    //}
+    let result = yield OSS.abortMitiUpload(ossCredential, false, fileInfo);
+    return result;
 
 
   }).catch(err => {
