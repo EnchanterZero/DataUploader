@@ -28,7 +28,7 @@ function GET(serverUrl, uri, query, option) {
       try {
         body = JSON.parse(body);
         if (body.code !== 200) {
-          return reject(body.message);
+          return reject(body);
         }
         resolve(body);
       } catch (err) {
