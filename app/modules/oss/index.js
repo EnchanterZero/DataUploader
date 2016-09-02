@@ -176,6 +176,9 @@ export function abortMitiUpload(credential, internal, fileInfo) {
         yield FileInfo.updateFileInfo(fileInfo, {status:FileInfo.FileInfoStatuses.aborted});
         logger.info(`Abort putOSSObject name -->${ckp.name}, uploadId--> ${ckp.uploadId}, result-->${result}`);
         return {success:true};
+      }else{
+        yield FileInfo.updateFileInfo(fileInfo, {status:FileInfo.FileInfoStatuses.aborted});
+        return {success:true}
       }
     })
     .catch((err) => {
