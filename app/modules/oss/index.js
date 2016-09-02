@@ -134,6 +134,7 @@ export function putOSSFile(credential, internal, fileInfo, options) {
               progress: 1,
               speed: BLOCK_SIZE / ((end - start) / 1000),
               checkPointTime: end,
+              status: FileInfo.FileInfoStatuses.finished,
             }
             Object.assign(fileInfo,fields);
             yield FileInfo.updateFileInfo(fileInfo, fields);

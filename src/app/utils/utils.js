@@ -12,6 +12,7 @@ var Utils = function () {
     return y + '年' + mo + '月' + d + '日 ' + h + ':' + mi + ':' + s;
   };
   var getFormatSpeedString = function (speed) {
+    speed = speed*1;
     if (speed < KB)
       return (speed).toFixed(2) + 'B/s';
     else if (speed <= MB)
@@ -20,6 +21,7 @@ var Utils = function () {
       return (speed / MB).toFixed(2) + 'MB/s';
   }
   var getFormatSizeString = function (size) {
+    size = size*1;
     if (size < KB)
       return (size).toFixed(2) + 'B';
     else if (size <= MB)
