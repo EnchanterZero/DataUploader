@@ -8,6 +8,5 @@ const models = sequelize.models;
 
 FileInfo.associate(models);
 Config.associate(models);
-Status.associate(models);
 
 export default models;
