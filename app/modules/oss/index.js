@@ -182,7 +182,7 @@ export function abortMitiUpload(credential, internal, fileInfo) {
       }
     })
     .catch((err) => {
-      if(err.message.indexOf('ENOTFOUND') < 0){
+      if(err.message.indexOf('ENOTFOUND') < 0 && err.message.indexOf('ENOENT') < 0){
         logger.info(`Abort success with err:${err.message}`);
         FileInfo.updateFileInfo(fileInfo, {status:FileInfo.FileInfoStatuses.aborted});
         return {success:true}

@@ -774,7 +774,7 @@ var utils = new Utils();
               })
             })
             .catch(function (err) {
-              if(err.message.indexOf('ENOTFOUND') > 0){
+              if(err.message.indexOf('ENOTFOUND') > 0 ||  err.message.indexOf('ENOENT') > 0){
                 err.message = '无法连接至网络,请检查网络连接后重试';
               }
               dialog.showMessageBox({type:'error',buttons:['确认'],title:'error',message:err.message},function () {})
