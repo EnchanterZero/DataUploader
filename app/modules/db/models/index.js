@@ -3,7 +3,6 @@ import sequelize from '../sequelize';
 
 export const FileInfo = require('./fileinfo').create(sequelize, Sequelize);
 export const Config = require('./config').create(sequelize, Sequelize);
-export const Status = require('./status').create(sequelize, Sequelize);
 
 const models = sequelize.models;
 
