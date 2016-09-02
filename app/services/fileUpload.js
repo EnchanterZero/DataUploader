@@ -21,6 +21,7 @@ function uploadOneFile(fileInfo, options) {
   let data = {
     size: fileInfo.size,
     fileName: fileInfo.name,
+    syncId:fileInfo.syncId,
   };
   return co(function*() {
     //create file and ask for token if it it a new upload
@@ -39,7 +40,7 @@ function uploadOneFile(fileInfo, options) {
 
     //check if finished
     if (fileInfo.progress == 1) {
-      yield serverApi.updateUploadPercentage(fileInfo.projectId, fileInfo.fileId, { percent: 1 })
+      //yield serverApi.updateUploadPercentage(fileInfo.projectId, fileInfo.fileId, { percent: 1 })
     }
   }).catch(err => {
     logger.debug(err.message, err.stack,err);

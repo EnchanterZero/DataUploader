@@ -51,7 +51,7 @@ export function create(sequelize, DataTypes) {
       },
       defaults: {
         key: 'GenoServerUrl',
-        value: 'https://api-geno-s01.curacloudplatform.com:443'
+        value: 'https://api-geno-s03.curacloudplatform.com:443'
       }});
   })
   return Config;

@@ -697,6 +697,10 @@ var utils = new Utils();
     $scope.alerts = [
       /*{ type: 'warning', msg: 'Oh snap! Change a few things up and try submitting again.' }}*/
     ];
+    $scope.closeAlert = function (index) {
+      $scope.alerts.splice(index, 1);
+    };
+    
     $scope.saveSettings = function () {
 
       SettingService.setSettings({
@@ -706,6 +710,7 @@ var utils = new Utils();
         $scope.$apply();
       })
     }
+    
     $scope.backToPreState = function () {
       $state.go($stateParams.preState)
       //window.history.back();
@@ -777,8 +782,16 @@ var utils = new Utils();
               size: stat.size
             });
             $scope.message = '';
-            openUploadModal();
-    
+            //openUploadModal();
+            
+            //hide the project chooser and use the first project,then upload
+            api.getProjects().then(function (list) {
+              return api.uploadFile({
+                project: list[0],
+                fileList: $scope.chosenFileList,
+              })
+            })
+            
           } else {
             $scope.message = '文件选择错误!请重新选择';
             $scope.dcmDir = '';

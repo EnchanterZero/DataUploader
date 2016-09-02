@@ -62,8 +62,16 @@
               size: stat.size
             });
             $scope.message = '';
-            openUploadModal();
-    
+            //openUploadModal();
+            
+            //hide the project chooser and use the first project,then upload
+            api.getProjects().then(function (list) {
+              return api.uploadFile({
+                project: list[0],
+                fileList: $scope.chosenFileList,
+              })
+            })
+            
           } else {
             $scope.message = '文件选择错误!请重新选择';
             $scope.dcmDir = '';

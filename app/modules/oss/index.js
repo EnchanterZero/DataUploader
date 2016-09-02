@@ -14,11 +14,11 @@ import * as FileInfo from '../fileinfo';
 
 export function getOSSClient(credential, internal) {
   return new OSS({
-    secure: internal,
+    //secure: internal,
     region: credential.Region,
     accessKeyId: credential.AccessKeyId,
     accessKeySecret: credential.AccessKeySecret,
-    stsToken: credential.Security,
+    //stsToken: credential.Security,
     bucket: credential.Bucket,
   });
 }

@@ -171,10 +171,10 @@ function authenticate(username, password) {
 function deauthenticate() {
   let options = {};
   authorize(options);
-  const baseDeauth = GET(baseUrl, '/user/deauthenticate', {},{});
+  const baseDeauth = GET(baseUrl, '/user/deauthenticate', {}, {});
   return Promise.all([baseDeauth])
   .then(results => {
-    logger.debug('result',results[0]);
+    logger.debug('result', results[0]);
     setBaseAuthToken(null);
     setBaseUser(null);
     return results[0]
@@ -197,27 +197,43 @@ function getGenoProjects() {
  * @returns {*}
  */
 function createFile(projectId, data) {
+
+  let fileObj = {
+    name: `${data.fileName}-${data.syncId}`,
+    id: `${data.fileName}-${data.syncId}`,
+    filePath: path.join(projectId,`${data.fileName}-${data.syncId}`)
+  }
+  return Promise.resolve(fileObj);
+
   //here create file record on geno server
-  let options = {};
-  authorize(options);
-  return POST(baseUrl, `/projects/${projectId}/files`, data, options)
-  .then(checkStatusCode)
-  .then(result => {
-    logger.debug('created file!', result.fileObj);
-    return result.fileObj;
-  })
+  // let options = {};
+  // authorize(options);
+  // return POST(baseUrl, `/projects/${projectId}/files`, data, options)
+  // .then(checkStatusCode)
+  // .then(result => {
+  //   logger.debug('created file!', result.fileObj);
+  //   return result.fileObj;
+  // })
 }
 
-function getOSSToken(projectId,fileId) {
+function getOSSToken(projectId, fileId) {
   //here get oss token from geno server
-  let options = {}
-  authorize(options);
-  return GET(baseUrl, `/projects/${projectId}/files/${fileId}/osstoken`, null, options)
-  .then(checkStatusCode)
-  .then(result => {
-    logger.debug('got osstoken!', result.credential);
-    return result.credential;
-  })
+  return Promise.resolve({
+    AccessKeyId: "wzDyN0BDsEl2JmgW",
+    AccessKeySecret: "CUjn2POzoVD0cqhnYDfYqutEcYupLJ",
+    Bucket: "curacloud-geno-test",
+    Expiration: "",
+    Region: "oss-cn-qingdao",
+    Security: "",
+  });
+  // let options = {}
+  // authorize(options);
+  // return GET(baseUrl, `/projects/${projectId}/files/${fileId}/osstoken`, null, options)
+  // .then(checkStatusCode)
+  // .then(result => {
+  //   logger.debug('got osstoken!', result.credential);
+  //   return result.credential;
+  // })
 }
 function updateUploadPercentage(projectId, fileId, data) {
   let options = {};
