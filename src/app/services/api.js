@@ -21,6 +21,16 @@
           Session.set(LOCAL_CURRENT_USER, result.data.currentUser);
           AuthService.loadCredentials();
           logger.debug('login success!!!!!!');
+          //restore username and password
+          var s = {
+            username: query.username,
+            password: query.password,
+            rememberPassword: $scope.rememberPassword ? '1' : '0',
+            autoLogin: $scope.autoLogin ? '1' : '0',
+          }
+          api.setSettings({settings:s}).then(function (result) {
+            $rootScope.$settings = result;
+          })
           $scope.alerts.push({ type: 'success', msg: 'Login success.Jumping into main page...' });
           $scope.$apply();
           $timeout(function () {
@@ -29,7 +39,7 @@
             DomChangeService.changeToUsingStyle();
             //jump to main page
             $state.go('upload');
-          }, 1500);
+          }, 1000);
         })
         .catch(function (err) {
           logger.debug(err);
@@ -44,6 +54,7 @@
         .then(() => {
           Session.set(LOCAL_BASE_TOKEN_KEY, null);
           Session.set(LOCAL_CURRENT_USER, null);
+          AuthService.loadCredentials();
           logger.debug('logout success!!!!!!');
           $rScope.showLogout = false;
           DomChangeService.changeToLoginStyle();

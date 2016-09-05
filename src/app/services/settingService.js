@@ -13,9 +13,10 @@
     var settingService = this;
 
     this.loadSettings = function () {
-      api.getSettings()
+      return api.getSettings()
       .then(function (result) {
         $rootScope.$settings = result.settings;
+        return result.settings;
       })
     }
 

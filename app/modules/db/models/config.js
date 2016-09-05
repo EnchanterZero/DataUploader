@@ -54,5 +54,45 @@ export function create(sequelize, DataTypes) {
         value: 'https://api-geno-s03.curacloudplatform.com:443'
       }});
   })
+  .then(()=> {
+    return Config.findOrCreate({
+      where: {
+        key: 'username',
+      },
+      defaults: {
+        key: 'username',
+        value: ''
+      }});
+  })
+  .then(()=> {
+    return Config.findOrCreate({
+      where: {
+        key: 'password',
+      },
+      defaults: {
+        key: 'password',
+        value: ''
+      }});
+  })
+  .then(()=> {
+    return Config.findOrCreate({
+      where: {
+        key: 'autoLogin',
+      },
+      defaults: {
+        key: 'autoLogin',
+        value: '0'
+      }});
+  })
+  .then(()=> {
+    return Config.findOrCreate({
+      where: {
+        key: 'rememberPassword',
+      },
+      defaults: {
+        key: 'rememberPassword',
+        value: '0'
+      }});
+  })
   return Config;
 };

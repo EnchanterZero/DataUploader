@@ -4,6 +4,9 @@ var fs = require('fs');
 const electron = require('electron')
 // Module to control application life.
 const app = electron.app
+const Menu = electron.Menu;
+const MenuItem = electron.MenuItem;
+const Tray = electron.Tray;
 
 //initConfig(app);
 
@@ -27,11 +30,31 @@ function createWindow () {
   // mainWindow.webContents.openDevTools()
 
   // Emitted when the window is closed.
+  mainWindow.on('close', function (event) {
+    // Dereference the window object, usually you would store windows
+    // in an array if your app supports multi windows, this is the time
+    // when you should delete the corresponding element.
+    //mainWindow = null
+    //event.returnValue = false;
+    event.preventDefault()
+    mainWindow.hide();
+    appIcon = new Tray('1.png');
+    var contextMenu = new Menu();
+    contextMenu.append(new MenuItem({ label: '显示窗口', click: function() { mainWindow.show();appIcon.destroy() } }));
+    contextMenu.append(new MenuItem({ label: '关闭应用', click: function() { appIcon.destroy();mainWindow.destroy();app.quit(12138) } }));
+
+    appIcon.setContextMenu(contextMenu);
+    appIcon.setToolTip('DataUploader');
+    // appIcon.on('click',function () {
+    //
+    //   appIcon.destroy()
+    // })
+  })
   mainWindow.on('closed', function () {
     // Dereference the window object, usually you would store windows
     // in an array if your app supports multi windows, this is the time
     // when you should delete the corresponding element.
-    mainWindow = null
+    //mainWindow = null
   })
 }
 
@@ -44,9 +67,9 @@ app.on('ready', createWindow)
 app.on('window-all-closed', function () {
   // On OS X it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
+  // if (process.platform !== 'darwin') {
+  //   app.quit()
+  // }
 })
 
 app.on('activate', function () {
@@ -61,6 +84,11 @@ app.on('activate', function () {
 app.on('quit', function () {
   console.log('app will quit!!!!!!');
 })
+app.on('before-quit', function () {
+  console.log('before quit!!!!!!');
+  mainWindow.destroy();
+})
+
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.

@@ -190,11 +190,7 @@ function getGenoProjects() {
   .then(checkStatusCode)
   .then(result => {
     return result.projects;
-  })
-  /*.catch(err=>{
-    logger.debug('123123123123123',err);
-    throw err;
-  })*/
+  });
 }
 /**
  *
