@@ -71,7 +71,7 @@ export function create(sequelize, DataTypes) {
       allowNull: true,
     },
     checkPoint: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(1024 * 1024 * 500),
       defaultValue: '',
       allowNull: true,
     },

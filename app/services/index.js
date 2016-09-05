@@ -34,7 +34,7 @@ function getConfig() {
 }
 function setConfig(settings) {
   console.log('set Upload Configs from database...');
-  $settings = settings;
+  Object.assign($settings, settings);
   return co(function* () {
     yield Config.setConfig($settings);
     serverApi.setServerUrl($settings[Config.CONFIG_FIELD.GenoServerUrl]);

@@ -69,7 +69,6 @@ export function putOSSFile(credential, internal, fileInfo, options) {
               //let lastRecord = yield FileInfo.getFileInfoBySyncId(fileInfo.syncId);
               let lastStatus = FileInfo.getOneFromUnfinishedFileList(fileInfo.syncId).status;
               //store file upload info
-              cpt.doneParts = [];
               let setField = {};
               setField.progress = p;
               setField.checkPoint = JSON.stringify(cpt);
@@ -134,6 +133,7 @@ export function putOSSFile(credential, internal, fileInfo, options) {
               progress: 1,
               speed: BLOCK_SIZE / ((end - start) / 1000),
               checkPointTime: end,
+              status: FileInfo.FileInfoStatuses.finished,
             }
             Object.assign(fileInfo,fields);
             yield FileInfo.updateFileInfo(fileInfo, fields);

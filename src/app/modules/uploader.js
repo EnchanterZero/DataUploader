@@ -15,8 +15,8 @@
   app.config(['$stateProvider', function ($stateProvider) {
     logger.debug('app.config');
   }])
-  .run(['Session', 'AuthService', 'SettingService', '$state', '$timeout', '$interval', '$state', '$rootScope', 'api',
-    function (Session, AuthService, SettingService, $state, $timeout, $interval, $state, $rootScope, api) {
+  .run(['Session', 'AuthService', 'SettingService', '$state', '$timeout', '$interval', '$state', '$rootScope','api',
+    function (Session, AuthService, SettingService, $state, $timeout, $interval, $state, $rootScope,api) {
 
       logger.debug('app.run');
 
@@ -53,15 +53,20 @@
         /**
          * get settings
          */
-        SettingService.loadSettings();
-
-        /**
-         * auth check
-         */
-        //$window.alert('请先登录!');
         $timeout(function () {
-          AuthService.gotoLogin();
-        }, 0);
+          logger.debug('getting settings......');
+          SettingService.loadSettings()
+          .then(function (result) {
+            /**
+             * auth check
+             */
+            $timeout(function () {
+              logger.debug('go to login page......');
+              AuthService.gotoLogin();
+            }, 500);
+          });
+        },0)
+        
 
       }catch (err){
         logger.debug(err,err.stack);

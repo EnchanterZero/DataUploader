@@ -19,7 +19,12 @@
     this.gotoLogin = function () {
       this.useCredentials(null, null);
       var currentState = $state.current.name;
-      $state.go('login');
+      if($rootScope.$settings.autoLogin == 1){
+        $state.go('login',{isAutoLogin:true},{reload: true});
+      }else{
+        $state.go('login',{},{reload: true});
+      }
+      
     }
 
     this.loadCredentials = function () {

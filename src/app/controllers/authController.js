@@ -3,8 +3,8 @@
  */
 (function () {
 
-  angular.module('Uploader.views').controller('AuthController', ['$scope', '$rootScope', 'api', 'serverUrl', authController]);
-  function authController($scope, $rootScope, api, serverUrl) {
+  angular.module('Uploader.views').controller('AuthController', ['$scope', '$rootScope', 'api', '$stateParams', '$timeout', authController]);
+  function authController($scope, $rootScope, api, $stateParams, $timeout) {
 
     //clear upload page state
     $rootScope.uploadControllerScope = null;
@@ -32,6 +32,28 @@
         $scope.loginButton = '登录';
       }
     };
+    $scope.clickAutoLogin = function () {
+      $timeout(function () {
+        //logger.debug('$scope.autoLogin:', $scope.autoLogin, '$scope.rememberPassword:', $scope.rememberPassword)
+        if ($scope.autoLogin == true) {
+          $scope.rememberPassword = true;
+        }
+      }, 30)
+    }
+    logger.debug('$stateParams', $stateParams,$rootScope.$settings)
+    if ($rootScope.$settings) {
+      $scope.username = $rootScope.$settings.username;
+      $scope.rememberPassword = $rootScope.$settings.rememberPassword == '1' ? true : false;
+      $scope.autoLogin = $rootScope.$settings.autoLogin == '1' ? true : false;
+      if ($scope.rememberPassword == 1) {
+        $scope.password = $rootScope.$settings.password;
+      }
+    }
+
+    //aoto login
+    if ($stateParams.isAutoLogin === true) {
+      $scope.doLogin();
+    }
   }
 
 })();

@@ -20,6 +20,7 @@
       .state('login', {
         url: "/login",
         templateUrl: './views/dashboard/auth.html',
+        params:{'isAutoLogin':{}}
       })
       .state('settings', {
         url: "/settings",
