@@ -54,6 +54,7 @@
         .then(() => {
           Session.set(LOCAL_BASE_TOKEN_KEY, null);
           Session.set(LOCAL_CURRENT_USER, null);
+          AuthService.loadCredentials();
           logger.debug('logout success!!!!!!');
           $rScope.showLogout = false;
           DomChangeService.changeToLoginStyle();
