@@ -21,6 +21,7 @@ function uploadOneFile(fileInfo, options) {
   let data = {
     size: fileInfo.size,
     fileName: fileInfo.name,
+    syncId: fileInfo.syncId,
   };
   return co(function*() {
     //create file and ask for token if it it a new upload
