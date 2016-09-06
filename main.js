@@ -38,10 +38,10 @@ function createWindow () {
     //event.returnValue = false;
     event.preventDefault()
     mainWindow.hide();
-    appIcon = new Tray('1.png');
+    appIcon = new Tray(`${__dirname}/AppIcon.png`);
     var contextMenu = new Menu();
     contextMenu.append(new MenuItem({ label: '显示窗口', click: function() { mainWindow.show();appIcon.destroy() } }));
-    contextMenu.append(new MenuItem({ label: '关闭应用', click: function() { appIcon.destroy();mainWindow.destroy();app.quit(12138) } }));
+    contextMenu.append(new MenuItem({ label: '关闭应用', click: function() { appIcon.destroy();mainWindow.destroy();app.quit() } }));
 
     appIcon.setContextMenu(contextMenu);
     appIcon.setToolTip('DataUploader');

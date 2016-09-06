@@ -211,8 +211,8 @@ var utils = new Utils();
   app.config(['$stateProvider', function ($stateProvider) {
     logger.debug('app.config');
   }])
-  .run(['Session', 'AuthService', 'SettingService', '$state', '$timeout', '$interval', '$state', '$rootScope', 'api',
-    function (Session, AuthService, SettingService, $state, $timeout, $interval, $state, $rootScope, api) {
+  .run(['Session', 'AuthService', 'SettingService', '$state', '$timeout', '$interval', '$state', '$rootScope','api',
+    function (Session, AuthService, SettingService, $state, $timeout, $interval, $state, $rootScope,api) {
 
       logger.debug('app.run');
 
@@ -249,15 +249,20 @@ var utils = new Utils();
         /**
          * get settings
          */
-        SettingService.loadSettings();
-
-        /**
-         * auth check
-         */
-        //$window.alert('请先登录!');
         $timeout(function () {
-          AuthService.gotoLogin();
-        }, 0);
+          logger.debug('getting settings......');
+          SettingService.loadSettings()
+          .then(function (result) {
+            /**
+             * auth check
+             */
+            $timeout(function () {
+              logger.debug('go to login page......');
+              AuthService.gotoLogin();
+            }, 500);
+          });
+        },0)
+        
 
       }catch (err){
         logger.debug(err,err.stack);
@@ -296,6 +301,7 @@ var utils = new Utils();
       .state('login', {
         url: "/login",
         templateUrl: './views/dashboard/auth.html',
+        params:{'isAutoLogin':{}}
       })
       .state('settings', {
         url: "/settings",
@@ -327,6 +333,16 @@ var utils = new Utils();
           Session.set(LOCAL_CURRENT_USER, result.data.currentUser);
           AuthService.loadCredentials();
           logger.debug('login success!!!!!!');
+          //restore username and password
+          var s = {
+            username: query.username,
+            password: query.password,
+            rememberPassword: $scope.rememberPassword ? '1' : '0',
+            autoLogin: $scope.autoLogin ? '1' : '0',
+          }
+          api.setSettings({settings:s}).then(function (result) {
+            $rootScope.$settings = result;
+          })
           $scope.alerts.push({ type: 'success', msg: 'Login success.Jumping into main page...' });
           $scope.$apply();
           $timeout(function () {
@@ -335,7 +351,7 @@ var utils = new Utils();
             DomChangeService.changeToUsingStyle();
             //jump to main page
             $state.go('upload');
-          }, 1500);
+          }, 1000);
         })
         .catch(function (err) {
           logger.debug(err);
@@ -350,6 +366,7 @@ var utils = new Utils();
         .then(() => {
           Session.set(LOCAL_BASE_TOKEN_KEY, null);
           Session.set(LOCAL_CURRENT_USER, null);
+          AuthService.loadCredentials();
           logger.debug('logout success!!!!!!');
           $rScope.showLogout = false;
           DomChangeService.changeToLoginStyle();
@@ -504,7 +521,12 @@ var utils = new Utils();
     this.gotoLogin = function () {
       this.useCredentials(null, null);
       var currentState = $state.current.name;
-      $state.go('login');
+      if($rootScope.$settings.autoLogin == 1){
+        $state.go('login',{isAutoLogin:true},{reload: true});
+      }else{
+        $state.go('login',{},{reload: true});
+      }
+      
     }
 
     this.loadCredentials = function () {
@@ -614,9 +636,10 @@ var utils = new Utils();
     var settingService = this;
 
     this.loadSettings = function () {
-      api.getSettings()
+      return api.getSettings()
       .then(function (result) {
         $rootScope.$settings = result.settings;
+        return result.settings;
       })
     }
 
@@ -639,8 +662,8 @@ var utils = new Utils();
  */
 (function () {
 
-  angular.module('Uploader.views').controller('AuthController', ['$scope', '$rootScope', 'api', 'serverUrl', authController]);
-  function authController($scope, $rootScope, api, serverUrl) {
+  angular.module('Uploader.views').controller('AuthController', ['$scope', '$rootScope', 'api', '$stateParams', '$timeout', authController]);
+  function authController($scope, $rootScope, api, $stateParams, $timeout) {
 
     //clear upload page state
     $rootScope.uploadControllerScope = null;
@@ -668,6 +691,28 @@ var utils = new Utils();
         $scope.loginButton = '登录';
       }
     };
+    $scope.clickAutoLogin = function () {
+      $timeout(function () {
+        //logger.debug('$scope.autoLogin:', $scope.autoLogin, '$scope.rememberPassword:', $scope.rememberPassword)
+        if ($scope.autoLogin == true) {
+          $scope.rememberPassword = true;
+        }
+      }, 30)
+    }
+    logger.debug('$stateParams', $stateParams,$rootScope.$settings)
+    if ($rootScope.$settings) {
+      $scope.username = $rootScope.$settings.username;
+      $scope.rememberPassword = $rootScope.$settings.rememberPassword == '1' ? true : false;
+      $scope.autoLogin = $rootScope.$settings.autoLogin == '1' ? true : false;
+      if ($scope.rememberPassword == 1) {
+        $scope.password = $rootScope.$settings.password;
+      }
+    }
+
+    //aoto login
+    if ($stateParams.isAutoLogin === true) {
+      $scope.doLogin();
+    }
   }
 
 })();
