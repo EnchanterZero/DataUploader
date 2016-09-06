@@ -1,19 +1,26 @@
 var path = require('path');
 var fs = require('fs');
-
+if (require('electron-squirrel-startup')) return;
+const handleSquirrelEvent = require('./squirrelEventHandler').handleSquirrelEvent;
 const electron = require('electron')
 // Module to control application life.
-const {dialog} = require('electron')
+
 const app = electron.app
+// this should be placed at top of main.js to handle setup events quickly
+if (handleSquirrelEvent(app)) {
+  // squirrel event handled and app will exit in 1000ms, so don't do anything else
+  return;
+}
+
+
+const {dialog} = electron;
 const Menu = electron.Menu;
 const MenuItem = electron.MenuItem;
 const Tray = electron.Tray;
+// Module to create native browser window.
+const BrowserWindow = electron.BrowserWindow;
 console.log('platform: ',process.platform);
 
-//initConfig(app);
-
-// Module to create native browser window.
-const BrowserWindow = electron.BrowserWindow
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.

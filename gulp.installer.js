@@ -1,13 +1,22 @@
 var gulp = require('gulp');
-var winInstaller = require('electron-windows-installer');
- 
-winInstaller({
-	appDirectory: 'd:\\GenoDataUploader-win32-x64',
-	outputDirectory: 'd:\\release',
-	arch: 'x64',
-	authors: "CuraCloudCorp",
-	iconUrl: "https://www.curacloudcorp.com/favicon.ico",
-}).then((e) => {console.log(e)} );
+//var winInstaller = require('electron-windows-installer');
+var winInstaller = require('electron-winstaller');
+
+var options = {
+  appDirectory: `${__dirname}\\release\\GenoDataUploader-win32-x64`,
+  outputDirectory: `${__dirname}\\release\\installer\\GenoDataUploader-win32-x64`,
+  arch: 'x64',
+  authors: "CuraCloudCorp",
+  iconUrl: "https://www.curacloudcorp.com/favicon.ico",
+  setupIcon:`${__dirname}\\AppIcon.ico`,
+}
+// winInstaller(options)
+// .then((e) => {
+//   if(e){console.log(e);return;}
+//   console.log(`Successfully created package at ${options.outputDirectory}`)
+// });
+winInstaller.createWindowsInstaller(options)
+.then(() => console.log(`Successfully created package at ${options.outputDirectory}`), (e) => console.log(`No dice: ${e.message}`))
 
 // var installer = require('electron-installer-windows')
 
