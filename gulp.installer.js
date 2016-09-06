@@ -4,7 +4,7 @@ var fs = require('fs');
 //var winInstaller = require('electron-windows-installer');
 var winInstaller = require('electron-winstaller');
 
-var packageJsonObj=JSON.parse(fs.readFileSync(path.join(__dirname,'..','package.json')));
+var packageJsonObj=JSON.parse(fs.readFileSync('package.json'));
 var options = {
   appDirectory: `${__dirname}\\release\\${packageJsonObj.name}-win32-x64`,
   outputDirectory: `${__dirname}\\release\\installer\\${packageJsonObj.name}-win32-x64`,
