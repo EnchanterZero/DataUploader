@@ -36,13 +36,13 @@
         <div class="form-group col-sm-offset-2">
           <div class="col-sm-offset-2 col-sm-10">
             <label for="remember" class="col-sm-2 control-label">记住密码</label>
-            <div class="col-sm-3" style="margin-top: -5px">
-              <input type="checkbox" checked style="border:none;box-shadow:none;" class="form-control" id="remember"
-                     placeholder="" ng-model="rememberPassword">
+            <div class="col-sm-3" style="margin-top: 5px">
+              <input type="checkbox" id="remember"
+                     ng-click="clickRememberPwd()" ng-model="rememberPassword">
             </div>
             <label for="auto" class="col-sm-2 control-label">自动登录</label>
-            <div class="col-sm-3" style="margin-top: -5px">
-              <input type="checkbox" checked style="border:none;box-shadow:none;" class="form-control" id="auto"
+            <div class="col-sm-3" style="margin-top: 5px">
+              <input type="checkbox" id="auto"
                      ng-click="clickAutoLogin()" ng-model="autoLogin">
             </div>
           </div>

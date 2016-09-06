@@ -7,6 +7,7 @@ const app = electron.app
 const Menu = electron.Menu;
 const MenuItem = electron.MenuItem;
 const Tray = electron.Tray;
+console.log('platform: ',process.platform);
 
 //initConfig(app);
 
@@ -36,19 +37,25 @@ function createWindow () {
     // when you should delete the corresponding element.
     //mainWindow = null
     //event.returnValue = false;
-    event.preventDefault()
+    event.preventDefault();
     mainWindow.hide();
     appIcon = new Tray(`${__dirname}/AppIcon16px.png`);
     var contextMenu = new Menu();
     contextMenu.append(new MenuItem({ label: '显示窗口', click: function() { mainWindow.show();appIcon.destroy() } }));
     contextMenu.append(new MenuItem({ label: '关闭应用', click: function() { appIcon.destroy();mainWindow.destroy();app.quit() } }));
-
     appIcon.setContextMenu(contextMenu);
     appIcon.setToolTip('DataUploader');
-    // appIcon.on('click',function () {
-    //
-    //   appIcon.destroy()
-    // })
+    if(process.platform == 'darwin'){
+      appIcon.on('right-click',function (event) {
+        mainWindow.show();
+        appIcon.destroy()
+      })
+    }else{
+      appIcon.on('click',function (event) {
+        mainWindow.show();
+        appIcon.destroy()
+      })
+    }
   })
   mainWindow.on('closed', function () {
     // Dereference the window object, usually you would store windows

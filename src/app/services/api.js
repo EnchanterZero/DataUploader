@@ -31,7 +31,8 @@
           api.setSettings({settings:s}).then(function (result) {
             $rootScope.$settings = result;
           })
-          $scope.alerts.push({ type: 'success', msg: 'Login success.Jumping into main page...' });
+          //$scope.alerts = [];
+          //$scope.alerts.push({ type: 'success', msg: 'Login success.Jumping into main page...' });
           $scope.$apply();
           $timeout(function () {
             //set ui
@@ -43,6 +44,7 @@
         })
         .catch(function (err) {
           logger.debug(err);
+          $scope.alerts = [];
           $scope.alerts.push({ type: 'warning', msg: 'Login failed for ' + err.message });
           $scope.loginButton = '登录';
           $scope.$apply();

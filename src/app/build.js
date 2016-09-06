@@ -343,7 +343,8 @@ var utils = new Utils();
           api.setSettings({settings:s}).then(function (result) {
             $rootScope.$settings = result;
           })
-          $scope.alerts.push({ type: 'success', msg: 'Login success.Jumping into main page...' });
+          //$scope.alerts = [];
+          //$scope.alerts.push({ type: 'success', msg: 'Login success.Jumping into main page...' });
           $scope.$apply();
           $timeout(function () {
             //set ui
@@ -355,6 +356,7 @@ var utils = new Utils();
         })
         .catch(function (err) {
           logger.debug(err);
+          $scope.alerts = [];
           $scope.alerts.push({ type: 'warning', msg: 'Login failed for ' + err.message });
           $scope.loginButton = '登录';
           $scope.$apply();
@@ -687,17 +689,28 @@ var utils = new Utils();
         $scope.loginButton = '登录中...';
         api.login(data, $scope, $rootScope);
       } else {
+        $scope.alerts = [];
         $scope.alerts.push({ type: 'warning', msg: 'username and password must be provided.' });
         $scope.loginButton = '登录';
       }
     };
     $scope.clickAutoLogin = function () {
       $timeout(function () {
-        //logger.debug('$scope.autoLogin:', $scope.autoLogin, '$scope.rememberPassword:', $scope.rememberPassword)
+        //logger.debug('clickAutoLogin--->$scope.autoLogin:', $scope.autoLogin, '$scope.rememberPassword:', $scope.rememberPassword)
         if ($scope.autoLogin == true) {
           $scope.rememberPassword = true;
+          //logger.debug('clickAfter---->$scope.autoLogin:', $scope.autoLogin, '$scope.rememberPassword:', $scope.rememberPassword)
         }
-      }, 30)
+      }, 20)
+    }
+    $scope.clickRememberPwd = function () {
+      $timeout(function () {
+        //logger.debug('clickAutoLogin--->$scope.autoLogin:', $scope.autoLogin, '$scope.rememberPassword:', $scope.rememberPassword)
+        if ($scope.rememberPassword == false) {
+          $scope.autoLogin = false;
+          //logger.debug('clickAfter---->$scope.autoLogin:', $scope.autoLogin, '$scope.rememberPassword:', $scope.rememberPassword)
+        }
+      }, 20)
     }
     logger.debug('$stateParams', $stateParams,$rootScope.$settings)
     if ($rootScope.$settings) {

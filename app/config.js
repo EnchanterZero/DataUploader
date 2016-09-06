@@ -15,8 +15,9 @@ console.log('Using : ', __dirname);
 /**
  * db config
  */
-
-const dbDir = path.join(os.homedir(),'Library/Application Support/DataUploader/db');
+var packageJsonObj=JSON.parse(fs.readFileSync(path.join(__dirname,'..','package.json')));
+console.log(packageJsonObj);
+const dbDir = path.join(os.homedir(),`Library/Application Support/${packageJsonObj.name}/db`);
 util.ensureFolderExist(dbDir);
 const dbConfig = {
   host: 'localhost',
