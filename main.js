@@ -20,7 +20,7 @@ let mainWindow
 function createWindow () {
   // Create the browser window.
 
-  mainWindow = new BrowserWindow({icon:`${__dirname}/AppIcon.png`,width: 1200, height: 768})
+  mainWindow = new BrowserWindow({icon:`${__dirname}/AppIcon64px.png`,width: 1200, height: 768})
 
   // and load the index.html of the app.
   //mainWindow.loadURL(`file://${__dirname}/src/app/index.html`)
@@ -38,7 +38,7 @@ function createWindow () {
     //event.returnValue = false;
     event.preventDefault()
     mainWindow.hide();
-    appIcon = new Tray(`${__dirname}/AppIcon.png`);
+    appIcon = new Tray(`${__dirname}/AppIcon16px.png`);
     var contextMenu = new Menu();
     contextMenu.append(new MenuItem({ label: '显示窗口', click: function() { mainWindow.show();appIcon.destroy() } }));
     contextMenu.append(new MenuItem({ label: '关闭应用', click: function() { appIcon.destroy();mainWindow.destroy();app.quit() } }));
