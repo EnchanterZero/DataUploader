@@ -3,6 +3,7 @@ var fs = require('fs');
 
 const electron = require('electron')
 // Module to control application life.
+const {dialog} = require('electron')
 const app = electron.app
 const Menu = electron.Menu;
 const MenuItem = electron.MenuItem;
@@ -20,7 +21,6 @@ let mainWindow
 
 function createWindow () {
   // Create the browser window.
-
   mainWindow = new BrowserWindow({icon:`${__dirname}/AppIcon64px.png`,width: 1200, height: 768})
 
   // and load the index.html of the app.
@@ -38,24 +38,39 @@ function createWindow () {
     //mainWindow = null
     //event.returnValue = false;
     event.preventDefault();
-    mainWindow.hide();
-    appIcon = new Tray(`${__dirname}/AppIcon16px.png`);
-    var contextMenu = new Menu();
-    contextMenu.append(new MenuItem({ label: '显示窗口', click: function() { mainWindow.show();appIcon.destroy() } }));
-    contextMenu.append(new MenuItem({ label: '关闭应用', click: function() { appIcon.destroy();mainWindow.destroy();app.quit() } }));
-    appIcon.setContextMenu(contextMenu);
-    appIcon.setToolTip('DataUploader');
-    if(process.platform == 'darwin'){
-      appIcon.on('right-click',function (event) {
-        mainWindow.show();
-        appIcon.destroy()
-      })
-    }else{
-      appIcon.on('click',function (event) {
-        mainWindow.show();
-        appIcon.destroy()
-      })
-    }
+    dialog.showMessageBox(mainWindow, {
+      type: 'question',
+      message: '请问您想要的操作是?',
+      buttons: ['关闭程序', '后台运行','取消'],
+      title: 'DataUploader',
+      defaultId:1,
+      cancelId:2,
+    }, function (buttonIndex) {
+      if(buttonIndex == 0){
+        app.quit();
+      }
+      if(buttonIndex == 1){
+        event.preventDefault();
+        mainWindow.hide();
+        appIcon = new Tray(`${__dirname}/AppIcon16px.png`);
+        var contextMenu = new Menu();
+        contextMenu.append(new MenuItem({ label: '显示窗口', click: function() { mainWindow.show();appIcon.destroy() } }));
+        contextMenu.append(new MenuItem({ label: '关闭应用', click: function() { appIcon.destroy();mainWindow.destroy();app.quit() } }));
+        appIcon.setContextMenu(contextMenu);
+        appIcon.setToolTip('DataUploader');
+        if(process.platform == 'darwin'){
+          appIcon.on('right-click',function (event) {
+            mainWindow.show();
+            appIcon.destroy()
+          })
+        }else{
+          appIcon.on('click',function (event) {
+            mainWindow.show();
+            appIcon.destroy()
+          })
+        }
+      }
+    })
   })
   mainWindow.on('closed', function () {
     // Dereference the window object, usually you would store windows
