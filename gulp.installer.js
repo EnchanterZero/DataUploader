@@ -1,10 +1,13 @@
 var gulp = require('gulp');
+var path = require('path');
+var fs = require('fs');
 //var winInstaller = require('electron-windows-installer');
 var winInstaller = require('electron-winstaller');
 
+var packageJsonObj=JSON.parse(fs.readFileSync(path.join(__dirname,'..','package.json')));
 var options = {
-  appDirectory: `${__dirname}\\release\\GenoDataUploader-win32-x64`,
-  outputDirectory: `${__dirname}\\release\\installer\\GenoDataUploader-win32-x64`,
+  appDirectory: `${__dirname}\\release\\${packageJsonObj.name}-win32-x64`,
+  outputDirectory: `${__dirname}\\release\\installer\\${packageJsonObj.name}-win32-x64`,
   arch: 'x64',
   authors: "CuraCloudCorp",
   iconUrl: "https://www.curacloudcorp.com/favicon.ico",
