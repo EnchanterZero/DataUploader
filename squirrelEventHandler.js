@@ -50,7 +50,7 @@ function handleSquirrelEvent(app) {
     done();
     return null;
     
-    return child;
+    //return child;
   }
   const uninstall = function(done){
     var child = spawn(updateDotExe, ['--removeShortcut', exeName]);
