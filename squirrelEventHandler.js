@@ -15,15 +15,14 @@ function handleSquirrelEvent(app) {
   const updateDotExe = path.resolve(path.join(rootAtomFolder, 'Update.exe'));
   const exeName = path.basename(process.execPath);
 
-  var d = (new Date()).toUTCString();
   console.log('rootAtomFolder:',rootAtomFolder)
   console.log('updateDotExe:',updateDotExe)
   console.log('exeName:',exeName)
-  var s = `${d}: rootAtomFolder-->${rootAtomFolder},`+
+  var s = `${(new Date()).toUTCString()}: rootAtomFolder-->${rootAtomFolder},`+
   `appicon-->${appicon},`+
   `updateDotExe-->${updateDotExe},`+
   `exeName-->${exeName}`;
-  fs.appendFileSync(path.resolve(path.join(rootAtomFolder,'run.log')),s);
+  fs.appendFileSync(path.resolve(path.join(rootAtomFolder,'run.log')),`${s} `+'\n');
 
   const spawn = function(command, args) {
     let spawnedProcess, error;
@@ -37,7 +36,11 @@ function handleSquirrelEvent(app) {
   const install = function(done){
     var child = spawn(updateDotExe, ['-i',appicon,'--createShortcut', exeName]);
     child.on('close',(code)=>{
-      fs.renameSync(path.resolve(path.join(desktop,'Electron.lnk')), path.resolve(path.join(desktop,`${path.basename(exeName, '.exe')}.lnk`)));
+      fs.appendFileSync(path.resolve(path.join(rootAtomFolder,'run.log')),`${(new Date()).toUTCString()}: desktop icon added `+'\n');
+      var a = path.resolve(path.join(desktop,'Electron.lnk'));
+      var b = path.resolve(path.join(desktop,`${path.basename(exeName, '.exe')}.lnk`))
+      fs.appendFileSync(path.resolve(path.join(rootAtomFolder,'run.log')),`${(new Date()).toUTCString()}: rename ${a}-->${b} `+'\n');
+      fs.renameSync(a,b);
       done();
     })
     
@@ -53,6 +56,8 @@ function handleSquirrelEvent(app) {
 
   const squirrelEvent = process.argv[1];
   console.log('got squirrelEvent:',squirrelEvent)
+  s = `${(new Date()).toUTCString()}: got squirrelEvent--> ${squirrelEvent}`;
+  fs.appendFileSync(path.resolve(path.join(rootAtomFolder,'run.log')),`${s} `+'\n');
   switch (squirrelEvent) {
     case '--squirrel-install':
     case '--squirrel-updated':

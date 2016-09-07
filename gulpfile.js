@@ -45,12 +45,13 @@ gulp.task('concat_custom_js', function () {
 
 gulp.task('pack-win', function (cb) {
   // pack 'Linux' on Linux, 'Darwin' on OS X and 'Windows_NT' on Windows.
+  var icon = path.resolve(path.join(__dirname,'AppIcon.ico'));
   if(os.type() == 'Windows_NT'){
-    exec("electron-packager . DataUploader --out=release --prune --asar --version=1.3.2 --platform=win32 --arch=x64 --asar.unpack='*.node' --icon='C:\\Cygwin64\\home\\Administrator\\DataUploader\\AppIcon.ico' --ignore=node_modules\\.bin --ignore=.git --ignore='node_modules\\electron-*' --overwrite",function(err1,stdout1,stderr1) {
+    exec(`electron-packager . DataUploader --out=release --prune --asar --version=1.3.2 --platform=win32 --arch=x64 --asar.unpack='*.node' --icon='${icon}' --ignore=node_modules\\.bin --ignore=.git --ignore='node_modules\\electron-*' --overwrite`,function(err1,stdout1,stderr1) {
     if (err1) return cb(err1); // 返回 error
     console.log(stderr1);
     console.log(stdout1);
-      exec(`${path.resolve(path.join(___dirname,'tools','rcedit','rcedit.exe'))} 'release\\DataUploader-win32-x64\\DataUploader.exe' --set-icon 'AppIcon.ico' `,
+      exec(`${path.resolve(path.join('tools','rcedit','rcedit.exe'))} ${path.resolve(path.join('release','DataUploader-win32-x64','DataUploader.exe'))} --set-icon ${icon} `,
       function(err2,stdout2,stderr2){
       if (err2) return cb(err2); // 返回 error
       console.log(stderr2);
@@ -66,8 +67,10 @@ gulp.task('pack-win', function (cb) {
 
 gulp.task('get-win-installer',['pack-win'], function (cb) {
   if(os.type() == 'Windows_NT'){
-    exec("gulp.installer",function(err) {
+    exec("node gulp.installer",function(err,stdout,stderr) {
     if (err) return cb(err); // 返回 error
+    console.log(stdout);
+    console.log(stderr);
     cb();
   });
 }
