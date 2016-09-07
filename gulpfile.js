@@ -1,4 +1,6 @@
 var gulp = require('gulp');
+var exec = require('child_process').exec;
+var os = require('os');
 //var order = require('gulp-order');
 //var inject = require('gulp-inject');
 var replace = require('gulp-replace');
@@ -40,5 +42,45 @@ gulp.task('concat_custom_js', function () {
   .pipe(replace("require('../../../dist", "require('../../dist"))
   .pipe(gulp.dest(destPath));
 });
+
+gulp.task('pack-win', function (cb) {
+  // pack 'Linux' on Linux, 'Darwin' on OS X and 'Windows_NT' on Windows.
+  if(os.type() == 'Windows_NT'){
+    exec("electron-packager . DataUploader --out=release --prune --asar --version=1.3.2 --platform=win32 --arch=x64 --asar.unpack='*.node' --icon='C:\\Cygwin64\\home\\Administrator\\DataUploader\\AppIcon.ico' --ignore=node_modules\\.bin --ignore=.git --ignore='node_modules\\electron-*' --overwrite",function(err1,stdout1,stderr1) {
+    if (err1) return cb(err1); // 返回 error
+    console.log(stderr1);
+    console.log(stdout1);
+      exec(`${path.resolve(path.join(___dirname,'tools','rcedit','rcedit.exe'))} 'release\\DataUploader-win32-x64\\DataUploader.exe' --set-icon 'AppIcon.ico' `,
+      function(err2,stdout2,stderr2){
+      if (err2) return cb(err2); // 返回 error
+      console.log(stderr2);
+      console.log(stdout2);
+      cb() // 完成 task
+    })
+  });
+}else{
+  console.log('You need run this task on win!',os.type());
+  return cb(new Error(`Wrong platform: ${os.type()}`));
+}
+});
+
+gulp.task('get-win-installer',['pack-win'], function (cb) {
+  if(os.type() == 'Windows_NT'){
+    exec("gulp.installer",function(err) {
+    if (err) return cb(err); // 返回 error
+    cb();
+  });
+}
+});
+
+
+
+
+
+
+
+
+
+
 
 gulp.task('default', [/*'concat_lib_js',*/'concat_custom_js']);

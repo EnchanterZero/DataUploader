@@ -1,6 +1,10 @@
 var path = require('path');
 var fs = require('fs');
+try{
 if (require('electron-squirrel-startup')) return;
+}catch(err){
+  console.log(err)
+}
 const handleSquirrelEvent = require('./squirrelEventHandler').handleSquirrelEvent;
 const electron = require('electron')
 // Module to control application life.
