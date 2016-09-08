@@ -4,7 +4,7 @@ import * as uploadRecovery from './uploadRecovery'
 import co from 'co';
 import * as FileInfo from  '../modules/fileinfo';
 import * as Config from '../modules/config';
-
+import Promise from 'bluebird';
 /**
  * initializing of service
  */
@@ -18,8 +18,17 @@ co(function*() {
 var $settings = null;
 function loadConfig() {
   return co(function*() {
-    console.log('load Upload Configs from database...');
-    $settings = yield Config.getConfig();
+    let retry = 5;
+    do {
+      console.log('try load Upload Configs from database...');
+      try {
+        $settings = yield Config.getConfig();
+        break;
+      }catch (err){
+        console.log('load Upload Configs failed, retry = '+ retry);
+      }
+      yield Promise.delay(100);
+    }while(retry --);
     serverApi.setServerUrl($settings[Config.CONFIG_FIELD.GenoServerUrl]);
     return $settings;
   })

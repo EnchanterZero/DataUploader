@@ -12,7 +12,8 @@ export function getConfig() {
     });
     return r;
   }).catch((err) => {
-    logger.error('err:' + err)
+    logger.debug('err:' + err)
+    throw err;
   });
 }
 
@@ -43,7 +44,8 @@ export function setConfig(settings) {
     });
   })
   .catch((err) => {
-    logger.error(err, err.stack);
+    logger.debug(err, err.stack);
+    throw err;
   });
 }
 
