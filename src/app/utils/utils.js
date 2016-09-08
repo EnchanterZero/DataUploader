@@ -9,7 +9,7 @@ var Utils = function () {
     var h = _.padStart(date.getHours(), 2, '0');
     var mi = _.padStart(date.getMinutes(), 2, '0');
     var s = _.padStart(date.getSeconds(), 2, '0');
-    return y + '年' + mo + '月' + d + '日 ' + h + ':' + mi + ':' + s;
+    return y + '/' + mo + '/' + d + ' ' + h + ':' + mi + ':' + s;
   };
   var getFormatSpeedString = function (speed) {
     speed = speed * 1;

@@ -47,7 +47,7 @@ if (shouldQuit) {
 
 function createWindow () {
   // Create the browser window.
-  mainWindow = new BrowserWindow({icon:`${__dirname}/AppIcon64px.png`,width: 1200, height: 768})
+  mainWindow = new BrowserWindow({icon:`${__dirname}/AppIcon64px.png`,width: 1000, height: 700,minWidth:850 ,minHeight:600})
 
   // and load the index.html of the app.
   //mainWindow.loadURL(`file://${__dirname}/src/app/index.html`)

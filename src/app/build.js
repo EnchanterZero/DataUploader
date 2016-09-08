@@ -20,7 +20,7 @@ var Utils = function () {
     var h = _.padStart(date.getHours(), 2, '0');
     var mi = _.padStart(date.getMinutes(), 2, '0');
     var s = _.padStart(date.getSeconds(), 2, '0');
-    return y + '年' + mo + '月' + d + '日 ' + h + ':' + mi + ':' + s;
+    return y + '/' + mo + '/' + d + ' ' + h + ':' + mi + ':' + s;
   };
   var getFormatSpeedString = function (speed) {
     speed = speed * 1;
@@ -357,6 +357,7 @@ var utils = new Utils();
         .catch(function (err) {
           logger.debug(err);
           $scope.alerts = [];
+          if(err.message == 'authenticate failed') err.message = 'wrong username or password';
           $scope.alerts.push({ type: 'warning', msg: 'Login failed for ' + err.message });
           $scope.loginButton = '登录';
           $scope.$apply();
@@ -390,7 +391,7 @@ var utils = new Utils();
         })
       }
 
-      this.recoverIfUnfinished = function () {
+      this.recoverIfUnfinished = function ($scope) {
         var currentUser = _BackendService.serverApi.getBaseUser();
         if (!currentUser) {
           $state.go('login');
@@ -406,7 +407,9 @@ var utils = new Utils();
               title: '恢复上传',
               message: '已经恢复上次未完成的上传'
             }, function () {
-            })
+            });
+            $scope.uploading = true;
+            $scope.stopCount = 5;
             _BackendService.uploadRecovery.recover(r);
           }
         });
@@ -771,7 +774,9 @@ var utils = new Utils();
     logger.debug('$rootScope.uploadControllerScope --> $scope');
     var getFileUplodStatuses = function ($scope) {
       $scope.intervalId = $interval(function () {
-        getFileList($scope);
+        if($scope.uploading) {
+          getFileList($scope);
+        }
       }, 1000);
     };
 
@@ -779,6 +784,18 @@ var utils = new Utils();
       return api.getFileInfoList().then(
         function (result) {
           if (result.fileInfoList) {
+            var activeItems =[];
+            result.fileInfoList.map(function (item) {
+              if(item.status != 'finished')
+                activeItems.push(item);
+            })
+            //logger.debug(activeItems);
+            if(activeItems.length == 0){
+              $scope.stopCount--;
+              if(!$scope.stopCount) $scope.uploading = false;
+            }else{
+              $scope.stopCount = 5;
+            }
             if (!$scope.fileInfoList) {
               utils.formatList(result.fileInfoList, result.fileInfoList);
               $scope.fileInfoList = result.fileInfoList;
@@ -796,7 +813,7 @@ var utils = new Utils();
       const { dialog } = require('electron').remote;
       //check for recover only once
       console.log('check for recover only once')
-      api.recoverIfUnfinished();
+      api.recoverIfUnfinished($scope);
       $rootScope.uploadControllerScope = {};
       var $scope = $rootScope.uploadControllerScope;
       if (!$rootScope.$settings) {
@@ -809,6 +826,8 @@ var utils = new Utils();
         $scope.dcmDir = $rootScope.$settings.UploadDir;
       }
       $scope.fileInfoList;
+      $scope.stopCount = 5;
+      $scope.uploading = false;
       $scope.chosenFileList = [];
       getFileList($scope);
       getFileUplodStatuses($scope);
@@ -831,6 +850,7 @@ var utils = new Utils();
             api.getProjects().then(function (list) {
               logger.debug('got project:', list);
               if (list[0]) {
+                $scope.uploading = true;
                 return api.uploadFile({
                   project: list[0],
                   fileList: $scope.chosenFileList,
@@ -915,6 +935,8 @@ var utils = new Utils();
             }
           }
         });
+        $scope.uploading = true;
+        $scope.stopCount = 5;
         api.resumeUploadFile(sId).then(function () {
         })
         .catch(function (err) {

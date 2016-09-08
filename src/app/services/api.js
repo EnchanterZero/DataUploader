@@ -45,6 +45,7 @@
         .catch(function (err) {
           logger.debug(err);
           $scope.alerts = [];
+          if(err.message == 'authenticate failed') err.message = 'wrong username or password';
           $scope.alerts.push({ type: 'warning', msg: 'Login failed for ' + err.message });
           $scope.loginButton = '登录';
           $scope.$apply();
@@ -78,7 +79,7 @@
         })
       }
 
-      this.recoverIfUnfinished = function () {
+      this.recoverIfUnfinished = function ($scope) {
         var currentUser = _BackendService.serverApi.getBaseUser();
         if (!currentUser) {
           $state.go('login');
@@ -94,7 +95,9 @@
               title: '恢复上传',
               message: '已经恢复上次未完成的上传'
             }, function () {
-            })
+            });
+            $scope.uploading = true;
+            $scope.stopCount = 5;
             _BackendService.uploadRecovery.recover(r);
           }
         });

@@ -8,7 +8,9 @@
     logger.debug('$rootScope.uploadControllerScope --> $scope');
     var getFileUplodStatuses = function ($scope) {
       $scope.intervalId = $interval(function () {
-        getFileList($scope);
+        if($scope.uploading) {
+          getFileList($scope);
+        }
       }, 1000);
     };
 
@@ -16,6 +18,18 @@
       return api.getFileInfoList().then(
         function (result) {
           if (result.fileInfoList) {
+            var activeItems =[];
+            result.fileInfoList.map(function (item) {
+              if(item.status != 'finished')
+                activeItems.push(item);
+            })
+            //logger.debug(activeItems);
+            if(activeItems.length == 0){
+              $scope.stopCount--;
+              if(!$scope.stopCount) $scope.uploading = false;
+            }else{
+              $scope.stopCount = 5;
+            }
             if (!$scope.fileInfoList) {
               utils.formatList(result.fileInfoList, result.fileInfoList);
               $scope.fileInfoList = result.fileInfoList;
@@ -33,7 +47,7 @@
       const { dialog } = require('electron').remote;
       //check for recover only once
       console.log('check for recover only once')
-      api.recoverIfUnfinished();
+      api.recoverIfUnfinished($scope);
       $rootScope.uploadControllerScope = {};
       var $scope = $rootScope.uploadControllerScope;
       if (!$rootScope.$settings) {
@@ -46,6 +60,8 @@
         $scope.dcmDir = $rootScope.$settings.UploadDir;
       }
       $scope.fileInfoList;
+      $scope.stopCount = 5;
+      $scope.uploading = false;
       $scope.chosenFileList = [];
       getFileList($scope);
       getFileUplodStatuses($scope);
@@ -68,6 +84,7 @@
             api.getProjects().then(function (list) {
               logger.debug('got project:', list);
               if (list[0]) {
+                $scope.uploading = true;
                 return api.uploadFile({
                   project: list[0],
                   fileList: $scope.chosenFileList,
@@ -152,6 +169,8 @@
             }
           }
         });
+        $scope.uploading = true;
+        $scope.stopCount = 5;
         api.resumeUploadFile(sId).then(function () {
         })
         .catch(function (err) {

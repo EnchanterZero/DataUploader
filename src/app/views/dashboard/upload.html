@@ -1,4 +1,11 @@
-<div ng-controller="UploadController">
+<style type="text/css">
+  body {
+    background: none;
+    color: black;
+
+  }
+</style>
+<div class="normal-background" ng-controller="UploadController">
   <!--<h1 class="page-header">上传文件</h1>-->
   <div>
     <button class="btn btn-sm btn-primary"
@@ -7,7 +14,7 @@
 
     <!--<h2 ng-hide="uploadControllerScope.fileInfoList.length == 0" class="sub-header">上传进度</h2>-->
     <h2 ng-hide="uploadControllerScope.fileInfoList.length > 0" class="sub-header">暂无上传</h2>
-    <div class="table-responsive" ng-hide="uploadControllerScope.fileInfoList.length == 0">
+    <div class="table-responsive" ng-hide="uploadControllerScope.fileInfoList.length == 0 || !uploadControllerScope.fileInfoList">
       <table class="table table-striped">
         <thead>
         <tr>
