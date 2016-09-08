@@ -23,13 +23,19 @@ function loadConfig() {
       console.log('try load Upload Configs from database...');
       try {
         $settings = yield Config.getConfig();
-        break;
+        //must get init value from db
+        if($settings.GenoServerUrl.length > 0){
+          console.log(`got GenoServerUrl--> ${$settings.GenoServerUrl}`);
+          break;
+        }
       }catch (err){
-        console.log('load Upload Configs failed, retry = '+ retry);
+        console.log(err);
       }
+      console.log('load Upload Configs failed, retry = '+ retry);
       yield Promise.delay(100);
-    }while(retry --);
-    serverApi.setServerUrl($settings[Config.CONFIG_FIELD.GenoServerUrl]);
+    }while( retry--);
+
+    serverApi.setServerUrl($settings.GenoServerUrl);
     return $settings;
   })
 }

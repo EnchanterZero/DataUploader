@@ -43,7 +43,15 @@ gulp.task('concat_custom_js', function () {
   .pipe(gulp.dest(destPath));
 });
 
-gulp.task('pack-win', function (cb) {
+gulp.task('buildapp',function (cb){
+  exec("babel app -d dist",function(err,stdout,stderr) {
+    if (err) return cb(err); // 返回 error
+    console.log(stdout);
+    console.log(stderr);
+    cb();
+  });
+});
+gulp.task('pack-win',['buildapp','concat_custom_js'], function (cb) {
   // pack 'Linux' on Linux, 'Darwin' on OS X and 'Windows_NT' on Windows.
   var icon = path.resolve(path.join(__dirname,'AppIcon.ico'));
   if(os.type() == 'Windows_NT'){
@@ -75,15 +83,5 @@ gulp.task('get-win-installer',['pack-win'], function (cb) {
   });
 }
 });
-
-
-
-
-
-
-
-
-
-
 
 gulp.task('default', [/*'concat_lib_js',*/'concat_custom_js']);

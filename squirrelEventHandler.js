@@ -18,7 +18,7 @@ function handleSquirrelEvent(app) {
   console.log('rootAtomFolder:',rootAtomFolder)
   console.log('updateDotExe:',updateDotExe)
   console.log('exeName:',exeName)
-  var s = `${(new Date()).toUTCString()}: process.execPath-->${process.execPath},`+
+  var s = `[${(new Date()).toUTCString()}]: process.execPath-->${process.execPath},`+
   `rootAtomFolder-->${rootAtomFolder},`+
   `appicon-->${appicon},`+
   `updateDotExe-->${updateDotExe},`+
@@ -37,17 +37,27 @@ function handleSquirrelEvent(app) {
   const install = function(done){
     // var child = spawn(updateDotExe, ['-i',appicon,'--createShortcut', exeName]);
     // child.on('close',(code)=>{
-    //   fs.appendFileSync(path.resolve(path.join(rootAtomFolder,'run.log')),`${(new Date()).toUTCString()}: desktop icon added `+'\n');
+    //   fs.appendFileSync(path.resolve(path.join(rootAtomFolder,'run.log')),`[${(new Date()).toUTCString()}]: desktop icon added `+'\n');
     //   var a = path.resolve(path.join(desktop,'Electron.lnk'));
     //   var b = path.resolve(path.join(desktop,`${path.basename(exeName, '.exe')}.lnk`))
-    //   fs.appendFileSync(path.resolve(path.join(rootAtomFolder,'run.log')),`${(new Date()).toUTCString()}: rename ${a}-->${b} `+'\n');
+    //   fs.appendFileSync(path.resolve(path.join(rootAtomFolder,'run.log')),`[${(new Date()).toUTCString()}]: rename ${a}-->${b} `+'\n');
     //   //fs.renameSync(a,b);
     //   fs.symlinkSync(process.execPath, b);
     //   done();
     // })
-    var b = path.resolve(path.join(desktop,`${path.basename(exeName, '.exe')}.lnk`))
-    fs.symlinkSync(process.execPath, b);
-    done();
+    var b = path.resolve(path.join(desktop,`${path.basename(exeName, '.exe')}`))
+    fs.lstat(b,(err,stat) =>{
+      if(err){
+        fs.appendFileSync(path.resolve(path.join(rootAtomFolder,'run.log')),`[${(new Date()).toUTCString()}]: ERR-->${err.message} `+'\n');
+      }
+      else if(stat.isSymbolicLink()){
+        fs.appendFileSync(path.resolve(path.join(rootAtomFolder,'run.log')),`[${(new Date()).toUTCString()}]: unlink. `+'\n');
+        fs.unlinkSync(b);
+      }
+      fs.appendFileSync(path.resolve(path.join(rootAtomFolder,'run.log')),`[${(new Date()).toUTCString()}]: create new link on desktop. `+'\n');
+      fs.symlinkSync(process.execPath, b);
+      done();
+    });
     return null;
     
     //return child;
@@ -62,7 +72,7 @@ function handleSquirrelEvent(app) {
 
   const squirrelEvent = process.argv[1];
   console.log('got squirrelEvent:',squirrelEvent)
-  s = `${(new Date()).toUTCString()}: got squirrelEvent--> ${squirrelEvent}`;
+  s = `[${(new Date()).toUTCString()}]: got squirrelEvent--> ${squirrelEvent}`;
   fs.appendFileSync(path.resolve(path.join(rootAtomFolder,'run.log')),`${s} `+'\n');
   switch (squirrelEvent) {
     case '--squirrel-install':

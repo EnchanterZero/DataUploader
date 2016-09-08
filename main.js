@@ -54,7 +54,7 @@ function createWindow () {
   mainWindow.loadURL(`file://${__dirname}/src/app/index.html`)
 
   // Open the DevTools.
-  // mainWindow.webContents.openDevTools()
+  mainWindow.webContents.openDevTools()
 
   // Emitted when the window is closed.
   mainWindow.on('close', function (event) {
