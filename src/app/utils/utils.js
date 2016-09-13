@@ -151,6 +151,37 @@ var Utils = function () {
       }
     }
   };
+  this.viewChinesefiy = function (arr) {
+    console.log(arr);
+    arr.map(function (item) {
+      var status = item.working?item.workingStatus:item.status;
+      switch (status){
+        case "uploading":
+          item.statusLocalized = "上传中";
+          break;
+        case "pausing...":
+          item.statusLocalized = "暂停中";
+          break;
+        case "paused":
+          item.statusLocalized = "已暂停";
+          break;
+        case "resuming...":
+          item.statusLocalized = "恢复中";
+          break;
+        case "finished":
+          item.statusLocalized = "已完成";
+          break;
+        case "failed":
+          item.statusLocalized = "已失败";
+          break;
+        case "aborting...":
+          item.statusLocalized = "放弃中";
+          break;
+        default:
+          item.statusLocalized = status;
+      }
+    });
+  }
   return this;
 }
 var utils = new Utils();

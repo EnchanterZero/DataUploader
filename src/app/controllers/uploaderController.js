@@ -36,8 +36,9 @@
             } else {
               utils.formatList(result.fileInfoList, $scope.fileInfoList);
               //$scope.oldfileInfoList = angular.copy($scope.fileInfoList);
-              utils.minAssignList($scope.fileInfoList, result.fileInfoList)
+              utils.minAssignList($scope.fileInfoList, result.fileInfoList);
             }
+            utils.viewChinesefiy($scope.fileInfoList);
           }
         }
       );
@@ -154,6 +155,7 @@
           if (o.syncId == sId) {
             o.working = true;
             o.workingStatus = 'pausing...';
+            o.statusLocalized = '暂停中';
           }
         });
         api.stopUploadFile(sId).then(function () {
@@ -164,6 +166,7 @@
           if (o.syncId == sId) {
             o.working = true;
             o.workingStatus = 'resuming...';
+            o.statusLocalized = '恢复中';
             if (o.status == 'failed') {
               o.failedCount = 0;
             }
@@ -190,6 +193,7 @@
             if (o.syncId == sId) {
               o.working = true;
               o.workingStatus = 'aborting...';
+              o.statusLocalized = '放弃中';
             }
           });
           api.abortUploadFile(sId).then(function (result) {

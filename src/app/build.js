@@ -162,6 +162,37 @@ var Utils = function () {
       }
     }
   };
+  this.viewChinesefiy = function (arr) {
+    console.log(arr);
+    arr.map(function (item) {
+      var status = item.working?item.workingStatus:item.status;
+      switch (status){
+        case "uploading":
+          item.statusLocalized = "上传中";
+          break;
+        case "pausing...":
+          item.statusLocalized = "暂停中";
+          break;
+        case "paused":
+          item.statusLocalized = "已暂停";
+          break;
+        case "resuming...":
+          item.statusLocalized = "恢复中";
+          break;
+        case "finished":
+          item.statusLocalized = "已完成";
+          break;
+        case "failed":
+          item.statusLocalized = "已失败";
+          break;
+        case "aborting...":
+          item.statusLocalized = "放弃中";
+          break;
+        default:
+          item.statusLocalized = status;
+      }
+    });
+  }
   return this;
 }
 var utils = new Utils();
@@ -344,7 +375,7 @@ var utils = new Utils();
             $rootScope.$settings = result;
           })
           //$scope.alerts = [];
-          //$scope.alerts.push({ type: 'success', msg: 'Login success.Jumping into main page...' });
+          //$scope.alerts.push({ type: 'success', msg: '登陆成功.正在跳转到主页面...' });
           $scope.$apply();
           $timeout(function () {
             //set ui
@@ -357,8 +388,8 @@ var utils = new Utils();
         .catch(function (err) {
           logger.debug(err);
           $scope.alerts = [];
-          if(err.message == 'authenticate failed') err.message = 'wrong username or password';
-          $scope.alerts.push({ type: 'warning', msg: 'Login failed for ' + err.message });
+          if(err.message == 'authenticate failed') err.message = '错误的用户名或密码.';
+          $scope.alerts.push({ type: 'warning', msg: '登录失败,原因: ' + err.message });
           $scope.loginButton = '登录';
           $scope.$apply();
         });
@@ -684,7 +715,7 @@ var utils = new Utils();
       $scope.alerts.splice(index, 1);
     };
     $scope.doLogin = function () {
-      if ($scope.username && $scope.username) {
+      if ($scope.username && $scope.password) {
         var data = {
           username: $scope.username,
           password: $scope.password,
@@ -693,7 +724,7 @@ var utils = new Utils();
         api.login(data, $scope, $rootScope);
       } else {
         $scope.alerts = [];
-        $scope.alerts.push({ type: 'warning', msg: 'username and password must be provided.' });
+        $scope.alerts.push({ type: 'warning', msg: '您必须输入用户名和密码.' });
         $scope.loginButton = '登录';
       }
     };
@@ -802,8 +833,9 @@ var utils = new Utils();
             } else {
               utils.formatList(result.fileInfoList, $scope.fileInfoList);
               //$scope.oldfileInfoList = angular.copy($scope.fileInfoList);
-              utils.minAssignList($scope.fileInfoList, result.fileInfoList)
+              utils.minAssignList($scope.fileInfoList, result.fileInfoList);
             }
+            utils.viewChinesefiy($scope.fileInfoList);
           }
         }
       );
@@ -920,6 +952,7 @@ var utils = new Utils();
           if (o.syncId == sId) {
             o.working = true;
             o.workingStatus = 'pausing...';
+            o.statusLocalized = '暂停中';
           }
         });
         api.stopUploadFile(sId).then(function () {
@@ -930,6 +963,7 @@ var utils = new Utils();
           if (o.syncId == sId) {
             o.working = true;
             o.workingStatus = 'resuming...';
+            o.statusLocalized = '恢复中';
             if (o.status == 'failed') {
               o.failedCount = 0;
             }
@@ -956,6 +990,7 @@ var utils = new Utils();
             if (o.syncId == sId) {
               o.working = true;
               o.workingStatus = 'aborting...';
+              o.statusLocalized = '放弃中';
             }
           });
           api.abortUploadFile(sId).then(function (result) {

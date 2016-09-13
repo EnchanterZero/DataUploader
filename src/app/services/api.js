@@ -32,7 +32,7 @@
             $rootScope.$settings = result;
           })
           //$scope.alerts = [];
-          //$scope.alerts.push({ type: 'success', msg: 'Login success.Jumping into main page...' });
+          //$scope.alerts.push({ type: 'success', msg: '登陆成功.正在跳转到主页面...' });
           $scope.$apply();
           $timeout(function () {
             //set ui
@@ -45,8 +45,8 @@
         .catch(function (err) {
           logger.debug(err);
           $scope.alerts = [];
-          if(err.message == 'authenticate failed') err.message = 'wrong username or password';
-          $scope.alerts.push({ type: 'warning', msg: 'Login failed for ' + err.message });
+          if(err.message == 'authenticate failed') err.message = '错误的用户名或密码.';
+          $scope.alerts.push({ type: 'warning', msg: '登录失败,原因: ' + err.message });
           $scope.loginButton = '登录';
           $scope.$apply();
         });

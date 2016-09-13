@@ -20,7 +20,7 @@
       $scope.alerts.splice(index, 1);
     };
     $scope.doLogin = function () {
-      if ($scope.username && $scope.username) {
+      if ($scope.username && $scope.password) {
         var data = {
           username: $scope.username,
           password: $scope.password,
@@ -29,7 +29,7 @@
         api.login(data, $scope, $rootScope);
       } else {
         $scope.alerts = [];
-        $scope.alerts.push({ type: 'warning', msg: 'username and password must be provided.' });
+        $scope.alerts.push({ type: 'warning', msg: '您必须输入用户名和密码.' });
         $scope.loginButton = '登录';
       }
     };

@@ -46,7 +46,8 @@
             </div>
           </td>
           <td>{{item.speed}}</td>
-          <td>{{item.working?item.workingStatus:item.status}}</td>
+          <!--<td>{{item.working?item.workingStatus:item.status}}</td>-->
+          <td>{{item.statusLocalized}}</td>
           <td>{{item.createdAt}}</td>
           <td>
             <button class="btn btn-sm btn-primary" ng-disabled="item.status != 'uploading' || item.status == 'failed' || item.working"
