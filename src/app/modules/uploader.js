@@ -4,7 +4,6 @@
  */
 
 (function () {
-  var packageJsonObj=JSON.parse(require('fs').readFileSync('./package.json'));
 
   var app = angular.module('Uploader', [
     'ui.router',
@@ -25,7 +24,7 @@
         /**
          * set varsion number
          */
-        $rootScope.$appVersion = packageJsonObj.version;
+        $rootScope.$appVersion = _BackendService.appConfig.projectConfig.versionNumber;
 
         /**
          * page change check

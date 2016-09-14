@@ -9,6 +9,7 @@ import os from 'os';
  */
 const projectConfig = {
   projectRoot: __dirname,
+  versionNumber:"",
 };
 console.log('Using : ', __dirname);
 
@@ -17,6 +18,7 @@ console.log('Using : ', __dirname);
  */
 var packageJsonObj=JSON.parse(fs.readFileSync(path.join(__dirname,'..','package.json')));
 console.log(packageJsonObj);
+projectConfig.versionNumber = packageJsonObj.version;
 const dbDir = path.join(os.homedir(),`Library/Application Support/${packageJsonObj.name}/db`);
 util.ensureFolderExist(dbDir);
 const dbConfig = {

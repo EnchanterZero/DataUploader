@@ -5,6 +5,7 @@ import co from 'co';
 import * as FileInfo from  '../modules/fileinfo';
 import * as Config from '../modules/config';
 import Promise from 'bluebird';
+import * as appConfig from '../config';
 /**
  * initializing of service
  */
@@ -62,4 +63,4 @@ var uploadSetting = {
   setConfig: setConfig,
   CONFIG_FIELD: Config.CONFIG_FIELD,
 };
-export { serverApi, uploadSetting, fileUpload, uploadRecovery }
+export { serverApi, uploadSetting, fileUpload, uploadRecovery,appConfig }
