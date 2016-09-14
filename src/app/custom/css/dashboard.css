@@ -108,3 +108,7 @@ body {
     -khtml-user-select: none;
     -webkit-user-select: none;
 }
+.version_number{
+    font-size: smaller;
+}
+

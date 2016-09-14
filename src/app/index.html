@@ -40,15 +40,23 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand">文件上传工具</a>
+      <a class="navbar-brand" >文件上传工具<span class="version_number" hidden>{{$appVersion}}</span></a>
     </div>
-    <div ng-controller="UserController" id="navbar" class="navbar-collapse collapse">
+    <script>
+      setTimeout(function () {
+        var s = document.getElementsByClassName('version_number');
+        s[0].removeAttribute("hidden");
+      },2000)
+    </script>
+    <div ng-controller="UserController" id="navbar" class="navbar-collapse collapse" >
       <ul class="nav navbar-nav navbar-right">
         <li style="display: none"><a >帮助</a></li>
         <li style="display: none" ng-click="goSettings()"><a>设置</a></li>
         <li id="logoutLink" style="display: none"><a ng-click="doLogout()">退出</a></li>
       </ul>
     </div>
+  </div>
+
   </div>
 </nav>
 
