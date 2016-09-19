@@ -108,7 +108,7 @@ function handleSquirrelEvent(app,dialog) {
       app.quit();
       return true;
     case '--squirrel-firstrun':
-      dialog.showMessageBox(mainWindow, {
+      dialog.showMessageBox({
         type: 'info',
         message: '程序安装成功',
         buttons: ['确认'],
