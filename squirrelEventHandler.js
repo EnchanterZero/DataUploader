@@ -1,4 +1,4 @@
-function handleSquirrelEvent(app) {
+function handleSquirrelEvent(app,dialog) {
   if (process.argv.length === 1) {
     return false;
   }
@@ -105,6 +105,15 @@ function handleSquirrelEvent(app) {
       // we update to the new version - it's the opposite of
       // --squirrel-updated
 
+      app.quit();
+      return true;
+    case '--squirrel-firstrun':
+      dialog.showMessageBox(mainWindow, {
+        type: 'info',
+        message: '程序安装成功',
+        buttons: ['确认'],
+        title: 'DataUploader Installer',
+      });
       app.quit();
       return true;
   }

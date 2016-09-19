@@ -9,15 +9,16 @@ const handleSquirrelEvent = require('./squirrelEventHandler').handleSquirrelEven
 const electron = require('electron')
 // Module to control application life.
 
-const app = electron.app
+const app = electron.app;
+const {dialog} = electron;
 // this should be placed at top of main.js to handle setup events quickly
-if (handleSquirrelEvent(app)) {
+if (handleSquirrelEvent(app,dialog)) {
   // squirrel event handled and app will exit in 1000ms, so don't do anything else
   return;
 }
 
 
-const {dialog} = electron;
+
 const Menu = electron.Menu;
 const MenuItem = electron.MenuItem;
 const Tray = electron.Tray;
