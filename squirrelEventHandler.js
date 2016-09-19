@@ -108,13 +108,15 @@ function handleSquirrelEvent(app,dialog) {
       app.quit();
       return true;
     case '--squirrel-firstrun':
-      dialog.showMessageBox({
+      app.on('ready',function(){
+        dialog.showMessageBox({
         type: 'info',
         message: '程序安装成功',
         buttons: ['确认'],
         title: 'DataUploader Installer',
       });
       app.quit();
+      });
       return true;
   }
 };
