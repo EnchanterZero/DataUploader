@@ -3,8 +3,8 @@
  */
 (function () {
 
-  angular.module('Uploader.views').controller('UserController', ['$state', '$scope', '$rootScope', 'api', 'serverUrl', userController]);
-  function userController($state, $scope, $rootScope, api, serverUrl) {
+  angular.module('Uploader.views').controller('UserController', ['$state', '$scope', '$rootScope', 'api', 'DomChangeService', userController]);
+  function userController($state, $scope, $rootScope, api, DomChangeService) {
 
     $rootScope.showLogout = true;
     //var logoutLink = document.getElementById('logoutLink');
@@ -16,16 +16,28 @@
         api.logout($rootScope);
       })
     };
-    // $scope.goSettings = function () {
-    //   $state.reload().then(function (currentState) {
-    //     console.log(currentState);
-    //     $state.go('settings', { preState: currentState.name })
-    //   }).catch(function (err) {
-    //     console.log(err.message,err.stack);
-    //   });
-    // }
+    $scope.historyLinkText = '上传记录';
+    var stateName = null;
     $scope.goSettings = function () {
       $state.go('settings', { preState: $state.current.name })
+    }
+    $scope.backToMain = function(){
+      logger.debug($state)
+      $state.go('upload');
+    }
+    $scope.goHistory = function () {
+      logger.debug($state)
+      $state.go('history');
+    }
+    $scope.go = function () {
+      if($state.current.name == 'history'){
+        $state.go('upload');
+        $scope.historyLinkText = '上传记录';
+      }
+      else{
+        $state.go('history');
+        $scope.historyLinkText = '返回';
+      }
     }
   }
 

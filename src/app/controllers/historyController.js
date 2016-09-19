@@ -31,21 +31,34 @@
     $scope.displayedPages = 9;
     api.getAllUploadRecords()
     .then(function (fileList) {
-      
-      $scope.fileList = fileList.map(function (item) {
-        return item.source; 
+      var list = fileList.map(function (item) {
+        return {
+          id: item.id,
+          project_id: item.project_id,
+          name: item.name,
+          createdAt: item.createdAt,
+          size: item.source.size,
+          path: item.path,
+        }
         //$scope.fileList.push(item.source);
       });
-      //console.log($scope.fileList);
-      utils.formatList($scope.fileList, $scope.fileList);
+      utils.formatList(list, list);
+      list = _.orderBy(list, ['createdAt'], ['desc']);
+      $scope.fileList = list;
       $scope.$digest();
     })
 
 
-    $scope.backToMain = function(){
+    $scope.backToMain = function () {
       $state.go('upload');
     }
-    $scope.download = function(fileId){
+    $scope.download = function (projectId,fileId) {
+      api.getDownloadUrl({projectId:projectId,fileId:fileId})
+      .then(function (url) {
+        //open bowser to download
+        var open = require("open");
+        open(url);
+      });
     }
   }
 

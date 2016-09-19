@@ -37,7 +37,7 @@
           $timeout(function () {
             //set ui
             $rScope.showLogout = true;
-            DomChangeService.changeToUsingStyle();
+            DomChangeService.changeToMainStyle();
             //jump to main page
             $state.go('upload');
           }, 1000);
@@ -197,6 +197,16 @@
         return _BackendService.uploadSetting.getConfig()
         .then(function (r) {
           return { settings: r }
+        })
+      }
+
+      /**
+       * download api
+       */
+      this.getDownloadUrl = function (data) {
+        return _BackendService.serverApi.getDownloadUrl(data)
+        .then(function (r) {
+          return r;
         })
       }
 

@@ -140,7 +140,7 @@ function authorize(options) {
 }
 
 function checkStatusCode(result) {
-  logger.debug(result);
+  logger.debug('checkStatusCode',result);
   if (!result) {
     throw new Error('empty response');
   }
@@ -200,42 +200,43 @@ function getGenoProjects() {
  */
 function createFile(projectId, data) {
 
-  let fileObj = {
-    name: `${data.fileName}-${data.syncId}`,
-    id: `${data.fileName}-${data.syncId}`,
-    filePath: path.posix.join(projectId,`${data.fileName}-${data.syncId}`)
-  }
-  return Promise.resolve(fileObj);
-
   //here create file record on geno server
-  // let options = {};
-  // authorize(options);
-  // return POST(baseUrl, `/projects/${projectId}/files`, data, options)
-  // .then(checkStatusCode)
-  // .then(result => {
-  //   logger.debug('created file!', result.fileObj);
-  //   return result.fileObj;
-  // })
+  let options = {};
+  authorize(options);
+  return POST(baseUrl, `/projects/${projectId}/files`, data, options)
+  .then(checkStatusCode)
+  .then(result => {
+    logger.debug('created file!', result.fileObj);
+    //result.fileObj.filePath = path.posix.join(projectId,`${data.name}-${data.syncId}`);
+    return result.fileObj;
+  })
+
+  // let fileObj = {
+  //   name: `${data.fileName}-${data.syncId}`,
+  //   id: `${data.fileName}-${data.syncId}`,
+  //   filePath: path.posix.join(projectId,`${data.fileName}-${data.syncId}`)
+  // }
+  // return Promise.resolve(fileObj);
 }
 
 function getOSSToken(projectId, fileId) {
   //here get oss token from geno server
-  return Promise.resolve({
-    AccessKeyId: "wzDyN0BDsEl2JmgW",
-    AccessKeySecret: "CUjn2POzoVD0cqhnYDfYqutEcYupLJ",
-    Bucket: "curacloud-geno-test",
-    Expiration: "",
-    Region: "oss-cn-qingdao",
-    Security: "",
-  });
-  // let options = {}
-  // authorize(options);
-  // return GET(baseUrl, `/projects/${projectId}/files/${fileId}/osstoken`, null, options)
-  // .then(checkStatusCode)
-  // .then(result => {
-  //   logger.debug('got osstoken!', result.credential);
-  //   return result.credential;
-  // })
+  // return Promise.resolve({
+  //   AccessKeyId: "wzDyN0BDsEl2JmgW",
+  //   AccessKeySecret: "CUjn2POzoVD0cqhnYDfYqutEcYupLJ",
+  //   Bucket: "curacloud-geno-test",
+  //   Expiration: "",
+  //   Region: "oss-cn-qingdao",
+  //   Security: "",
+  // });
+  let options = {}
+  authorize(options);
+  return GET(baseUrl, `/projects/${projectId}/files/${fileId}/credential`, null, options)
+  .then(checkStatusCode)
+  .then(result => {
+    logger.debug('got osstoken!', result);
+    return result;
+  })
 }
 function updateUploadPercentage(projectId, fileId, data) {
   let options = {};
@@ -257,6 +258,18 @@ function getAllRecords(projectId) {
   });
 }
 
+function getDownloadUrl(data) {
+  ///:projectId/files/:fileId/signedurl
+  let options = {}
+  authorize(options);
+  return GET(baseUrl, `/projects/${data.projectId}/files/${data.fileId}/signedurl`, null, options)
+  .then(checkStatusCode)
+  .then(result => {
+    logger.debug('got download urls', result.url);
+    return result.url;
+  });
+}
+
 export {
   setBaseAuthToken,
   getBaseAuthToken,
@@ -269,5 +282,6 @@ export {
   getOSSToken,
   getGenoProjects,
   updateUploadPercentage,
-  getAllRecords
+  getAllRecords,
+  getDownloadUrl,
 }

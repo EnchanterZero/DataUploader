@@ -26,13 +26,29 @@ export const FileInfoStatuses = {
   uploading: 'uploading',
   paused: 'paused',
   pausing: 'pausing',
+  waiting: 'waiting',
   failed: 'failed',
   aborting:'aborting',
   aborted: 'aborted',
 };
 
 export const unfinishedFileList = [];
+const MAX_UPLOADING_COUNT = 5;
 
+// export function checkUploadingCount() {
+//   var count = 0;
+//   unfinishedFileList.map(item =>{
+//     switch(item.status){
+//       case 'paused':
+//         break;
+//       case 'aborted':
+//         break;
+//       case 'failed':
+//         break;
+//       default:
+//     }
+//   });
+// }
 export function addToUnfinishedFileList(fileInfo) {
   logger.debug('add To UnfinishedFileList',unfinishedFileList,fileInfo);
   for(var i in unfinishedFileList){

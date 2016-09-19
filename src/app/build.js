@@ -242,8 +242,8 @@ var utils = new Utils();
   app.config(['$stateProvider', function ($stateProvider) {
     logger.debug('app.config');
   }])
-  .run(['Session', 'AuthService', 'SettingService', '$state', '$timeout', '$interval', '$state', '$rootScope','api',
-    function (Session, AuthService, SettingService, $state, $timeout, $interval, $state, $rootScope,api) {
+  .run(['Session', 'AuthService', 'SettingService', '$state', '$timeout', '$interval', '$state', '$rootScope','DomChangeService',
+    function (Session, AuthService, SettingService, $state, $timeout, $interval, $state, $rootScope,DomChangeService) {
 
       logger.debug('app.run');
 
@@ -264,7 +264,19 @@ var utils = new Utils();
             if(!AuthService.isAuthenticated() && toState.name != 'settings' && toState.name != 'login' && toState.name != ''){
               logger.debug('catched illegal state change!',!AuthService.isAuthenticated());
               $state.go('login');
+              //return;
             }
+            // else {
+            //   if(fromState.name == 'upload' && toState.name == 'history'){
+            //     DomChangeService.changeToHistoryStyle();
+            //    
+            //   }
+            //   else if(fromState.name == 'history' && toState.name == 'upload'){
+            //     DomChangeService.changeToMainStyle();
+            //   }
+            //   $rootScope.$digest();
+            //  
+            // }
 
 
             if ($rootScope.uploadControllerScope && $rootScope.uploadControllerScope.intervalId) {
@@ -395,7 +407,7 @@ var utils = new Utils();
           $timeout(function () {
             //set ui
             $rScope.showLogout = true;
-            DomChangeService.changeToUsingStyle();
+            DomChangeService.changeToMainStyle();
             //jump to main page
             $state.go('upload');
           }, 1000);
@@ -558,6 +570,16 @@ var utils = new Utils();
         })
       }
 
+      /**
+       * download api
+       */
+      this.getDownloadUrl = function (data) {
+        return _BackendService.serverApi.getDownloadUrl(data)
+        .then(function (r) {
+          return r;
+        })
+      }
+
     }]);
 
 })();
@@ -633,13 +655,20 @@ var utils = new Utils();
     var displayBlockStyle = 'display:block';
 
     var unfullContentClass = 'col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main';
-    this.changeToUsingStyle = function () {
+
+
+    this.changeToMainStyle = function () {
       var loginShowElements = document.getElementsByClassName('loginShow');
       for(var i=0;i<loginShowElements.length;i++){
         angular.element(loginShowElements[i]).attr('style', displayBlockStyle);
       }
       angular.element(document.getElementById('sideNavBar')).attr('style', displayBlockStyle);
+      var historyLink = angular.element(document.getElementById('historyLink'))
+      historyLink.html('上传记录');
+      
+      
     }
+
     this.changeToLoginStyle = function () {
       
       var loginShowElements = document.getElementsByClassName('loginShow');
@@ -648,6 +677,13 @@ var utils = new Utils();
       }
       angular.element(document.getElementById('sideNavBar')).attr('style', displayNoneStyle);
     }
+
+    this.changeToHistoryStyle = function () {
+      logger.debug('change to history style!!!!!');
+      var historyLink = angular.element(document.getElementById('historyLink'))
+      historyLink.html('返回');
+    }
+
   }])
 
 })();
@@ -828,21 +864,34 @@ var utils = new Utils();
     $scope.displayedPages = 9;
     api.getAllUploadRecords()
     .then(function (fileList) {
-      
-      $scope.fileList = fileList.map(function (item) {
-        return item.source; 
+      var list = fileList.map(function (item) {
+        return {
+          id: item.id,
+          project_id: item.project_id,
+          name: item.name,
+          createdAt: item.createdAt,
+          size: item.source.size,
+          path: item.path,
+        }
         //$scope.fileList.push(item.source);
       });
-      //console.log($scope.fileList);
-      utils.formatList($scope.fileList, $scope.fileList);
+      utils.formatList(list, list);
+      list = _.orderBy(list, ['createdAt'], ['desc']);
+      $scope.fileList = list;
       $scope.$digest();
     })
 
 
-    $scope.backToMain = function(){
+    $scope.backToMain = function () {
       $state.go('upload');
     }
-    $scope.download = function(fileId){
+    $scope.download = function (projectId,fileId) {
+      api.getDownloadUrl({projectId:projectId,fileId:fileId})
+      .then(function (url) {
+        //open bowser to download
+        var open = require("open");
+        open(url);
+      });
     }
   }
 
@@ -1148,8 +1197,8 @@ var utils = new Utils();
  */
 (function () {
 
-  angular.module('Uploader.views').controller('UserController', ['$state', '$scope', '$rootScope', 'api', 'serverUrl', userController]);
-  function userController($state, $scope, $rootScope, api, serverUrl) {
+  angular.module('Uploader.views').controller('UserController', ['$state', '$scope', '$rootScope', 'api', 'DomChangeService', userController]);
+  function userController($state, $scope, $rootScope, api, DomChangeService) {
 
     $rootScope.showLogout = true;
     //var logoutLink = document.getElementById('logoutLink');
@@ -1161,16 +1210,28 @@ var utils = new Utils();
         api.logout($rootScope);
       })
     };
-    // $scope.goSettings = function () {
-    //   $state.reload().then(function (currentState) {
-    //     console.log(currentState);
-    //     $state.go('settings', { preState: currentState.name })
-    //   }).catch(function (err) {
-    //     console.log(err.message,err.stack);
-    //   });
-    // }
+    $scope.historyLinkText = '上传记录';
+    var stateName = null;
     $scope.goSettings = function () {
       $state.go('settings', { preState: $state.current.name })
+    }
+    $scope.backToMain = function(){
+      logger.debug($state)
+      $state.go('upload');
+    }
+    $scope.goHistory = function () {
+      logger.debug($state)
+      $state.go('history');
+    }
+    $scope.go = function () {
+      if($state.current.name == 'history'){
+        $state.go('upload');
+        $scope.historyLinkText = '上传记录';
+      }
+      else{
+        $state.go('history');
+        $scope.historyLinkText = '返回';
+      }
     }
   }
 

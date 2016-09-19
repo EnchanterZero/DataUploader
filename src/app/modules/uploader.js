@@ -15,8 +15,8 @@
   app.config(['$stateProvider', function ($stateProvider) {
     logger.debug('app.config');
   }])
-  .run(['Session', 'AuthService', 'SettingService', '$state', '$timeout', '$interval', '$state', '$rootScope','api',
-    function (Session, AuthService, SettingService, $state, $timeout, $interval, $state, $rootScope,api) {
+  .run(['Session', 'AuthService', 'SettingService', '$state', '$timeout', '$interval', '$state', '$rootScope','DomChangeService',
+    function (Session, AuthService, SettingService, $state, $timeout, $interval, $state, $rootScope,DomChangeService) {
 
       logger.debug('app.run');
 
@@ -37,7 +37,19 @@
             if(!AuthService.isAuthenticated() && toState.name != 'settings' && toState.name != 'login' && toState.name != ''){
               logger.debug('catched illegal state change!',!AuthService.isAuthenticated());
               $state.go('login');
+              //return;
             }
+            // else {
+            //   if(fromState.name == 'upload' && toState.name == 'history'){
+            //     DomChangeService.changeToHistoryStyle();
+            //    
+            //   }
+            //   else if(fromState.name == 'history' && toState.name == 'upload'){
+            //     DomChangeService.changeToMainStyle();
+            //   }
+            //   $rootScope.$digest();
+            //  
+            // }
 
 
             if ($rootScope.uploadControllerScope && $rootScope.uploadControllerScope.intervalId) {

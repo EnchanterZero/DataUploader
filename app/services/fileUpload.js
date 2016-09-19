@@ -20,17 +20,20 @@ function uploadOneFile(fileInfo, options) {
   //logger.debug(dcmInfos);
   let data = {
     size: fileInfo.size,
-    fileName: fileInfo.name,
+    name: fileInfo.name,
     syncId: fileInfo.syncId,
   };
   return co(function*() {
     //create file and ask for token if it it a new upload
     if (!fileInfo.fileId) {
-      let file = yield serverApi.createFile(fileInfo.projectId, data);
-      fileInfo.fileId = file.id;
-      fileInfo.ossPath = file.filePath;
+      let fileObj = yield serverApi.createFile(fileInfo.projectId, data);
+      fileInfo.fileId = fileObj.id;
     }
-    let ossCredential = yield serverApi.getOSSToken(fileInfo.projectId, fileInfo.fileId);
+    let { credential:ossCredential,file:file} = yield serverApi.getOSSToken(fileInfo.projectId, fileInfo.fileId);
+    if(fileInfo.ossPath && fileInfo.ossPath!= file.objectKey){
+      logger.error('ossPath has changed!!')
+    }
+    fileInfo.ossPath = file.objectKey;
     // record into sqlite
     yield FileInfo.createFileInfo(fileInfo);
     FileInfo.addToUnfinishedFileList(fileInfo);
@@ -40,7 +43,7 @@ function uploadOneFile(fileInfo, options) {
 
     //check if finished
     if (fileInfo.progress == 1) {
-      //yield serverApi.updateUploadPercentage(fileInfo.projectId, fileInfo.fileId, { percent: 1 })
+      yield serverApi.updateUploadPercentage(fileInfo.projectId, fileInfo.fileId, { percentage: 1 })
     }
   })
   /*.catch(err => {

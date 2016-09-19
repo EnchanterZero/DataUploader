@@ -36,7 +36,7 @@
           <td>{{item.createdAt}}</td>
           <td>
             <button class="btn btn-sm btn-primary"
-                    ng-click="download(item.id)">下载
+                    ng-click="download(item.project_id,item.id)">下载
             </button>
           </td>
         </tr>
@@ -49,13 +49,11 @@
         </tr>
         </tfoot>
       </table>
-      <div>
-        <button class="btn btn-sm btn-primary button-back" ng-click="backToMain()">
-          <span class="glyphicon glyphicon-chevron-left"></span>返回
-        </button>
-      </div>
-
     </div>
-
+    <!--<div>-->
+      <!--<button class="btn btn-sm btn-primary button-back" ng-click="backToMain()">-->
+        <!--<span class="glyphicon glyphicon-chevron-left"></span>返回-->
+      <!--</button>-->
+    <!--</div>-->
   </div>
 </div>
