@@ -251,7 +251,6 @@ var utils = new Utils();
         /**
          * set varsion number
          */
-        console.log("123123123123123123123123",_BackendService.appConfig.projectConfig);
         $rootScope.$appVersion = _BackendService.appConfig.projectConfig.versionNumber;
 
         /**
@@ -322,7 +321,8 @@ var utils = new Utils();
 (function () {
   var app = angular.module('Uploader.views', [
     'ui.router',
-    'ui.bootstrap'
+    'ui.bootstrap',
+    'smart-table',
   ])
   .config(['$stateProvider', '$urlRouterProvider',
     function ($stateProvider, $urlRouterProvider) {
@@ -345,8 +345,17 @@ var utils = new Utils();
         templateUrl: './views/dashboard/settings.html',
         params:{'preState':{}}
       })
+      .state('history', {
+        url: "/history",
+        templateUrl: './views/dashboard/history.html',
+      })
     }]);
-})();
+  app.filter('fileRecord', function() {
+    return function (file) {
+
+    }
+  });
+  })();
 /**
  * service api
  */
@@ -517,6 +526,17 @@ var utils = new Utils();
         return _BackendService.serverApi.getGenoProjects()
       }
 
+      this.getAllUploadRecords = function () {
+        return this.getProjects().then(function (projects) {
+          if(projects.length > 0){
+            return _BackendService.serverApi.getAllRecords(projects[0].id);
+          }else{
+            logger.error('no projects!');
+            return Promise.resolve([]);
+          }
+        })
+      }
+
       /**
        * settings api
        */
@@ -614,12 +634,18 @@ var utils = new Utils();
 
     var unfullContentClass = 'col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main';
     this.changeToUsingStyle = function () {
-      angular.element(document.getElementById('logoutLink')).attr('style', displayBlockStyle);
+      var loginShowElements = document.getElementsByClassName('loginShow');
+      for(var i=0;i<loginShowElements.length;i++){
+        angular.element(loginShowElements[i]).attr('style', displayBlockStyle);
+      }
       angular.element(document.getElementById('sideNavBar')).attr('style', displayBlockStyle);
     }
     this.changeToLoginStyle = function () {
-
-      angular.element(document.getElementById('logoutLink')).attr('style', displayNoneStyle);
+      
+      var loginShowElements = document.getElementsByClassName('loginShow');
+      for(var i=0;i<loginShowElements.length;i++){
+        angular.element(loginShowElements[i]).attr('style', displayNoneStyle);
+      }
       angular.element(document.getElementById('sideNavBar')).attr('style', displayNoneStyle);
     }
   }])
@@ -770,6 +796,62 @@ var utils = new Utils();
 
 })();
 /**
+ * HistoryController
+ */
+(function () {
+
+  angular.module('Uploader.views').controller('HistoryController', ['$scope', 'api', '$interval', '$state', historyController]);
+  function historyController($scope, api, $interval, $state) {
+    //logger.debug('$rootScope.historyControllerScope --> $scope');
+    $scope.fileList = [];
+    // var i = 0;
+    // do {
+    //   i++;
+    //   $scope.fileList.push({
+    //     "id": "2ed9dac7-1c44-42d5-a919-0cbea4eff659" + i,
+    //     "name": "abc" + i,
+    //     "objectKey": "projects/a33ced47-6b64-467f-9550-5615d61c141d",
+    //     "reference": 1,
+    //     "size": i,
+    //     "public": false,
+    //     "uploadRegion": "oss-cn-qingdao",
+    //     "uploadBucket": "curacloud-geno-test",
+    //     "uploadPercent": i,
+    //     "uploadCheckpoint": null,
+    //     "finished": true,
+    //     "deleted": false,
+    //     "createdAt": "2016-09-12T08:31:54.000Z",
+    //     "updatedAt": "2016-09-12T08:31:54.000Z"
+    //   });
+    // } while ($scope.fileList.length < 500);
+    $scope.pageCount = 8;
+    $scope.displayedPages = 9;
+    api.getAllUploadRecords()
+    .then(function (fileList) {
+      
+      $scope.fileList = fileList.map(function (item) {
+        return item.source; 
+        //$scope.fileList.push(item.source);
+      });
+      //console.log($scope.fileList);
+      utils.formatList($scope.fileList, $scope.fileList);
+      $scope.$digest();
+    })
+
+
+    $scope.backToMain = function(){
+      $state.go('upload');
+    }
+    $scope.download = function(fileId){
+    }
+  }
+
+  /**
+   *
+   */
+
+})();
+/**
  * SettingController
  */
 (function () {
@@ -851,9 +933,9 @@ var utils = new Utils();
       const { dialog } = require('electron').remote;
       //check for recover only once
       console.log('check for recover only once')
-      api.recoverIfUnfinished($scope);
       $rootScope.uploadControllerScope = {};
       var $scope = $rootScope.uploadControllerScope;
+      api.recoverIfUnfinished($scope);
       if (!$rootScope.$settings) {
         api.getSettings()
         .then(function (result) {
@@ -871,16 +953,31 @@ var utils = new Utils();
       getFileUplodStatuses($scope);
 
       $scope.browseAndUpload = function () {
-        var path = dialog.showOpenDialog({ properties: ['openFile', /*'openDirectory', 'multiSelections',*/] });
+        var path = dialog.showOpenDialog({ properties: ['openFile', 'multiSelections'] });
         if (path) {
-          $scope.dcmDir = path[0];
-          var stat = require('fs').statSync(path[0]);
-          if (stat.isFile()) {
+          var fileSection = true;
+          var files = [];
+          try {
+            path.map(function (p) {
+              var stat = require('fs').statSync(p);
+              if (!stat.isFile()) {
+                throw p + ' is not a file';
+              }else{
+                files.push({filePath: p, size: stat.size});
+              }
+            })
+          }catch(err) {
+            fileSection = false;
+          }
+          if (fileSection) {
             $scope.chosenFileList = [];
-            $scope.chosenFileList.push({
-              filePath: path[0],
-              size: stat.size
-            });
+            files.map(function (file) {
+              $scope.chosenFileList.push({
+                filePath: file.filePath,
+                size: file.size
+              });
+            })
+            
             $scope.message = '';
             //openUploadModal();
 
@@ -924,7 +1021,6 @@ var utils = new Utils();
 
           } else {
             $scope.message = '文件选择错误!请重新选择';
-            $scope.dcmDir = '';
           }
         }
       }

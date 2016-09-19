@@ -1,35 +1,61 @@
- <div ng-controller="HistoryController">
-          <h2 class="sub-header">上传记录</h2>
-          <div class="table-responsive">
-            <table class="table table-striped">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>患者姓名</th>
-                  <th>上传数量</th>
-                  <th>上传时间</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr ng-repeat='item in table.uploadList'>
-                  <td>{{item.StudyInstanceUID}}</td>
-                  <td>{{item.PatientName}}</td>
-                  <td>{{item.num}}</td>
-                  <td>{{item.updatedAt}}</td>
-                </tr>
-              </tbody>
-            </table>
-            <div class="btn-group" role="group" >
-              <button type="button" class="btn btn-default" ng-disabled="table.page <= 1" ng-click="pre()">上一页</button>
-              <button type="button" class="btn btn-default" style="background: #eee;">当前:{{table.page}}</button>
-              <button type="button" class="btn btn-default" ng-disabled="table.page >= table.pageTotalNum" ng-click="next()">下一页</button>
-            </div>
-            <!--<ul class="pagination">-->
-              <!--<li><a href="#" style="background: #eee;">1</a></li>-->
-              <!--<li><a href="#">2</a></li>-->
-              <!--<li><a href="#">3</a></li>-->
-              <!--<li><a href="#">4</a></li>-->
-              <!--<li><a href="#">5</a></li>-->
-            </ul>
-          </div>
-        </div>
+<style type="text/css">
+  body {
+    background: none;
+    color: black;
+
+  }
+  .button-back{
+    position: absolute;
+    top: 530px;
+  }
+</style>
+<div class="normal-background" ng-controller="HistoryController">
+  <h1 class="page-header">上传记录</h1>
+  <div>
+
+    <!--<h2 ng-hide="files.length == 0" class="sub-header">上传进度</h2>-->
+    <h3 ng-hide="fileList.length > 0" class="sub-header">暂无上传</h3>
+    <div class="table-responsive" ng-hide="fileList.length == 0 || !fileList">
+      <table st-table="files" st-safe-src="fileList" class="table table-striped">
+        <thead>
+        <tr>
+          <th>#</th>
+          <th>名称</th>
+          <th>大小</th>
+          <th>上传开始时间</th>
+          <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr ng-repeat="item in  files">
+          <td>{{item.id}}</td>
+          <td>{{item.name}}</td>
+          <!--<td>{{item.projectName}}</td>-->
+          <td>{{item.size}}</td>
+          <!--<td>{{item.working?item.workingStatus:item.status}}</td>-->
+          <td>{{item.createdAt}}</td>
+          <td>
+            <button class="btn btn-sm btn-primary"
+                    ng-click="download(item.id)">下载
+            </button>
+          </td>
+        </tr>
+        </tbody>
+        <tfoot>
+        <tr>
+          <td colspan="5" class="text-center">
+            <div st-pagination="" st-items-by-page="pageCount" st-displayed-pages="displayedPages"></div>
+          </td>
+        </tr>
+        </tfoot>
+      </table>
+      <div>
+        <button class="btn btn-sm btn-primary button-back" ng-click="backToMain()">
+          <span class="glyphicon glyphicon-chevron-left"></span>返回
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+</div>

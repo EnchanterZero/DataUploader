@@ -4,7 +4,8 @@
 (function () {
   var app = angular.module('Uploader.views', [
     'ui.router',
-    'ui.bootstrap'
+    'ui.bootstrap',
+    'smart-table',
   ])
   .config(['$stateProvider', '$urlRouterProvider',
     function ($stateProvider, $urlRouterProvider) {
@@ -27,5 +28,14 @@
         templateUrl: './views/dashboard/settings.html',
         params:{'preState':{}}
       })
+      .state('history', {
+        url: "/history",
+        templateUrl: './views/dashboard/history.html',
+      })
     }]);
-})();
+  app.filter('fileRecord', function() {
+    return function (file) {
+
+    }
+  });
+  })();

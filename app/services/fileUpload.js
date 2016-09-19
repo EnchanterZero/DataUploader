@@ -62,8 +62,9 @@ function uploadFiles(project, filePaths, sId, options) {
     if (!currentUser) {
       throw new Error('no currentUser');
     }
-    var syncId = sId ? sId : new Date().getTime().toString();
+    var syncId = sId ? sId*1 : new Date().getTime();
     //set upload record base data
+    var count = 0;
     var fileInfos = filePaths.map(item=> {
       let stat = fs.statSync(item.filePath);
       return {
@@ -79,7 +80,7 @@ function uploadFiles(project, filePaths, sId, options) {
         status: FileInfo.FileInfoStatuses.uploading,
         fileId: '',
         ossPath: '',
-        syncId: syncId,
+        syncId: (syncId+count++),
         userId: currentUser.id,
         uploadType: 'test',
       }
@@ -87,11 +88,13 @@ function uploadFiles(project, filePaths, sId, options) {
     return co(function*() {
       for (let i in fileInfos) {
         logger.debug('start upload---------->' + fileInfos[i].filePath);
-        yield uploadOneFile(fileInfos[i], options ? options : {});
+        uploadOneFile(fileInfos[i], options ? options : {});
+        yield Promise.delay(100);
       }
       return {
         filePaths: filePaths,
         syncId: syncId,
+        fileCount:filePaths.length,
       };
     }).catch(err => {
       logger.error(err.message, err.stack);

@@ -48,9 +48,9 @@
       const { dialog } = require('electron').remote;
       //check for recover only once
       console.log('check for recover only once')
-      api.recoverIfUnfinished($scope);
       $rootScope.uploadControllerScope = {};
       var $scope = $rootScope.uploadControllerScope;
+      api.recoverIfUnfinished($scope);
       if (!$rootScope.$settings) {
         api.getSettings()
         .then(function (result) {
@@ -68,16 +68,31 @@
       getFileUplodStatuses($scope);
 
       $scope.browseAndUpload = function () {
-        var path = dialog.showOpenDialog({ properties: ['openFile', /*'openDirectory', 'multiSelections',*/] });
+        var path = dialog.showOpenDialog({ properties: ['openFile', 'multiSelections'] });
         if (path) {
-          $scope.dcmDir = path[0];
-          var stat = require('fs').statSync(path[0]);
-          if (stat.isFile()) {
+          var fileSection = true;
+          var files = [];
+          try {
+            path.map(function (p) {
+              var stat = require('fs').statSync(p);
+              if (!stat.isFile()) {
+                throw p + ' is not a file';
+              }else{
+                files.push({filePath: p, size: stat.size});
+              }
+            })
+          }catch(err) {
+            fileSection = false;
+          }
+          if (fileSection) {
             $scope.chosenFileList = [];
-            $scope.chosenFileList.push({
-              filePath: path[0],
-              size: stat.size
-            });
+            files.map(function (file) {
+              $scope.chosenFileList.push({
+                filePath: file.filePath,
+                size: file.size
+              });
+            })
+            
             $scope.message = '';
             //openUploadModal();
 
@@ -121,7 +136,6 @@
 
           } else {
             $scope.message = '文件选择错误!请重新选择';
-            $scope.dcmDir = '';
           }
         }
       }

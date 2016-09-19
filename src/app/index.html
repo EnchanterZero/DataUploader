@@ -52,7 +52,8 @@
       <ul class="nav navbar-nav navbar-right">
         <li style="display: none"><a >帮助</a></li>
         <li style="display: none" ng-click="goSettings()"><a>设置</a></li>
-        <li id="logoutLink" style="display: none"><a ng-click="doLogout()">退出</a></li>
+        <li style="display: none" class="loginShow" ><a ui-sref="history" >上传记录</a></li>
+        <li style="display: none" class="loginShow" ><a ng-click="doLogout()">退出</a></li>
       </ul>
     </div>
   </div>
@@ -89,6 +90,7 @@
 <script src="../lib/angular/angular.js"></script>
 <script src="../lib/angular-bootstrap/ui-bootstrap-tpls.js"></script>
 <script src="../lib/angular-ui-router/release/angular-ui-router.js"></script>
+<script src="../lib/angular-smart-table/dist/smart-table.js"></script>
 <script src="./build.js"></script>
 </body>
 </html>

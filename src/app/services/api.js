@@ -168,6 +168,17 @@
         return _BackendService.serverApi.getGenoProjects()
       }
 
+      this.getAllUploadRecords = function () {
+        return this.getProjects().then(function (projects) {
+          if(projects.length > 0){
+            return _BackendService.serverApi.getAllRecords(projects[0].id);
+          }else{
+            logger.error('no projects!');
+            return Promise.resolve([]);
+          }
+        })
+      }
+
       /**
        * settings api
        */

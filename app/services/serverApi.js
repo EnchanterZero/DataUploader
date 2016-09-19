@@ -247,6 +247,15 @@ function updateUploadPercentage(projectId, fileId, data) {
     return result.fileObj;
   })
 }
+function getAllRecords(projectId) {
+  let options = {}
+  authorize(options);
+  return GET(baseUrl, `/projects/${projectId}/files`, null, options)
+  .then(checkStatusCode)
+  .then(result => {
+    return result.files;
+  });
+}
 
 export {
   setBaseAuthToken,
@@ -260,4 +269,5 @@ export {
   getOSSToken,
   getGenoProjects,
   updateUploadPercentage,
+  getAllRecords
 }

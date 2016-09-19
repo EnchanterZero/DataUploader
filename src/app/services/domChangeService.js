@@ -11,12 +11,18 @@
 
     var unfullContentClass = 'col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main';
     this.changeToUsingStyle = function () {
-      angular.element(document.getElementById('logoutLink')).attr('style', displayBlockStyle);
+      var loginShowElements = document.getElementsByClassName('loginShow');
+      for(var i=0;i<loginShowElements.length;i++){
+        angular.element(loginShowElements[i]).attr('style', displayBlockStyle);
+      }
       angular.element(document.getElementById('sideNavBar')).attr('style', displayBlockStyle);
     }
     this.changeToLoginStyle = function () {
-
-      angular.element(document.getElementById('logoutLink')).attr('style', displayNoneStyle);
+      
+      var loginShowElements = document.getElementsByClassName('loginShow');
+      for(var i=0;i<loginShowElements.length;i++){
+        angular.element(loginShowElements[i]).attr('style', displayNoneStyle);
+      }
       angular.element(document.getElementById('sideNavBar')).attr('style', displayNoneStyle);
     }
   }])

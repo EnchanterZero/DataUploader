@@ -16,6 +16,7 @@ var miningLibFiles = [
   path.join(__dirname, 'src/lib/angular/angular.js.js'),
   path.join(__dirname, 'src/lib/angular-bootstrap/ui-bootstrap-tpls.js'),
   path.join(__dirname, 'src/lib/angular-ui-router/release/angular-ui-router.js'),
+  path.join(__dirname, 'src/lib/angular-smart-table/dist/smart-table.js'),
 ];
 var miningCustomFiles = [
   path.join(__dirname, 'src/app/app.js'),
