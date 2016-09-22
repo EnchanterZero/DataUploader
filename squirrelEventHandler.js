@@ -55,7 +55,14 @@ function handleSquirrelEvent(app,dialog) {
         fs.unlinkSync(b);
       }
       fs.appendFileSync(path.resolve(path.join(rootAtomFolder,'run.log')),`[${(new Date()).toUTCString()}]: create new link on desktop. `+'\n');
-      fs.symlinkSync(process.execPath, b);
+      try {
+        fs.symlinkSync(process.execPath, b);
+      }catch (err){
+        console.log(err);
+        if(os.platform() == 'win32'){
+          ChildProcess.exec(`mklink /D "${path.resolve(process.execPath)}" "${b}"`);
+        }
+      }
       done();
     });
     return null;
