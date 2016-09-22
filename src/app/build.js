@@ -940,12 +940,13 @@ var utils = new Utils();
   angular.module('Uploader.views').controller('UploadController', ['$rootScope', 'api', '$interval', '$uibModal', uploadController]);
   function uploadController($rootScope, api, $interval, $uibModal) {
     logger.debug('$rootScope.uploadControllerScope --> $scope');
+    var CONTINUE_TIME = 5;
     var getFileUplodStatuses = function ($scope) {
       $scope.intervalId = $interval(function () {
         if($scope.uploading) {
           getFileList($scope);
         }
-      }, 500);
+      }, 800);
     };
 
     var getFileList = function ($scope) {
@@ -962,7 +963,7 @@ var utils = new Utils();
               $scope.stopCount--;
               if(!$scope.stopCount) $scope.uploading = false;
             }else{
-              $scope.stopCount = 5;
+              $scope.stopCount = CONTINUE_TIME;
             }
             if (!$scope.fileInfoList) {
               utils.formatList(result.fileInfoList, result.fileInfoList);
@@ -995,7 +996,7 @@ var utils = new Utils();
         $scope.dcmDir = $rootScope.$settings.UploadDir;
       }
       $scope.fileInfoList;
-      $scope.stopCount = 5;
+      $scope.stopCount = CONTINUE_TIME;
       $scope.uploading = false;
       $scope.chosenFileList = [];
       getFileList($scope);
@@ -1121,7 +1122,7 @@ var utils = new Utils();
           }
         });
         $scope.uploading = true;
-        $scope.stopCount = 5;
+        $scope.stopCount = CONTINUE_TIME;
         api.resumeUploadFile(sId).then(function () {
         })
         .catch(function (err) {
