@@ -9,9 +9,9 @@
     var CONTINUE_TIME = 5;
     var getFileUplodStatuses = function ($scope) {
       $scope.intervalId = $interval(function () {
-        if($scope.uploading) {
+        //if($scope.uploading) {
           getFileList($scope);
-        }
+        //}
       }, 800);
     };
 
@@ -19,18 +19,18 @@
       return api.getFileInfoList().then(
         function (result) {
           if (result.fileInfoList) {
-            var activeItems =[];
-            result.fileInfoList.map(function (item) {
-              if(item.status != 'finished')
-                activeItems.push(item);
-            })
-            //logger.debug(activeItems);
-            if(activeItems.length == 0){
-              $scope.stopCount--;
-              if(!$scope.stopCount) $scope.uploading = false;
-            }else{
-              $scope.stopCount = CONTINUE_TIME;
-            }
+            // var activeItems =[];
+            // result.fileInfoList.map(function (item) {
+            //   if(item.status != 'finished')
+            //     activeItems.push(item);
+            // })
+            // //logger.debug(activeItems);
+            // if(activeItems.length == 0){
+            //   $scope.stopCount--;
+            //   if(!$scope.stopCount) $scope.uploading = false;
+            // }else{
+            //   $scope.stopCount = CONTINUE_TIME;
+            // }
             if (!$scope.fileInfoList) {
               utils.formatList(result.fileInfoList, result.fileInfoList);
               $scope.fileInfoList = result.fileInfoList;
