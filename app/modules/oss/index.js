@@ -174,10 +174,12 @@ export function abortMitiUpload(credential, internal, fileInfo) {
       var ckp = JSON.parse(fileInfo.checkPoint);
       var result = yield ossClient.abortMultipartUpload(ckp.name, ckp.uploadId);
       yield FileInfo.updateFileInfo(fileInfo, { status: FileInfo.FileInfoStatuses.aborted });
+      FileInfo.removeFromUnfinishedFileList(fileInfo.syncId);
       logger.info(`Abort putOSSObject name -->${ckp.name}, uploadId--> ${ckp.uploadId}, result-->${result}`);
       return { success: true };
     } else {
       yield FileInfo.updateFileInfo(fileInfo, { status: FileInfo.FileInfoStatuses.aborted });
+      FileInfo.removeFromUnfinishedFileList(fileInfo.syncId);
       return { success: true }
     }
   })
@@ -185,6 +187,7 @@ export function abortMitiUpload(credential, internal, fileInfo) {
     if (err.message.indexOf('ENOTFOUND') < 0 && err.message.indexOf('ENOENT') < 0) {
       logger.info(`Abort success with err:${err.message}`);
       FileInfo.updateFileInfo(fileInfo, { status: FileInfo.FileInfoStatuses.aborted });
+      FileInfo.removeFromUnfinishedFileList(fileInfo.syncId);
       return { success: true }
     }
     logger.error(err.message, err.stack);

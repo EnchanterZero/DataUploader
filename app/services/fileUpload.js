@@ -140,6 +140,16 @@ function stopUploadFiles(syncId) {
    .catch(err=>logger.log(err))*/
 }
 
+function stopAllUploading() {
+  FileInfo.unfinishedFileList.map(item => {
+    if(item.status!='paused' && item.status!='aborted') {
+      FileInfo.setStatusToUnfinishedFileList(item.syncId, 'suspending');
+    }
+  });
+  logger.debug('ready to pause');
+  return Promise.resolve();
+}
+
 function abortUploadFiles(syncId) {
   FileInfo.setStatusToUnfinishedFileList(syncId, FileInfo.FileInfoStatuses.aborting);
   logger.debug('ready to abort');
@@ -148,7 +158,7 @@ function abortUploadFiles(syncId) {
     //if (result) {
     logger.debug('abort upload---------->' + syncId);
     var fileInfo = yield FileInfo.getFileInfoBySyncId(syncId);
-    let ossCredential = yield serverApi.getOSSToken(fileInfo.projectId, fileInfo.fileId);
+    let { credential:ossCredential,file:file} = yield serverApi.getOSSToken(fileInfo.projectId, fileInfo.fileId);
     //abort the upload
     let result = yield OSS.abortMitiUpload(ossCredential, false, fileInfo);
     return result;
@@ -165,7 +175,7 @@ function abortAllUploading() {
     stoppings.push(function () {
       return co(function*() {
         var fileInfo = yield FileInfo.getFileInfoBySyncId(item.syncId);
-        let ossCredential = yield serverApi.getOSSToken(fileInfo.fileId);
+        let { credential:ossCredential,file:file} = yield serverApi.getOSSToken(fileInfo,projectId,fileInfo.fileId);
         yield OSS.abortMitiUpload(ossCredential, false, fileInfo);
       })
     })
@@ -175,13 +185,7 @@ function abortAllUploading() {
   });
 }
 
-function stopAllUploading() {
-  FileInfo.unfinishedFileList.map(item => {
-    FileInfo.setStatusToUnfinishedFileList(item.syncId, 'suspending');
-  });
-  logger.debug('ready to pause');
-  return Promise.resolve();
-}
+
 
 
 export {

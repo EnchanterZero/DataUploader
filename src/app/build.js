@@ -945,7 +945,7 @@ var utils = new Utils();
         if($scope.uploading) {
           getFileList($scope);
         }
-      }, 1000);
+      }, 500);
     };
 
     var getFileList = function ($scope) {

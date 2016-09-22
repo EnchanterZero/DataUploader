@@ -89,6 +89,16 @@ export function removeFromUnfinishedFileList(syncId) {
 export function resetUnfinishedFileList() {
   logger.debug('reset UnfinishedFileList',unfinishedFileList);
 }
+export function getUnfinishedFileList(userId) {
+  var list = [];
+  unfinishedFileList.map(item =>{
+    if(item.userId == userId) {
+      list.push(item);
+    }
+  });
+  return list;
+};
+
 
 export function createFileInfo(fileInfo) {
   return models.FileInfo.findOrCreate({
