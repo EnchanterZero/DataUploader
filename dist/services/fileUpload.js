@@ -5,6 +5,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.stopAllUploading = exports.abortUploadFiles = exports.stopUploadFiles = exports.uploadFiles = exports.setInternal = undefined;
 
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
 var _util = require('../util');
 
 var _path = require('path');
@@ -73,8 +75,15 @@ function uploadOneFile(fileInfo, options) {
     }
     fileInfo.ossPath = file.objectKey;
     // record into sqlite
-    yield FileInfo.createFileInfo(fileInfo);
-    FileInfo.addToUnfinishedFileList(fileInfo);
+
+    var _ref2 = yield FileInfo.createFileInfo(fileInfo);
+
+    var _ref3 = _slicedToArray(_ref2, 2);
+
+    let fileDataValue = _ref3[0];
+    let created = _ref3[1];
+
+    FileInfo.addToUnfinishedFileList(fileDataValue);
     logger.debug('start upload!!!!!!!!!');
     //upload
     yield OSS.putOSSFile(ossCredential, false, fileInfo, options);
@@ -180,12 +189,18 @@ function stopUploadFiles(syncId) {
 
 function stopAllUploading() {
   FileInfo.unfinishedFileList.map(item => {
-    if (item.status != 'paused' && item.status != 'aborted') {
-      FileInfo.setStatusToUnfinishedFileList(item.syncId, 'suspending');
+    if (item.status != FileInfo.FileInfoStatuses.paused && item.status != FileInfo.FileInfoStatuses.failed && item.status != FileInfo.FileInfoStatuses.finished) {
+      FileInfo.setStatusToUnfinishedFileList(item.syncId, FileInfo.FileInfoStatuses.suspending);
     }
   });
   logger.debug('ready to pause');
-  return _bluebird2.default.resolve();
+  return (0, _co2.default)(function* () {
+    while (FileInfo.unfinishedFileList.length > 0) {
+      logger.debug("-----------*-*-*--*-*---*-*-*-*-*-*ready to log off");
+      yield _bluebird2.default.delay(100);
+    }
+    return {};
+  });
 }
 
 function abortUploadFiles(syncId) {
@@ -197,10 +212,10 @@ function abortUploadFiles(syncId) {
     logger.debug('abort upload---------->' + syncId);
     var fileInfo = yield FileInfo.getFileInfoBySyncId(syncId);
 
-    var _ref2 = yield _services.serverApi.getOSSToken(fileInfo.projectId, fileInfo.fileId);
+    var _ref4 = yield _services.serverApi.getOSSToken(fileInfo.projectId, fileInfo.fileId);
 
-    let ossCredential = _ref2.credential;
-    let file = _ref2.file;
+    let ossCredential = _ref4.credential;
+    let file = _ref4.file;
     //abort the upload
 
     let result = yield OSS.abortMitiUpload(ossCredential, false, fileInfo);
@@ -217,10 +232,10 @@ function abortAllUploading() {
       return (0, _co2.default)(function* () {
         var fileInfo = yield FileInfo.getFileInfoBySyncId(item.syncId);
 
-        var _ref3 = yield _services.serverApi.getOSSToken(fileInfo, projectId, fileInfo.fileId);
+        var _ref5 = yield _services.serverApi.getOSSToken(fileInfo, projectId, fileInfo.fileId);
 
-        let ossCredential = _ref3.credential;
-        let file = _ref3.file;
+        let ossCredential = _ref5.credential;
+        let file = _ref5.file;
 
         yield OSS.abortMitiUpload(ossCredential, false, fileInfo);
       });

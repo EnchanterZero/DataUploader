@@ -89,6 +89,8 @@ export function putOSSFile(credential, internal, fileInfo, options) {
                 //update
                 Object.assign(fileInfo, setField);
                 yield FileInfo.updateFileInfo(fileInfo, setField);
+                FileInfo.setAttributesToUnfinishedFileList(fileInfo.syncId,setField);
+                FileInfo.setStatusToUnfinishedFileList(fileInfo.syncId,FileInfo.FileInfoStatuses.finished);
                 //return true;
               }
               //if upload unfinished, status is not 'uploading' means upload need to stop
@@ -98,7 +100,18 @@ export function putOSSFile(credential, internal, fileInfo, options) {
                   setField.status = FileInfo.FileInfoStatuses.paused;
                 Object.assign(fileInfo, setField);
                 yield FileInfo.updateFileInfo(fileInfo, setField);
-                FileInfo.removeFromUnfinishedFileList(fileInfo.syncId);
+                FileInfo.setAttributesToUnfinishedFileList(fileInfo.syncId,setField);
+                switch (lastStatus){
+                  case FileInfo.FileInfoStatuses.pausing:
+                    FileInfo.setStatusToUnfinishedFileList(fileInfo.syncId,FileInfo.FileInfoStatuses.paused);
+                    break;
+                  case FileInfo.FileInfoStatuses.aborting:
+                    FileInfo.setStatusToUnfinishedFileList(fileInfo.syncId,FileInfo.FileInfoStatuses.aborted);
+                    break;
+                  case FileInfo.FileInfoStatuses.suspending:
+                    FileInfo.removeFromUnfinishedFileList(fileInfo.syncId);
+                }
+
                 //return false;
                 throw new Error('upload stop');
               }
@@ -106,6 +119,8 @@ export function putOSSFile(credential, internal, fileInfo, options) {
               else {
                 Object.assign(fileInfo, setField);
                 yield FileInfo.updateFileInfo(fileInfo, setField);
+                FileInfo.setAttributesToUnfinishedFileList(fileInfo.syncId,setField);
+                //FileInfo.setStatusToUnfinishedFileList(fileInfo.syncId,FileInfo.FileInfoStatuses.uploading);
                 //return true;
               }
 
@@ -138,6 +153,8 @@ export function putOSSFile(credential, internal, fileInfo, options) {
             }
             Object.assign(fileInfo, fields);
             yield FileInfo.updateFileInfo(fileInfo, fields);
+            FileInfo.setAttributesToUnfinishedFileList(fileInfo.syncId,fields);
+            FileInfo.setAttributesToUnfinishedFileList(fileInfo.syncId,FileInfo.FileInfoStatuses.finished);
             logger.debug(`uploading ${filePath} to ${objectKey}`);
           }
 
@@ -161,8 +178,10 @@ export function putOSSFile(credential, internal, fileInfo, options) {
     return fileInfo;
   })
   .catch((err) => {
-    FileInfo.removeFromUnfinishedFileList(fileInfo.syncId);
-    FileInfo.updateFileInfo(fileInfo, { status: FileInfo.FileInfoStatuses.failed });
+    FileInfo.updateFileInfo(fileInfo, { status: FileInfo.FileInfoStatuses.failed })
+    .then(()=>{
+      FileInfo.setStatusToUnfinishedFileList(fileInfo.syncId,FileInfo.FileInfoStatuses.failed)
+    })
     throw err;
   });
 }
@@ -174,12 +193,12 @@ export function abortMitiUpload(credential, internal, fileInfo) {
       var ckp = JSON.parse(fileInfo.checkPoint);
       var result = yield ossClient.abortMultipartUpload(ckp.name, ckp.uploadId);
       yield FileInfo.updateFileInfo(fileInfo, { status: FileInfo.FileInfoStatuses.aborted });
-      FileInfo.removeFromUnfinishedFileList(fileInfo.syncId);
+      FileInfo.setStatusToUnfinishedFileList(fileInfo.syncId,FileInfo.FileInfoStatuses.aborted);
       logger.info(`Abort putOSSObject name -->${ckp.name}, uploadId--> ${ckp.uploadId}, result-->${result}`);
       return { success: true };
     } else {
       yield FileInfo.updateFileInfo(fileInfo, { status: FileInfo.FileInfoStatuses.aborted });
-      FileInfo.removeFromUnfinishedFileList(fileInfo.syncId);
+      FileInfo.setStatusToUnfinishedFileList(fileInfo.syncId,FileInfo.FileInfoStatuses.aborted);
       return { success: true }
     }
   })
@@ -187,7 +206,7 @@ export function abortMitiUpload(credential, internal, fileInfo) {
     if (err.message.indexOf('ENOTFOUND') < 0 && err.message.indexOf('ENOENT') < 0) {
       logger.info(`Abort success with err:${err.message}`);
       FileInfo.updateFileInfo(fileInfo, { status: FileInfo.FileInfoStatuses.aborted });
-      FileInfo.removeFromUnfinishedFileList(fileInfo.syncId);
+      FileInfo.setStatusToUnfinishedFileList(fileInfo.syncId,FileInfo.FileInfoStatuses.aborted);
       return { success: true }
     }
     logger.error(err.message, err.stack);

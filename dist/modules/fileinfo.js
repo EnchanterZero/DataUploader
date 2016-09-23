@@ -10,6 +10,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 exports.addToUnfinishedFileList = addToUnfinishedFileList;
 exports.getOneFromUnfinishedFileList = getOneFromUnfinishedFileList;
 exports.setStatusToUnfinishedFileList = setStatusToUnfinishedFileList;
+exports.setAttributesToUnfinishedFileList = setAttributesToUnfinishedFileList;
 exports.removeFromUnfinishedFileList = removeFromUnfinishedFileList;
 exports.resetUnfinishedFileList = resetUnfinishedFileList;
 exports.getUnfinishedFileList = getUnfinishedFileList;
@@ -63,6 +64,7 @@ const FileInfoStatuses = exports.FileInfoStatuses = {
   paused: 'paused',
   pausing: 'pausing',
   waiting: 'waiting',
+  suspending: 'suspending',
   failed: 'failed',
   aborting: 'aborting',
   aborted: 'aborted'
@@ -89,11 +91,17 @@ function addToUnfinishedFileList(fileInfo) {
   logger.debug('add To UnfinishedFileList', unfinishedFileList, fileInfo);
   for (var i in unfinishedFileList) {
     if (unfinishedFileList[i].syncId == fileInfo.syncId) {
+      if (unfinishedFileList[i].status != FileInfoStatuses.paused || unfinishedFileList[i].status != FileInfoStatuses.aborted) {
+        unfinishedFileList[i].status = FileInfoStatuses.uploading;
+        return true;
+      }
       logger.debug('duplicate to add to UnfinishedFileList', fileInfo);
       return false;
     }
   }
-  unfinishedFileList.push(_util.util._.cloneDeep(fileInfo));
+  var o = _util.util._.cloneDeep(fileInfo);
+  //o.opreation = "";
+  unfinishedFileList.push(o);
   return true;
 }
 function getOneFromUnfinishedFileList(syncId) {
@@ -109,10 +117,23 @@ function setStatusToUnfinishedFileList(syncId, status) {
   for (var i in unfinishedFileList) {
     if (unfinishedFileList[i].syncId == syncId) {
       unfinishedFileList[i].status = status;
+      if (status == FileInfoStatuses.aborted) {
+        removeFromUnfinishedFileList(syncId);
+      }
       return;
     }
   }
 }
+function setAttributesToUnfinishedFileList(syncId, setField) {
+  logger.debug('set progress To UnfinishedFileList', unfinishedFileList, syncId);
+  for (var i in unfinishedFileList) {
+    if (unfinishedFileList[i].syncId == syncId) {
+      Object.assign(unfinishedFileList[i], setField);
+      return;
+    }
+  }
+}
+
 function removeFromUnfinishedFileList(syncId) {
   logger.debug('remove From UnfinishedFileList', unfinishedFileList, syncId);
   for (var i in unfinishedFileList) {
@@ -129,12 +150,19 @@ function getUnfinishedFileList(userId) {
   var list = [];
   unfinishedFileList.map(item => {
     if (item.userId == userId) {
-      list.push(item);
+      list.push(_util.util._.cloneDeep(item));
     }
   });
   return list;
 };
 
+/**
+ * mem cache operation
+ */
+
+/**
+ * Database operation
+ */
 function createFileInfo(fileInfo) {
   return _models2.default.FileInfo.findOrCreate({
     where: {
@@ -144,12 +172,14 @@ function createFileInfo(fileInfo) {
     },
     defaults: fileInfo
   }).then(result => {
+    logger.debug(result);
+
     var _result = _slicedToArray(result, 2);
 
-    let rs = _result[0];
+    let instance = _result[0];
     let created = _result[1];
 
-    return created;
+    return [instance.dataValues, created];
   }).catch(err => {
     logger.error(err, err.stack);
   });
@@ -256,7 +286,7 @@ function getFileInfoBySyncId(SyncId) {
 }
 
 function listFiles(userId) {
-  let where = { status: { $ne: FileInfoStatuses.aborted } };
+  let where = { status: { $notIn: [FileInfoStatuses.aborted, FileInfoStatuses.finished] } };
   if (userId) where.userId = userId;
   return _models2.default.FileInfo.findAll({
     where: where,

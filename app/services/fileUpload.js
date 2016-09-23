@@ -35,8 +35,8 @@ function uploadOneFile(fileInfo, options) {
     }
     fileInfo.ossPath = file.objectKey;
     // record into sqlite
-    yield FileInfo.createFileInfo(fileInfo);
-    FileInfo.addToUnfinishedFileList(fileInfo);
+    let [fileDataValue,created] = yield FileInfo.createFileInfo(fileInfo);
+    FileInfo.addToUnfinishedFileList(fileDataValue);
     logger.debug('start upload!!!!!!!!!');
     //upload
     yield OSS.putOSSFile(ossCredential, false, fileInfo, options);
@@ -142,12 +142,18 @@ function stopUploadFiles(syncId) {
 
 function stopAllUploading() {
   FileInfo.unfinishedFileList.map(item => {
-    if(item.status!='paused' && item.status!='aborted') {
-      FileInfo.setStatusToUnfinishedFileList(item.syncId, 'suspending');
+    if(item.status!=FileInfo.FileInfoStatuses.paused && item.status!=FileInfo.FileInfoStatuses.failed && item.status !=FileInfo.FileInfoStatuses.finished) {
+      FileInfo.setStatusToUnfinishedFileList(item.syncId, FileInfo.FileInfoStatuses.suspending);
     }
   });
   logger.debug('ready to pause');
-  return Promise.resolve();
+  return co(function* () {
+    while(FileInfo.unfinishedFileList.length > 0){
+      logger.debug("-----------*-*-*--*-*---*-*-*-*-*-*ready to log off");
+      yield Promise.delay(100);
+    }
+    return {};
+  })
 }
 
 function abortUploadFiles(syncId) {

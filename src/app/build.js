@@ -485,7 +485,8 @@ var utils = new Utils();
           $state.go('login');
           return Promise.reject('no currentUser');
         }
-        return _FileInfo.listFiles(currentUser.id)
+        //return _FileInfo.listFiles(currentUser.id)
+        return Promise.resolve(_FileInfo.getUnfinishedFileList(currentUser.id))
         .then(function (r) {
           return { fileInfoList: r }
         })

@@ -27,6 +27,7 @@ export const FileInfoStatuses = {
   paused: 'paused',
   pausing: 'pausing',
   waiting: 'waiting',
+  suspending: 'suspending',
   failed: 'failed',
   aborting:'aborting',
   aborted: 'aborted',
@@ -52,12 +53,18 @@ const MAX_UPLOADING_COUNT = 5;
 export function addToUnfinishedFileList(fileInfo) {
   logger.debug('add To UnfinishedFileList',unfinishedFileList,fileInfo);
   for(var i in unfinishedFileList){
-    if(unfinishedFileList[i].syncId == fileInfo.syncId ){
+    if(unfinishedFileList[i].syncId == fileInfo.syncId){
+      if(unfinishedFileList[i].status != FileInfoStatuses.paused || unfinishedFileList[i].status != FileInfoStatuses.aborted){
+        unfinishedFileList[i].status = FileInfoStatuses.uploading;
+        return true;
+      }
       logger.debug('duplicate to add to UnfinishedFileList',fileInfo);
       return false;
     }
   }
-  unfinishedFileList.push(util._.cloneDeep(fileInfo));
+  var o = util._.cloneDeep(fileInfo);
+  //o.opreation = "";
+  unfinishedFileList.push(o);
   return true;
 }
 export function getOneFromUnfinishedFileList(syncId) {
@@ -73,10 +80,23 @@ export function setStatusToUnfinishedFileList(syncId,status) {
   for(var i in unfinishedFileList){
     if(unfinishedFileList[i].syncId == syncId ){
       unfinishedFileList[i].status = status;
+      if(status == FileInfoStatuses.aborted){
+        removeFromUnfinishedFileList(syncId)
+      }
       return;
     }
   }
 }
+export function setAttributesToUnfinishedFileList(syncId,setField) {
+  logger.debug('set progress To UnfinishedFileList',unfinishedFileList,syncId);
+  for(var i in unfinishedFileList){
+    if(unfinishedFileList[i].syncId == syncId ){
+      Object.assign(unfinishedFileList[i], setField);
+      return;
+    }
+  }
+}
+
 export function removeFromUnfinishedFileList(syncId) {
   logger.debug('remove From UnfinishedFileList',unfinishedFileList,syncId);
   for(var i in unfinishedFileList){
@@ -93,13 +113,19 @@ export function getUnfinishedFileList(userId) {
   var list = [];
   unfinishedFileList.map(item =>{
     if(item.userId == userId) {
-      list.push(item);
+      list.push(util._.cloneDeep(item));
     }
   });
   return list;
 };
 
+/**
+ * mem cache operation
+ */
 
+/**
+ * Database operation
+ */
 export function createFileInfo(fileInfo) {
   return models.FileInfo.findOrCreate({
     where: {
@@ -109,8 +135,9 @@ export function createFileInfo(fileInfo) {
     },
     defaults: fileInfo
   }).then((result) => {
-    let [rs,created] = result;
-    return created;
+    logger.debug(result);
+    let [instance,created] = result;
+    return [instance.dataValues ,created];
   }).catch((err) => {
     logger.error(err, err.stack)
   });
@@ -227,7 +254,7 @@ export function getFileInfoBySyncId(SyncId) {
 }
 
 export function listFiles(userId) {
-  let where = {status:{$ne:FileInfoStatuses.aborted}};
+  let where = {status:{$notIn:[FileInfoStatuses.aborted,FileInfoStatuses.finished]}};
   if(userId) where.userId = userId;
   return models.FileInfo.findAll({
     where: where,
