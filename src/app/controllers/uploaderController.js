@@ -51,7 +51,17 @@
       console.log('check for recover only once')
       $rootScope.uploadControllerScope = {};
       var $scope = $rootScope.uploadControllerScope;
-      api.recoverIfUnfinished($scope);
+      $scope.fileInfoList;
+      $scope.stopCount = CONTINUE_TIME;
+      $scope.uploading = false;
+      $scope.chosenFileList = [];
+      api.recoverIfUnfinished($scope).then(function (r) {
+        var temp=[];
+        angular.copy(r,temp);
+        utils.formatList(temp,temp);
+        $scope.fileInfoList = temp;
+        
+      });
       if (!$rootScope.$settings) {
         api.getSettings()
         .then(function (result) {
@@ -61,11 +71,7 @@
       } else {
         $scope.dcmDir = $rootScope.$settings.UploadDir;
       }
-      $scope.fileInfoList;
-      $scope.stopCount = CONTINUE_TIME;
-      $scope.uploading = false;
-      $scope.chosenFileList = [];
-      getFileList($scope);
+      //getFileList($scope);
       getFileUplodStatuses($scope);
 
       $scope.browseAndUpload = function () {

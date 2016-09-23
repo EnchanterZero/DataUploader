@@ -159,6 +159,9 @@ var Utils = function () {
         case "uploading":
           item.statusLocalized = "上传中";
           break;
+        case "pausing":
+          item.statusLocalized = "暂停中";
+          break;
         case "pausing...":
           item.statusLocalized = "暂停中";
           break;
@@ -173,6 +176,9 @@ var Utils = function () {
           break;
         case "failed":
           item.statusLocalized = "已失败";
+          break;
+        case "aborting":
+          item.statusLocalized = "放弃中";
           break;
         case "aborting...":
           item.statusLocalized = "放弃中";

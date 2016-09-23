@@ -85,9 +85,14 @@
           $state.go('login');
           return;
         }
-        co(function*() {
-          let r = yield _FileInfo.listUploadingFiles(currentUser.id);
-          if (r.length > 0) {
+        return co(function*() {
+          let r = yield _FileInfo.listFiles(currentUser.id);
+          var uploadingCount = 0;
+          r.map(function(item){
+            if(item.status ==_FileInfo.FileInfoStatuses.pausing ||item.status == _FileInfo.FileInfoStatuses.uploading)
+              uploadingCount++;
+          });
+          if (uploadingCount > 0) {
             const { dialog } = require('electron').remote;
             var buttonIndex = dialog.showMessageBox({
               type: 'info',
@@ -98,8 +103,9 @@
             });
             $scope.uploading = true;
             $scope.stopCount = 5;
-            _BackendService.uploadRecovery.recover(r);
           }
+          _BackendService.uploadRecovery.recover(r);
+          return r;
         });
       }
       this.stopAll = function () {

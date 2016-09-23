@@ -67,6 +67,20 @@ export function addToUnfinishedFileList(fileInfo) {
   unfinishedFileList.push(o);
   return true;
 }
+export function getActiveUnfinishedFileList() {
+  logger.debug('get Active UnfinishedFileList',unfinishedFileList);
+  var list = [];
+  for(var i in unfinishedFileList){
+    if(  unfinishedFileList[i].status!=FileInfoStatuses.paused 
+      && unfinishedFileList[i].status!=FileInfoStatuses.failed 
+      && unfinishedFileList[i].status!=FileInfoStatuses.finished ){
+      (function (i) {
+        list.push(util._.cloneDeep(unfinishedFileList[i]));
+      })(i);
+    }
+  }
+  return list;
+}
 export function getOneFromUnfinishedFileList(syncId) {
   logger.debug('get One From UnfinishedFileList',unfinishedFileList,syncId);
   for(var i in unfinishedFileList){
@@ -108,6 +122,9 @@ export function removeFromUnfinishedFileList(syncId) {
 }
 export function resetUnfinishedFileList() {
   logger.debug('reset UnfinishedFileList',unfinishedFileList);
+  while(unfinishedFileList.length > 0){
+    unfinishedFileList.pop();
+  }
 }
 export function getUnfinishedFileList(userId) {
   var list = [];
@@ -226,7 +243,7 @@ export function setFileInfoAborted(syncId) {
     where: {
       syncId: syncId,
       status: { $notIn: [FileInfoStatuses.finished,] },
-      progress: { $notIn: [ '1'] },
+      progress: { $notIn: ['1'] },
     }
   })
   .then(result => {

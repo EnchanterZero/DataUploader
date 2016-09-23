@@ -170,6 +170,9 @@ var Utils = function () {
         case "uploading":
           item.statusLocalized = "上传中";
           break;
+        case "pausing":
+          item.statusLocalized = "暂停中";
+          break;
         case "pausing...":
           item.statusLocalized = "暂停中";
           break;
@@ -184,6 +187,9 @@ var Utils = function () {
           break;
         case "failed":
           item.statusLocalized = "已失败";
+          break;
+        case "aborting":
+          item.statusLocalized = "放弃中";
           break;
         case "aborting...":
           item.statusLocalized = "放弃中";
@@ -455,9 +461,14 @@ var utils = new Utils();
           $state.go('login');
           return;
         }
-        co(function*() {
-          let r = yield _FileInfo.listUploadingFiles(currentUser.id);
-          if (r.length > 0) {
+        return co(function*() {
+          let r = yield _FileInfo.listFiles(currentUser.id);
+          var uploadingCount = 0;
+          r.map(function(item){
+            if(item.status ==_FileInfo.FileInfoStatuses.pausing ||item.status == _FileInfo.FileInfoStatuses.uploading)
+              uploadingCount++;
+          });
+          if (uploadingCount > 0) {
             const { dialog } = require('electron').remote;
             var buttonIndex = dialog.showMessageBox({
               type: 'info',
@@ -468,8 +479,9 @@ var utils = new Utils();
             });
             $scope.uploading = true;
             $scope.stopCount = 5;
-            _BackendService.uploadRecovery.recover(r);
           }
+          _BackendService.uploadRecovery.recover(r);
+          return r;
         });
       }
       this.stopAll = function () {
@@ -986,7 +998,17 @@ var utils = new Utils();
       console.log('check for recover only once')
       $rootScope.uploadControllerScope = {};
       var $scope = $rootScope.uploadControllerScope;
-      api.recoverIfUnfinished($scope);
+      $scope.fileInfoList;
+      $scope.stopCount = CONTINUE_TIME;
+      $scope.uploading = false;
+      $scope.chosenFileList = [];
+      api.recoverIfUnfinished($scope).then(function (r) {
+        var temp=[];
+        angular.copy(r,temp);
+        utils.formatList(temp,temp);
+        $scope.fileInfoList = temp;
+        
+      });
       if (!$rootScope.$settings) {
         api.getSettings()
         .then(function (result) {
@@ -996,11 +1018,7 @@ var utils = new Utils();
       } else {
         $scope.dcmDir = $rootScope.$settings.UploadDir;
       }
-      $scope.fileInfoList;
-      $scope.stopCount = CONTINUE_TIME;
-      $scope.uploading = false;
-      $scope.chosenFileList = [];
-      getFileList($scope);
+      //getFileList($scope);
       getFileUplodStatuses($scope);
 
       $scope.browseAndUpload = function () {

@@ -195,10 +195,11 @@ function stopAllUploading() {
   });
   logger.debug('ready to pause');
   return (0, _co2.default)(function* () {
-    while (FileInfo.unfinishedFileList.length > 0) {
+    while (FileInfo.getActiveUnfinishedFileList().length > 0) {
       logger.debug("-----------*-*-*--*-*---*-*-*-*-*-*ready to log off");
       yield _bluebird2.default.delay(100);
     }
+    FileInfo.resetUnfinishedFileList();
     return {};
   });
 }

@@ -148,10 +148,11 @@ function stopAllUploading() {
   });
   logger.debug('ready to pause');
   return co(function* () {
-    while(FileInfo.unfinishedFileList.length > 0){
+    while(FileInfo.getActiveUnfinishedFileList().length > 0){
       logger.debug("-----------*-*-*--*-*---*-*-*-*-*-*ready to log off");
       yield Promise.delay(100);
     }
+    FileInfo.resetUnfinishedFileList();
     return {};
   })
 }
