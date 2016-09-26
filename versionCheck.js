@@ -1,7 +1,7 @@
 /**
  * Created by intern07 on 16/9/26.
  */
-const versionInfoUrl = "http://127.0.0.1:3008/test1.json";
+const versionInfoUrl = "https://www.curacloudplatform.com/download/datauploader/versionInfo.json";
 const downloadUrl = "https://www.curacloudplatform.com/download/datauploader";
 var request = require('request');
 var path = require('path');
