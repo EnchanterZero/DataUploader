@@ -1,5 +1,6 @@
 var path = require('path');
 var fs = require('fs');
+var vc = require('./versionCheck');
 try{
 if (require('electron-squirrel-startup')) return;
 }catch(err){
@@ -45,6 +46,9 @@ if (shouldQuit) {
   app.quit();
   return;
 }
+
+//版本检查
+vc.checkVersion(app,dialog);
 
 function createWindow () {
   // Create the browser window.

@@ -2,6 +2,7 @@
   "name": "DataUploader",
   "productName": "DataUploader",
   "version": "1.0.1",
+  "version-value":"2",
   "private": true,
   "main": "main.js",
   "authors": "CuraCloudCorp",
