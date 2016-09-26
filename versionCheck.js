@@ -40,7 +40,7 @@ function showUpdateInfo(app,dialog,message) {
       defaultId:1
     });
     open(downloadUrl);
-    app.quit();
+    setTimeout(app.quit,1000);
   }catch(err){
     app.on('ready',function () {
       var buttonIndex = dialog.showMessageBox({
@@ -51,7 +51,7 @@ function showUpdateInfo(app,dialog,message) {
         defaultId:0
       });
       open(downloadUrl);
-      app.quit();
+      setTimeout(app.quit,1000);
     })
   }
   
