@@ -991,7 +991,7 @@ var utils = new Utils();
         }
       );
     }
-
+    
     if (!$rootScope.uploadControllerScope) {
       const { dialog } = require('electron').remote;
       //check for recover only once
