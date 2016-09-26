@@ -48,14 +48,14 @@ if (shouldQuit) {
 
 function createWindow () {
   // Create the browser window.
-  mainWindow = new BrowserWindow({icon:`${__dirname}/AppIcon64px.png`,width: 1000, height: 700,minWidth:850 ,minHeight:600})
+  mainWindow = new BrowserWindow({icon:`${__dirname}/AppIcon64px.png`,width: 900, height: 680,minWidth:850 ,minHeight:640})
 
   // and load the index.html of the app.
   //mainWindow.loadURL(`file://${__dirname}/src/app/index.html`)
   mainWindow.loadURL(`file://${__dirname}/src/app/index.html`)
 
   // Open the DevTools.
-  mainWindow.webContents.openDevTools()
+  //mainWindow.webContents.openDevTools()
 
   // Emitted when the window is closed.
   mainWindow.on('close', function (event) {

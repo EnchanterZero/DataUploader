@@ -8,6 +8,9 @@
     position: absolute;
     top: 530px;
   }
+  .pagination {
+    margin: 5px auto;
+  }
 </style>
 <div class="normal-background" ng-controller="HistoryController">
   <h1 class="page-header">上传记录</h1>
@@ -16,7 +19,7 @@
     <!--<h2 ng-hide="files.length == 0" class="sub-header">上传进度</h2>-->
     <h3 ng-hide="fileList.length > 0" class="sub-header">暂无上传</h3>
     <div class="table-responsive" ng-hide="fileList.length == 0 || !fileList">
-      <table st-table="files" st-safe-src="fileList" class="table table-striped">
+      <table st-table="files" st-safe-src="fileList" class="table table-striped" style="margin-bottom: 0">
         <thead>
         <tr>
           <th>名称</th>
